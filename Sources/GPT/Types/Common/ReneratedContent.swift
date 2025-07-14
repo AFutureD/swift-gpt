@@ -2,7 +2,7 @@ struct GeneratedContentType: RawRepresentable {
     let rawValue: String
 }
 
-protocol GeneratedItem: Identifiable {
+protocol GeneratedItem: Identifiable, Sendable {
     associatedtype Content
 
     var type: GeneratedContentType { get }

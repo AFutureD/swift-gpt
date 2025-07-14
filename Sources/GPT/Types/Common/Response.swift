@@ -1,4 +1,4 @@
-enum ModelStreamResponse {
+enum ModelStreamResponse: Sendable {
     // Start
     case create
 

@@ -6,27 +6,27 @@
 //
 
 extension OpenAIModelReponseRequest {
-    init(_ prompt: Prompt, model: String) {
+    init(_ prompt: Prompt, model: String, stream: Bool) {
         self.init(
             input: prompt.inputs,
             model: model,
-            background: nil, // TODO: suppert backgroud mode.
+            background: nil,  // TODO: suppert backgroud mode.
             include: nil,
             instructions: prompt.instructions,
             maxOutputTokens: nil,
             metadata: nil,
             parallelToolCalls: false,
             previousResponseId: prompt.prev_id,
-            reasoning: nil, // TODO: Add reasning configuration
+            reasoning: nil,  // TODO: Add reasning configuration
             store: prompt.store,
-            stream: true,
+            stream: stream,
             temperature: nil,
-            text: nil, // TODO: add expected ouput format support
+            text: nil,  // TODO: add expected ouput format support
             toolChoice: nil,
             tools: nil,
             topP: nil,
             truncation: nil,
-            user: nil // TODO: provide session ID or user ID
+            user: nil  // TODO: provide session ID or user ID
         )
     }
 }
@@ -37,7 +37,10 @@ extension OpenAIChatCompletionRequestMessageContentPart {
         case .text(let text):
             self = .text(.init(text: text.text))
         case .file(let file):
-            self = .file(.init(file: .init(fileId: file.fileID, filename: file.filename, fileData: file.fileData)))
+            self = .file(
+                .init(
+                    file: .init(
+                        fileId: file.fileID, filename: file.filename, fileData: file.fileData)))
         default:
             return nil
         }
@@ -45,14 +48,14 @@ extension OpenAIChatCompletionRequestMessageContentPart {
 }
 
 extension OpenAIChatCompletionRequestMessageContentPart {
-    
+
 }
 
 extension OpenAIChatCompletionRequestMessage {
     init(_ item: OpenAIModelReponseRequestInputItemMessage) {
-        
+
         let content: OpenAIChatCompletionRequestMessageContent
-        
+
         switch item.content {
         case .text(let text):
             content = .text(text)
@@ -62,10 +65,11 @@ extension OpenAIChatCompletionRequestMessage {
             }
             content = .parts(parts)
         }
-        
+
         switch item.role {
         case .assistant:
-            self = .assistant(.init(audio: nil, content: content, name: nil, refusal: nil, tool_calls: nil))
+            self = .assistant(
+                .init(audio: nil, content: content, name: nil, refusal: nil, tool_calls: nil))
         case .developer:
             self = .developer(.init(content: content, name: nil))
         case .user:
@@ -83,7 +87,7 @@ extension OpenAIChatCompletionRequestMessage {
             let parts = input.content.compactMap {
                 OpenAIChatCompletionRequestMessageContentPart(item: $0)
             }
-            
+
             let content: OpenAIChatCompletionRequestMessageContent = .parts(parts)
             switch input.role {
             case .developer:
@@ -97,13 +101,14 @@ extension OpenAIChatCompletionRequestMessage {
             let parts: [OpenAIChatCompletionRequestMessageContentPart] = output.content.compactMap {
                 switch $0 {
                 case .text(let text):
-                        .text(.init(text: text.text))
+                    .text(.init(text: text.text))
                 default:
                     nil
                 }
             }
-            
-            self = .assistant(.init(audio: nil, content: .parts(parts), name: nil, refusal: nil, tool_calls: nil))
+
+            self = .assistant(
+                .init(audio: nil, content: .parts(parts), name: nil, refusal: nil, tool_calls: nil))
         default:
             return nil
         }
@@ -111,7 +116,7 @@ extension OpenAIChatCompletionRequestMessage {
 }
 
 extension OpenAIChatCompletionRequest {
-    init(_ prompt: Prompt, model: String) {
+    init(_ prompt: Prompt, model: String, stream: Bool) {
         var messages: [OpenAIChatCompletionRequestMessage] = []
         switch prompt.inputs {
         case .text(let text):
@@ -148,7 +153,7 @@ extension OpenAIChatCompletionRequest {
             serviceTier: nil,
             stop: nil,
             store: prompt.store,
-            stream: true,
+            stream: stream,
             streamOptions: .init(includeUsage: true),
             temperature: nil,
             toolChoice: nil,

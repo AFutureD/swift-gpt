@@ -28,7 +28,12 @@ struct GPT {
         self.encoder = encoder
     }
 
-    func send(_ prompt: Prompt, model: LLMQualifiedModel) async throws -> ModelResponse {
+    func send(
+        _ prompt: Prompt,
+        model: LLMQualifiedModel
+    ) async throws -> AnyAsyncSequence<ModelStreamResponse> {
+        assert(prompt.stream == true, "The prompt perfer do not use stream.")
+
         switch model.provider.type {
         case .OpenAI:
 
@@ -49,12 +54,16 @@ struct GPT {
                 ]
             )
 
-            let body = OpenAIModelReponseRequest(prompt, model: model.name)
+            let body = OpenAIModelReponseRequest(prompt, model: model.name, stream: true)
             let bodyData = try encoder.encode(body)
 
             // Send Request
             let (response, responseBody) = try await client.send(
-                request, body: .init(bodyData), baseURL: url, operationID: UUID().uuidString)
+                request,
+                body: .init(bodyData),
+                baseURL: url,
+                operationID: UUID().uuidString
+            )
 
             // Error
             // TODO: Handle `tooManyRequests`
@@ -72,22 +81,24 @@ struct GPT {
                 todo("throw empty body")
             }
 
-            guard let contentType = response.headerFields.contentType,
+            guard
+                let contentType = response.headerFields.contentType,
                 contentType.starts(with: NetworkKit.ServerSentEvent.MIME_String)
             else {
-                let data = try await Data(collecting: responseBody, upTo: .max)
-                let result = try JSONDecoder().decode(OpenAIModelReponse.self, from: data)
-                return .block(result)
+                // let data = try await Data(collecting: responseBody, upTo: .max)
+                // let result = try JSONDecoder().decode(OpenAIModelReponse.self, from: data)
+                // return .block(result)
+
+                todo("throw error and suggest block api call")
             }
 
-            let stream = responseBody.map {
+            return responseBody.map {
                 Data($0)
             }.mapToServerSentEvert().map {
                 try decoder.decode(OpenAIModelStreamResponse.self, from: Data($0.data.utf8))
-            }
-
-            // return .stream(stream.eraseToAnyAsyncSequence())
-            todo()
+            }.map {
+                ModelStreamResponse($0)
+            }.compacted().eraseToAnyAsyncSequence()
         case .OpenAICompatible:
 
             guard let providerURL = URL(string: model.provider.apiURL) else {
@@ -107,7 +118,7 @@ struct GPT {
                 ]
             )
 
-            let body = OpenAIChatCompletionRequest(prompt, model: model.name)
+            let body = OpenAIChatCompletionRequest(prompt, model: model.name, stream: true)
             let bodyData = try encoder.encode(body)
 
             let (response, responseBody) = try await client.send(
