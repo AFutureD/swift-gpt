@@ -5,10 +5,28 @@
 //  Created by AFuture on 2025/7/12.
 //
 
+import Algorithms
+
+extension OpenAIModelReponseRequestInputItemMessageContentItem {
+    init(_ input: Prompt.Input) {
+        fatalError()
+    }
+}
+
 extension OpenAIModelReponseRequest {
     init(_ prompt: Prompt, model: String, stream: Bool) {
+        let items: [OpenAIModelReponseRequestInputItem] = prompt.inputs.chunked(on: \.content.role).map { role, inputs in
+            let items = inputs.map {
+                OpenAIModelReponseRequestInputItemMessageContentItem($0)
+            }
+            
+            return OpenAIModelReponseRequestInputItemMessage(content: .inputs(items), role: .init(rawValue: role.rawValue) ?? .user, type: nil)
+        }.map {
+            .message($0)
+        }
+        
         self.init(
-            input: prompt.inputs,
+            input: .items(items),
             model: model,
             background: nil,  // TODO: suppert backgroud mode.
             include: nil,
@@ -115,24 +133,51 @@ extension OpenAIChatCompletionRequestMessage {
     }
 }
 
+extension OpenAIChatCompletionRequestMessage {
+    init?(_ item: OpenAIModelReponseRequestInputItem) {
+        switch item {
+        case .message(let message):
+            self = OpenAIChatCompletionRequestMessage(message)
+        case .output(let output):
+            guard let message = OpenAIChatCompletionRequestMessage(output) else {
+                return nil
+            }
+            self = message
+        case .reference(_):
+            return nil
+        }
+    }
+}
+
+extension OpenAIChatCompletionRequestMessageContentPart {
+    init?(_ input: Prompt.Input) {
+        fatalError()
+    }
+}
+
+
+
 extension OpenAIChatCompletionRequest {
     init(_ prompt: Prompt, model: String, stream: Bool) {
-        var messages: [OpenAIChatCompletionRequestMessage] = []
-        switch prompt.inputs {
-        case .text(let text):
-            messages.append(.user(.init(content: .text(text), name: nil)))
-        case .items(let items):
-            for item in items {
-                switch item {
-                case .message(let message):
-                    messages.append(OpenAIChatCompletionRequestMessage(message))
-                case .output(let output):
-                    messages.append(OpenAIChatCompletionRequestMessage(output)!)
-                case .reference(_):
-                    break
-                }
+    
+        let messages: [OpenAIChatCompletionRequestMessage] = prompt.inputs.chunked(on: \.content.role).compactMap { role, inputs in
+            let parts = inputs.compactMap {
+                OpenAIChatCompletionRequestMessageContentPart($0)
+            }
+            switch role {
+            case .system:
+                return .system(.init(content: .parts(parts), name: nil))
+            case .assistant:
+                return .assistant(.init(audio: nil, content: .parts(parts), name: nil, refusal: nil, tool_calls: nil))
+            case .user:
+                return .user(.init(content: .parts(parts), name: nil))
+            case .developer:
+                return .developer(.init(content: .parts(parts), name: nil))
+            default:
+                return nil
             }
         }
+        
         self.init(
             messages: messages,
             model: model,
