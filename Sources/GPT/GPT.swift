@@ -1,45 +1,43 @@
 // The Swift Programming Language
 // https://docs.swift.org/swift-book
 
-import LazyKit
-import OpenAPIRuntime
-import HTTPTypes
 import Foundation
+import HTTPTypes
+import LazyKit
 import NetworkKit
+import OpenAPIRuntime
 
 public protocol PromptPart {}
 
-
 enum ModelResponse {
     case block(OpenAIModelReponse)
-    case stream(AnyAsyncSequence<()>)
+    case stream(AnyAsyncSequence<ModelStreamResponse>)
 }
 
 struct GPT {
     let client: ClientTransport
-        
+
     // TODO: Support Session
-    
-    
+
     let encoder: JSONEncoder
     let decoder: JSONDecoder
-    
+
     init(client: ClientTransport, encoder: JSONEncoder = .init(), decoder: JSONDecoder = .init()) {
         self.client = client
         self.decoder = decoder
         self.encoder = encoder
     }
-    
+
     func send(_ prompt: Prompt, model: LLMQualifiedModel) async throws -> ModelResponse {
         switch model.provider.type {
         case .OpenAI:
-            
+
             guard let providerURL = URL(string: model.provider.apiURL) else {
                 todo("throw api url invalid")
             }
-            
+
             let url = providerURL.appending(path: "responses")
-            
+
             let request = HTTPRequest(
                 method: .post,
                 scheme: nil,
@@ -50,52 +48,54 @@ struct GPT {
                     .authorization: "Bearer \(model.provider.apiKey)",
                 ]
             )
-            
+
             let body = OpenAIModelReponseRequest(prompt, model: model.name)
             let bodyData = try encoder.encode(body)
-            
+
             // Send Request
-            let (response, responseBody) = try await client.send(request, body: .init(bodyData), baseURL: url, operationID: UUID().uuidString)
-            
+            let (response, responseBody) = try await client.send(
+                request, body: .init(bodyData), baseURL: url, operationID: UUID().uuidString)
+
             // Error
             // TODO: Handle `tooManyRequests`
             guard response.status == .ok else {
-                let errorStr = if let responseBody {
-                    try await String(collecting: responseBody, upTo: .max)
-                } else {
-                    "nil"
-                }
+                let errorStr =
+                    if let responseBody {
+                        try await String(collecting: responseBody, upTo: .max)
+                    } else {
+                        "nil"
+                    }
                 todo("throw errors: \(errorStr)")
             }
-            
+
             guard let responseBody else {
                 todo("throw empty body")
             }
-            
+
             guard let contentType = response.headerFields.contentType,
-                  contentType.starts(with: NetworkKit.ServerSentEvent.MIME_String)
+                contentType.starts(with: NetworkKit.ServerSentEvent.MIME_String)
             else {
                 let data = try await Data(collecting: responseBody, upTo: .max)
                 let result = try JSONDecoder().decode(OpenAIModelReponse.self, from: data)
                 return .block(result)
             }
-            
+
             let stream = responseBody.map {
                 Data($0)
             }.mapToServerSentEvert().map {
                 try decoder.decode(OpenAIModelStreamResponse.self, from: Data($0.data.utf8))
             }
-            
+
             // return .stream(stream.eraseToAnyAsyncSequence())
             todo()
         case .OpenAICompatible:
-            
+
             guard let providerURL = URL(string: model.provider.apiURL) else {
                 todo("throw api url invalid")
             }
-            
+
             let url = providerURL.appending(path: "/chat/completions")
-            
+
             let request = HTTPRequest(
                 method: .post,
                 scheme: nil,
@@ -106,41 +106,44 @@ struct GPT {
                     .authorization: "Bearer \(model.provider.apiKey)",
                 ]
             )
-            
+
             let body = OpenAIChatCompletionRequest(prompt, model: model.name)
             let bodyData = try encoder.encode(body)
-            
-            let (response, responseBody) = try await client.send(request, body: .init(bodyData), baseURL: url, operationID: UUID().uuidString)
-            
+
+            let (response, responseBody) = try await client.send(
+                request, body: .init(bodyData), baseURL: url, operationID: UUID().uuidString)
+
             // Error
             // TODO: Handle `tooManyRequests`
             guard response.status == .ok else {
-                let errorStr = if let responseBody {
-                    try await String(collecting: responseBody, upTo: .max)
-                } else {
-                    "nil"
-                }
+                let errorStr =
+                    if let responseBody {
+                        try await String(collecting: responseBody, upTo: .max)
+                    } else {
+                        "nil"
+                    }
                 todo("throw errors: \(errorStr)")
             }
-            
+
             guard let responseBody else {
                 todo("throw empty body")
             }
-            
+
             guard let contentType = response.headerFields.contentType,
-                  contentType.starts(with: NetworkKit.ServerSentEvent.MIME_String)
+                contentType.starts(with: NetworkKit.ServerSentEvent.MIME_String)
             else {
                 let data = try await Data(collecting: responseBody, upTo: .max)
                 let result = try JSONDecoder().decode(OpenAIChatCompletionResponse.self, from: data)
                 todo("Unsupport Yet")
             }
-            
+
             let stream = responseBody.map {
                 Data($0)
             }.mapToServerSentEvert().map {
-                try decoder.decode(OpenAIChatCompletionStreamResponse.self, from: Data($0.data.utf8))
+                try decoder.decode(
+                    OpenAIChatCompletionStreamResponse.self, from: Data($0.data.utf8))
             }
-            
+
             // return .stream(stream.eraseToAnyAsyncSequence())
             todo()
         case .Gemini:
@@ -156,7 +159,7 @@ extension HTTPFields {
         }
         return Int(value)
     }
-    
+
     public var contentType: String? {
         self[.contentType]
     }
