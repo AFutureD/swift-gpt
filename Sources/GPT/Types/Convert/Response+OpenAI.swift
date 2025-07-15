@@ -22,7 +22,7 @@ extension ModelStreamResponse {
                 let contents = output.content.map {
                     $0.convertToGenratedItem()
                 }
-                self = .itemAdded(MessageItem(id: output.id, index: itemDone.output_index, content: contents))
+                self = .itemDone(MessageItem(id: output.id, index: itemDone.output_index, content: contents))
             default:
                 return nil
             }
@@ -34,7 +34,7 @@ extension ModelStreamResponse {
             self = .contentDone(content)
         case .response_output_text_delta(let textDelta):
             let content = TextContent(delta: textDelta.delta, content: nil, annotations: [])
-            self = .contentDone(content)
+            self = .contentDelta(content)
         default:
             return nil
         }

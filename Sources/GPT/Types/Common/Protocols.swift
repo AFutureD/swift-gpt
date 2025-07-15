@@ -4,6 +4,12 @@ struct GeneratedContentType: RawRepresentable {
     let rawValue: String
 }
 
+extension GeneratedContentType: CustomStringConvertible {
+    var description: String {
+        rawValue
+    }
+}
+
 protocol GeneratedItem: Sendable {
     associatedtype Content
 
@@ -31,6 +37,12 @@ struct ModelInputContentRole: RawRepresentable, Hashable, Sendable {
     let rawValue: String
 }
 
+extension ModelInputContentRole: CustomStringConvertible {
+    var description: String {
+        rawValue
+    }
+}
+
 extension ModelInputContentRole {
     static let system = ModelInputContentRole(rawValue: "system")
     static let assistant = ModelInputContentRole(rawValue: "assistant")
@@ -40,6 +52,12 @@ extension ModelInputContentRole {
 
 struct ModelInputContentType: RawRepresentable, Sendable {
     let rawValue: String
+}
+
+extension ModelInputContentType: CustomStringConvertible {
+    var description: String {
+        rawValue
+    }
 }
 
 protocol ModelInputContent: Sendable {

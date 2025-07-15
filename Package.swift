@@ -13,9 +13,14 @@ let package = Package(
             targets: ["GPT"]),
     ],
     dependencies: [
+        .package(path: "../swift-lazy"),
+        // .package(url: "https://github.com/Myoland/swift-lazy", branch: "main"),
         .package(url: "https://github.com/objecthub/swift-dynamicjson", from: "1.0.2"),
         .package(url: "https://github.com/apple/swift-openapi-runtime", from: "1.8.2"),
-        .package(path: "../swift-lazy"),
+        .package(url: "https://github.com/apple/swift-algorithms", from: "1.2.1"),
+        
+        // Test
+        .package(url: "https://github.com/swift-server/swift-openapi-async-http-client", from: "1.0.0"),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -27,11 +32,16 @@ let package = Package(
                 .product(name: "NetworkKit", package: "swift-lazy"),
                 .product(name: "DynamicJSON", package: "swift-dynamicjson"),
                 .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
+                .product(name: "Algorithms", package: "swift-algorithms")
             ]
         ),
         .testTarget(
             name: "GPTTests",
-            dependencies: ["GPT"]
+            dependencies: [
+                "GPT",
+                .product(name: "TestKit", package: "swift-lazy"),
+                .product(name: "OpenAPIAsyncHTTPClient", package: "swift-openapi-async-http-client"),
+            ]
         ),
     ]
 )
