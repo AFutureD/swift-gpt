@@ -4,7 +4,7 @@ struct GeneratedContentType: RawRepresentable {
     let rawValue: String
 }
 
-protocol GeneratedItem: Identifiable, Sendable {
+protocol GeneratedItem: Sendable {
     associatedtype Content
 
     var type: GeneratedContentType { get }
@@ -30,16 +30,15 @@ extension ModelInputContentRole {
     static let developer = ModelInputContentRole(rawValue: "developer")
 }
 
-
 struct ModelInputContentType: RawRepresentable, Sendable {
     let rawValue: String
 }
 
 protocol ModelInputContent: Sendable {
     associatedtype Content: Encodable
-    
+
     var type: ModelInputContentType { get }
     var role: ModelInputContentRole { get }
-    
+
     var content: Content { get }
 }

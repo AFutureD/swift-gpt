@@ -201,8 +201,6 @@ public struct OpenAIModelReponse: Codable, Sendable {
     }
 }
 
-
-
 struct OpenAIModelStreamResponseCreated: Codable, Sendable {
     let type: OpenAIModelStreamResponseType = .response_created
     let sequence_number: Int
@@ -226,7 +224,6 @@ struct OpenAIModelStreamResponseInProgess: Codable, Sendable {
         case response
     }
 }
-
 
 struct OpenAIModelStreamResponseCompleted: Codable, Sendable {
     let type: OpenAIModelStreamResponseType = .response_completed
@@ -703,7 +700,7 @@ struct OpenAIModelStreamResponseMCPListToolsInProgress: Codable, Sendable {
     let sequence_number: Int
 }
 
-struct OpenAIModelStreamResponseOutputTextAnnotationAddedAnnotation: Codable, Sendable  {
+struct OpenAIModelStreamResponseOutputTextAnnotationAddedAnnotation: Codable, Sendable {
     let type: String = "text_annotation"
     let text: String
     let start: Int
@@ -726,7 +723,7 @@ struct OpenAIModelStreamResponseQueued: Codable, Sendable {
     let response: OpenAIModelReponse
 }
 
-struct OpenAIModelStreamResponseReasoningDeltaText: Codable, Sendable  {
+struct OpenAIModelStreamResponseReasoningDeltaText: Codable, Sendable {
     let text: String
 }
 

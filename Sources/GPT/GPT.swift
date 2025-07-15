@@ -14,10 +14,10 @@ enum ModelResponse {
     case stream(AnyAsyncSequence<ModelStreamResponse>)
 }
 
-struct GPT {
+struct GPTSession: Sendable {
     let client: ClientTransport
 
-    // TODO: Support Session
+    let sessionID: LazyLockedValue<String?> = .init(nil)
 
     let encoder: JSONEncoder
     let decoder: JSONDecoder
@@ -148,15 +148,13 @@ struct GPT {
                 todo("Unsupport Yet")
             }
 
-            let stream = responseBody.map {
+            return responseBody.map {
                 Data($0)
             }.mapToServerSentEvert().map {
-                try decoder.decode(
-                    OpenAIChatCompletionStreamResponse.self, from: Data($0.data.utf8))
-            }
-
-            // return .stream(stream.eraseToAnyAsyncSequence())
-            todo()
+                try decoder.decode(OpenAIChatCompletionStreamResponse.self, from: Data($0.data.utf8))
+            }.map {
+                ModelStreamResponse($0)
+            }.compacted().eraseToAnyAsyncSequence()
         case .Gemini:
             todo()
         }

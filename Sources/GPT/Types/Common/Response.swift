@@ -18,14 +18,13 @@ enum ModelStreamResponse: Sendable {
 
 struct TokenUsage {}
 
-// MARK: Text
+// MARK: Content - Text
 
 extension GeneratedContentType {
     static let text = GeneratedContentType(rawValue: "response.message.text")
 }
 
 struct TextContent: PartialUpdatableItem {
-    let id: String
     let type: GeneratedContentType = .text
 
     let delta: String?
@@ -34,7 +33,7 @@ struct TextContent: PartialUpdatableItem {
     let annotations: [Annotation]
 }
 
-// MARK: Text Annotation
+// MARK: Content - Text Annotation
 
 extension GeneratedContentType {
     static let textAnnotation = GeneratedContentType(rawValue: "response.message.text.annotation")
@@ -49,14 +48,13 @@ extension TextContent {
     }
 }
 
-// MARK: Refusal
+// MARK: Content - Refusal
 
 extension GeneratedContentType {
     static let textRefusal = GeneratedContentType(rawValue: "response.message.text.refusal")
 }
 
 struct TextRefusalContent: GeneratedItem {
-    let id: String
     let type: GeneratedContentType = .textRefusal
 
     let content: String?
@@ -68,7 +66,7 @@ extension GeneratedContentType {
     static let message = GeneratedContentType(rawValue: "response.message")
 }
 
-struct MessageItem: GeneratedItem {
+struct MessageItem: Identifiable, GeneratedItem {
     let id: String
     let type: GeneratedContentType = .message
 
