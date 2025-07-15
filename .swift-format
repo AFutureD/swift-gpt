@@ -1,3 +1,6 @@
 {
+    "indentation": {
+        "spaces": 4
+    },
     "lineLength": 160
 }
