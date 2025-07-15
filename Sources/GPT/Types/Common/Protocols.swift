@@ -11,11 +11,19 @@ protocol GeneratedItem: Sendable {
     var content: Content? { get }
 }
 
-protocol PartialUpdatableItem: GeneratedItem {
+protocol GeneratedSortable: Sendable {
+    var index: Int? { get }
+}
+
+typealias GeneratedSortableItem = GeneratedSortable & GeneratedItem
+
+protocol PartialUpdatable: Sendable {
     associatedtype Delta
 
     var delta: Delta { get }
 }
+
+typealias PartialUpdatableItem = PartialUpdatable & GeneratedItem
 
 // MARK: Model Inputs
 

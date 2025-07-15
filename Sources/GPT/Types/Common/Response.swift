@@ -12,7 +12,7 @@ enum ModelStreamResponse: Sendable {
 
     // Item.Content
     case contentAdded(any GeneratedItem)
-    case contentDelta(any PartialUpdatableItem)
+    case contentDelta(any PartialUpdatable & GeneratedItem)
     case contentDone(any GeneratedItem)
 }
 
@@ -24,7 +24,9 @@ extension GeneratedContentType {
     static let text = GeneratedContentType(rawValue: "response.message.text")
 }
 
-struct TextContent: PartialUpdatableItem {
+struct TextContent: PartialUpdatable, GeneratedItem {
+    // TODO: Support content index
+    
     let type: GeneratedContentType = .text
 
     let delta: String?
@@ -55,6 +57,7 @@ extension GeneratedContentType {
 }
 
 struct TextRefusalContent: GeneratedItem {
+
     let type: GeneratedContentType = .textRefusal
 
     let content: String?
@@ -66,9 +69,10 @@ extension GeneratedContentType {
     static let message = GeneratedContentType(rawValue: "response.message")
 }
 
-struct MessageItem: Identifiable, GeneratedItem {
+struct MessageItem: Identifiable, GeneratedSortableItem {
     let id: String
     let type: GeneratedContentType = .message
+    let index: Int?
 
     // Text Or TextRefusal
     let content: [any GeneratedItem]?
