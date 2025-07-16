@@ -6,6 +6,7 @@ import HTTPTypes
 import LazyKit
 import NetworkKit
 import OpenAPIRuntime
+import SynchronizationKit
 
 public protocol PromptPart {}
 
