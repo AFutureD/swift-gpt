@@ -153,9 +153,7 @@ struct GPTSession: Sendable {
                 Data($0)
             }.mapToServerSentEvert().map {
                 try decoder.decode(OpenAIChatCompletionStreamResponse.self, from: Data($0.data.utf8))
-            }.map {
-                ModelStreamResponse($0)
-            }.compacted().eraseToAnyAsyncSequence()
+            }.aggregateToModelStremResponse().eraseToAnyAsyncSequence()
         case .Gemini:
             todo()
         }

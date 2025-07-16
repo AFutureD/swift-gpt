@@ -1,5 +1,5 @@
 {
-  "originHash" : "19fdd2746a1162aa21e42eac2da623468acc0381a38880a79851262c59a4eace",
+  "originHash" : "fb4c698c34e9debd3703b2fbb8cca943a8800feb6a3560d8d360f5952bc0c9a1",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -13,7 +13,7 @@
     {
       "identity" : "swift-algorithms",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-algorithms.git",
+      "location" : "https://github.com/apple/swift-algorithms",
       "state" : {
         "revision" : "87e50f483c54e6efd60e885f7f5aa946cee68023",
         "version" : "1.2.1"
@@ -121,7 +121,7 @@
     {
       "identity" : "swift-nio",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-nio.git",
+      "location" : "https://github.com/apple/swift-nio",
       "state" : {
         "revision" : "ad6b5f17270a7008f60d35ec5378e6144a575162",
         "version" : "2.84.0"
@@ -205,7 +205,7 @@
       "location" : "https://github.com/AFutureD/swift-synchronization",
       "state" : {
         "branch" : "main",
-        "revision" : "77be520e8b18d416cb0e7ef3dc9d1a6e25dd660e"
+        "revision" : "2796e5cc569acd8774468ab45bb294ba41028d30"
       }
     },
     {

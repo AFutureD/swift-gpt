@@ -1,3 +1,7 @@
+import SynchronizationKit
+import AsyncAlgorithms
+import LazyKit
+
 extension ModelStreamResponse {
     init?(_ event: OpenAIModelStreamResponse) {
         switch event {
@@ -53,8 +57,102 @@ extension OpenAIModelReponseContextOutputContent {
 }
 
 
-extension ModelStreamResponse {
-    init?(_ event: OpenAIChatCompletionStreamResponse) {
-        return nil
+struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
+    
+    private let didSendCreate: LazyLockedValue<Bool> = .init(false)
+    private let hasEmittedFirstContent: LazyLockedValue<Bool> = .init(false)
+    private let currentTextContent: LazyLockedValue<(any GeneratedItem)?> = .init(nil)
+    
+    func handle(_ event: OpenAIChatCompletionStreamResponse) -> [ModelStreamResponse] {
+        var result: [ModelStreamResponse] = []
+        
+        let sent = self.didSendCreate.withLock { sent in
+            if sent {
+                return true
+            } else {
+                sent = true
+                return false
+            }
+        }
+        
+        if !sent {
+            result.append(.create)
+        }
+        
+        guard let choice = event.choices.first else {
+            let usage = event.usage
+            result.append(.completed(responseId: event.id, usage: nil))
+            return result
+        }
+        
+        if let finish = choice.finish_reason {
+            switch finish {
+            case "stop":
+                let text = currentTextContent.withLock { $0 }
+                let content: [any GeneratedItem] = text.flatMap { [$0] } ?? []
+                
+                let messageItem = MessageItem(id: event.id, index: 0, content: content)
+                result.append(.itemDone(messageItem))
+                
+            case "length":
+                result.append(.error)
+                
+            case "content_filter":
+                result.append(.error)
+                
+            case "tool_calls":
+                result.append(.error)
+                
+            default:
+                break
+            }
+        }
+        
+        if choice.delta.role != nil {
+            let textContent = TextContent(delta: nil, content: choice.delta.content, annotations: [])
+            currentTextContent.withLock { $0 = textContent }
+            
+            let messageItem = MessageItem(id: event.id, index: 0, content: nil)
+            result.append(.contentAdded(messageItem))
+        }
+        
+        if let delta = choice.delta.content {
+            currentTextContent.withLock {
+                let previous = ($0 as? TextContent)?.content
+                $0 = TextContent(delta: delta, content: (previous ?? "") + delta, annotations: [])
+            }
+            result.append(.contentDelta(TextContent(delta: delta, content: nil, annotations: [])))
+        }
+        
+        if let Refusal = choice.delta.refusal {
+            let content = TextRefusalContent(content: Refusal)
+            currentTextContent.withLock { $0 = content }
+            result.append(.contentDone(content))
+        }
+        
+        return result
+    }
+    
+}
+
+public struct OpenAIChatCompletionStreamResponseAsyncAggregater<Base: AsyncSequence & Sendable>: Sendable, AsyncSequence where Base.Element == OpenAIChatCompletionStreamResponse {
+    
+    let base: Base
+    public init(base: Base) {
+        self.base = base
+    }
+   
+    public func makeAsyncIterator() -> AnyAsyncSequence<ModelStreamResponse>.AsyncIterator {
+        let aggregater = OpenAIChatCompletionStreamResponseAggregater()
+       
+        return base.flatMap {
+            aggregater.handle($0).async
+        }.eraseToAnyAsyncSequence().makeAsyncIterator()
+    }
+}
+
+extension AsyncSequence where Self: Sendable, Self.Element == OpenAIChatCompletionStreamResponse {
+    func aggregateToModelStremResponse() -> OpenAIChatCompletionStreamResponseAsyncAggregater<Self> {
+        OpenAIChatCompletionStreamResponseAsyncAggregater<Self>(base: self)
     }
 }

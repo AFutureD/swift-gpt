@@ -1,4 +1,4 @@
-enum ModelStreamResponse: Sendable {
+public enum ModelStreamResponse: Sendable {
     // Start
     case create
 
@@ -16,12 +16,12 @@ enum ModelStreamResponse: Sendable {
     case contentDone(any GeneratedItem)
 }
 
-struct TokenUsage {}
+public struct TokenUsage: Sendable {}
 
 // MARK: Content - Text
 
 extension GeneratedContentType {
-    static let text = GeneratedContentType(rawValue: "response.message.text")
+    public static let text = GeneratedContentType(rawValue: "response.message.text")
 }
 
 struct TextContent: PartialUpdatable, GeneratedItem {

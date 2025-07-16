@@ -3,10 +3,11 @@ import OpenAPIAsyncHTTPClient
 @testable import GPT
 import os.log
 import TestKit
+import SwiftDotenv
 
 @Test("testExmaple")
 func testExmaple() async throws {
-    Dotenv.make()
+    try Dotenv.make()
     
     let client = AsyncHTTPClientTransport()
     let session = GPTSession(client: client)
