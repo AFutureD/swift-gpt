@@ -1,3 +1,14 @@
+public struct ModelResponse: Sendable {
+    let id: String?
+    
+    let items: [any GeneratedItem]
+    
+    let usage: TokenUsage?
+    
+    // let error: Void
+}
+
+
 public enum ModelStreamResponse: Sendable {
     // Start
     case create
@@ -16,7 +27,11 @@ public enum ModelStreamResponse: Sendable {
     case contentDone(any GeneratedItem)
 }
 
-public struct TokenUsage: Sendable {}
+public struct TokenUsage: Sendable {
+    let input: Int?
+    let output: Int?
+    let total: Int?
+}
 
 // MARK: Content - Text
 

@@ -8,7 +8,12 @@ extension ModelStreamResponse {
         case .response_created(_):
             self = .create  // Pass id
         case .response_completed(let completed):
-            self = .completed(responseId: completed.response.id, usage: nil)
+            let usage = TokenUsage(
+                input: completed.response.usage?.input_tokens,
+                output: completed.response.usage?.output_tokens,
+                total: completed.response.usage?.total_tokens
+            )
+            self = .completed(responseId: completed.response.id, usage: usage)
         case .response_incomplete(_):
             self = .error  // TODO: throw incomplete info as error
         case .error(_):
@@ -80,8 +85,12 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
         }
         
         guard let choice = event.choices.first else {
-            let usage = event.usage
-            result.append(.completed(responseId: event.id, usage: nil))
+            let usage = TokenUsage(
+                input: event.usage?.prompt_tokens,
+                output: event.usage?.completion_tokens, 
+                total: event.usage?.total_tokens
+            )
+            result.append(.completed(responseId: event.id,usage: usage))
             return result
         }
         
@@ -119,7 +128,7 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
         if let delta = choice.delta.content {
             currentTextContent.withLock {
                 let previous = ($0 as? TextContent)?.content
-                $0 = TextContent(delta: delta, content: (previous ?? "") + delta, annotations: [])
+                $0 = TextContent(delta: nil, content: (previous ?? "") + delta, annotations: [])
             }
             result.append(.contentDelta(TextContent(delta: delta, content: nil, annotations: [])))
         }

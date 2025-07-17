@@ -10,11 +10,6 @@ import SynchronizationKit
 
 public protocol PromptPart {}
 
-enum ModelResponse {
-    case block(OpenAIModelReponse)
-    case stream(AnyAsyncSequence<ModelStreamResponse>)
-}
-
 struct GPTSession: Sendable {
     let client: ClientTransport
 
@@ -149,9 +144,11 @@ struct GPTSession: Sendable {
                 todo("Unsupport Yet")
             }
 
-            return responseBody.map {
+            return try responseBody.map {
                 Data($0)
-            }.mapToServerSentEvert().map {
+            }.mapToServerSentEvert().prefix {
+                $0.data != "[DONE]"
+            }.map {
                 try decoder.decode(OpenAIChatCompletionStreamResponse.self, from: Data($0.data.utf8))
             }.aggregateToModelStremResponse().eraseToAnyAsyncSequence()
         case .Gemini:
