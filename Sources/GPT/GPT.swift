@@ -34,7 +34,7 @@ struct GPTSession: Sendable {
         case .OpenAI:
 
             guard let providerURL = URL(string: model.provider.apiURL) else {
-                todo("throw api url invalid")
+                throw RuntimeError.invalidApiURL(model.provider.apiURL)
             }
 
             let url = providerURL.appending(path: "responses")
@@ -61,31 +61,25 @@ struct GPTSession: Sendable {
                 operationID: UUID().uuidString
             )
 
-            // Error
-            // TODO: Handle `tooManyRequests`
             guard response.status == .ok else {
-                let errorStr =
+                let errorStr: String? =
                     if let responseBody {
                         try await String(collecting: responseBody, upTo: .max)
                     } else {
-                        "nil"
+                        nil
                     }
-                todo("throw errors: \(errorStr)")
-            }
-
-            guard let responseBody else {
-                todo("throw empty body")
+                throw RuntimeError.httpError(response.status, errorStr)
             }
 
             guard
                 let contentType = response.headerFields.contentType,
                 contentType.starts(with: NetworkKit.ServerSentEvent.MIME_String)
             else {
-                // let data = try await Data(collecting: responseBody, upTo: .max)
-                // let result = try JSONDecoder().decode(OpenAIModelReponse.self, from: data)
-                // return .block(result)
+                throw RuntimeError.reveiveUnsupportedContentTypeInResponse
+            }
 
-                todo("throw error and suggest block api call")
+            guard let responseBody else {
+                throw RuntimeError.emptyResponseBody
             }
 
             return responseBody.map {
@@ -98,7 +92,7 @@ struct GPTSession: Sendable {
         case .OpenAICompatible:
 
             guard let providerURL = URL(string: model.provider.apiURL) else {
-                todo("throw api url invalid")
+                throw RuntimeError.invalidApiURL(model.provider.apiURL)
             }
 
             let url = providerURL.appending(path: "/chat/completions")
@@ -120,28 +114,24 @@ struct GPTSession: Sendable {
             let (response, responseBody) = try await client.send(
                 request, body: .init(bodyData), baseURL: url, operationID: UUID().uuidString)
 
-            // Error
-            // TODO: Handle `tooManyRequests`
             guard response.status == .ok else {
-                let errorStr =
+                let errorStr: String? =
                     if let responseBody {
                         try await String(collecting: responseBody, upTo: .max)
                     } else {
-                        "nil"
+                        nil
                     }
-                todo("throw errors: \(errorStr)")
-            }
-
-            guard let responseBody else {
-                todo("throw empty body")
+                throw RuntimeError.httpError(response.status, errorStr)
             }
 
             guard let contentType = response.headerFields.contentType,
                 contentType.starts(with: NetworkKit.ServerSentEvent.MIME_String)
             else {
-                let data = try await Data(collecting: responseBody, upTo: .max)
-                let result = try JSONDecoder().decode(OpenAIChatCompletionResponse.self, from: data)
-                todo("Unsupport Yet")
+                throw RuntimeError.reveiveUnsupportedContentTypeInResponse
+            }
+
+            guard let responseBody else {
+                throw RuntimeError.emptyResponseBody
             }
 
             return try responseBody.map {
@@ -152,7 +142,7 @@ struct GPTSession: Sendable {
                 try decoder.decode(OpenAIChatCompletionStreamResponse.self, from: Data($0.data.utf8))
             }.aggregateToModelStremResponse().eraseToAnyAsyncSequence()
         case .Gemini:
-            todo()
+            throw RuntimeError.unsupportedModelProvider(.Gemini)
         }
     }
 }

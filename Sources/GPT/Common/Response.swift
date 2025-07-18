@@ -1,3 +1,13 @@
+public struct GenerationError: Sendable {
+    public let code: String?
+    public let message: String?
+}
+
+public struct GenerationStop: Sendable {
+    public let code: String?
+    public let message: String?
+}
+
 public struct ModelResponse: Sendable {
     let id: String?
 
@@ -5,16 +15,17 @@ public struct ModelResponse: Sendable {
 
     let usage: TokenUsage?
 
-    // let error: Void
+    let stop: GenerationStop?
+    let error: GenerationError?
 }
 
 public enum ModelStreamResponse: Sendable {
-    // Start
-    case create
+    // ERROR
+    case error(GenerationError?)
 
-    // End
+    // Response
+    case create
     case completed(ModelResponse)
-    case error
 
     // Item
     case itemAdded(any GeneratedItem)

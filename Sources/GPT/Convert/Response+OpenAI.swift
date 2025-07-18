@@ -24,30 +24,49 @@ extension Collection where Element == OpenAIModelReponseContext {
     }
 }
 
+extension ModelResponse {
+    init(_ response: OpenAIModelReponse) {
+        let usage = TokenUsage(
+            input: response.usage?.input_tokens,
+            output: response.usage?.output_tokens,
+            total: response.usage?.total_tokens
+        )
+        let items = response.output.convert()
+
+        self.init(
+            id: response.id,
+            items: items,
+            usage: usage,
+            stop: .init(code: nil, message: response.incomplete_details?.reason),
+            error: .init(code: response.error?.code, message: response.error?.message))
+    }
+}
+
 extension ModelStreamResponse {
     init?(_ event: OpenAIModelStreamResponse) {
         switch event {
         case .response_created(_):
             self = .create  // Pass id
+
         case .response_completed(let completed):
-            let usage = TokenUsage(
-                input: completed.response.usage?.input_tokens,
-                output: completed.response.usage?.output_tokens,
-                total: completed.response.usage?.total_tokens
-            )
-            let items = completed.response.output.convert()
-            let response = ModelResponse(id: completed.response.id, items: items, usage: usage)
-            self = .completed(response)
-        case .response_incomplete(_):
-            self = .error  // TODO: throw incomplete info as error
-        case .error(_):
-            self = .error
+            self = .completed(ModelResponse(completed.response))
+
+        case .response_incomplete(let incomplete):
+            self = .completed(ModelResponse(incomplete.response))
+
+        case .response_failed(let failed):
+            self = .completed(ModelResponse(failed.response))
+
+        case .error(let error):
+            self = .error(.init(code: error.code, message: error.message))
+
         case .response_output_item_added(let itemAdded):
             if let item = itemAdded.item.convert(idx: itemAdded.output_index) {
                 self = .itemDone(item)
             } else {
                 return nil
             }
+
         case .response_output_item_done(let itemDone):
             if let item = itemDone.item.convert(idx: itemDone.output_index) {
                 self = .itemDone(item)
@@ -58,12 +77,15 @@ extension ModelStreamResponse {
         case .response_content_part_added(let partAdded):
             let content = partAdded.part.convertToGenratedItem()
             self = .contentAdded(content)
+
         case .response_content_part_done(let partDone):
             let content = partDone.part.convertToGenratedItem()
             self = .contentDone(content)
+
         case .response_output_text_delta(let textDelta):
             let content = TextContent(delta: textDelta.delta, content: nil, annotations: [])
             self = .contentDelta(content)
+
         default:
             return nil
         }
@@ -86,6 +108,7 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
     private let didSendCreate: LazyLockedValue<Bool> = .init(false)
     private let hasEmittedFirstContent: LazyLockedValue<Bool> = .init(false)
     private let currentContent: LazyLockedValue<(any GeneratedItem)?> = .init(nil)
+    private let stopReason: LazyLockedValue<GenerationStop?> = .init(nil)
 
     func handle(_ event: OpenAIChatCompletionStreamResponse) -> [ModelStreamResponse] {
         var result: [ModelStreamResponse] = []
@@ -110,8 +133,9 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
                 total: event.usage?.total_tokens
             )
             let item = currentItem(id: event.id)
+            let stop = stopReason.withLock { $0 }
 
-            let response = ModelResponse(id: event.id, items: [item], usage: usage)
+            let response = ModelResponse(id: event.id, items: [item], usage: usage, stop: stop, error: nil)
             result.append(.completed(response))
             return result
         }
@@ -122,17 +146,10 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
                 let item = currentItem(id: event.id)
                 result.append(.itemDone(item))
 
-            case "length":
-                result.append(.error)
-
-            case "content_filter":
-                result.append(.error)
-
-            case "tool_calls":
-                result.append(.error)
-
             default:
-                break
+                stopReason.withLock {
+                    $0 = .init(code: finish, message: nil)
+                }
             }
         }
 
