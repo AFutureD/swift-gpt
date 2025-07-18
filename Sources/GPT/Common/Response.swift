@@ -1,20 +1,19 @@
 public struct ModelResponse: Sendable {
     let id: String?
-    
+
     let items: [any GeneratedItem]
-    
+
     let usage: TokenUsage?
-    
+
     // let error: Void
 }
-
 
 public enum ModelStreamResponse: Sendable {
     // Start
     case create
 
     // End
-    case completed(responseId: String, usage: TokenUsage?)
+    case completed(ModelResponse)
     case error
 
     // Item
@@ -41,7 +40,7 @@ extension GeneratedContentType {
 
 struct TextContent: PartialUpdatable, GeneratedItem {
     // TODO: Support content index
-    
+
     let type: GeneratedContentType = .text
 
     let delta: String?
