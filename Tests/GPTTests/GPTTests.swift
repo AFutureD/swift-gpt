@@ -25,8 +25,8 @@ func testExmaple() async throws {
             .text(.init(role: .user, content: "Ping"))
         ]
     )
-    let openai = LLMProvider(type: .OpenAI, name: "OpenAI", apiKey: Dotenv["OPENAI_API_KEY"]!.stringValue, apiURL: "https://api.openai.com/v1")
-    let model = LLMQualifiedModel(name: "gpt-4o", provider: openai)
+    let openai = LLMProviderConfiguration(type: .OpenAI, name: "OpenAI", apiKey: Dotenv["OPENAI_API_KEY"]!.stringValue, apiURL: "https://api.openai.com/v1")
+    let model = LLMModelReference(model: .init(name: "gpt-4o"), provider: openai)
     let response = try await session.send(prompt, model: model)
    
     let logger = Logger()
@@ -56,8 +56,8 @@ func testExmaple2() async throws {
             .text(.init(role: .user, content: "Ping"))
         ]
     )
-    let openai = LLMProvider(type: .OpenAICompatible, name: "OpenAI", apiKey: Dotenv["OPENAI_API_KEY"]!.stringValue, apiURL: "https://api.openai.com/v1")
-    let model = LLMQualifiedModel(name: "gpt-4o", provider: openai)
+    let openai = LLMProviderConfiguration(type: .OpenAICompatible, name: "OpenAI", apiKey: Dotenv["OPENAI_API_KEY"]!.stringValue, apiURL: "https://api.openai.com/v1")
+    let model = LLMModelReference(model: .init(name: "gpt-4o"), provider: openai)
     let response = try await session.send(prompt, model: model)
     
     let logger = Logger()

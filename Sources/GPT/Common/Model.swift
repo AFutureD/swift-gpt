@@ -5,13 +5,25 @@
 //  Created by AFuture on 2025/7/12.
 //
 
+import OpenAPIRuntime
+import LazyKit
+
 public enum LLMProviderType: String, Hashable, Codable, Sendable {
     case OpenAI
     case OpenAICompatible
     case Gemini
 }
 
-public struct LLMProvider: Hashable, Codable, Sendable {
+protocol LLMProvider: Sendable {
+    func send(
+        client: ClientTransport,
+        provider: LLMProviderConfiguration,
+        model: LLMModel,
+        _ prompt: Prompt
+    ) async throws -> AnyAsyncSequence<ModelStreamResponse>
+}
+
+public struct LLMProviderConfiguration: Hashable, Codable, Sendable {
     public let type: LLMProviderType
     
     public let name: String
@@ -26,26 +38,17 @@ public struct LLMProvider: Hashable, Codable, Sendable {
     }
 }
 
-
-public struct LLMQualifiedModel: Hashable, Codable, Sendable {
+public struct LLMModel: Hashable, Codable, Sendable  {
     public let name: String
-    public let provider: LLMProvider
-    
-    public init(name: String, provider: LLMProvider) {
-        self.name = name
-        self.provider = provider
-    }
 }
 
-public struct LLMModel: Sendable {
+public struct LLMModelReference: Hashable, Codable, Sendable {
+    public let model: LLMModel
+    public let provider: LLMProviderConfiguration
+}
+
+public struct LLMQualifiedModel: Sendable {
     public let name: String
     
-    public let type: LLMProviderType
-    public let models: [LLMQualifiedModel]
-    
-    public init(name: String, type: LLMProviderType, models: [LLMQualifiedModel]) {
-        self.name = name
-        self.models = models
-        self.type = type
-    }
+    public let models: [LLMModelReference]
 }
