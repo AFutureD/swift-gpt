@@ -1,67 +1,11 @@
-//
-//  Untitled.swift
-//  swift-gpt
-//
-//  Created by AFuture on 2025/7/12.
-//
 
 import Algorithms
+import AsyncAlgorithms
+import LazyKit
+import SynchronizationKit
 
-extension OpenAIModelReponseRequestInputItemMessageContentItem {
-    init(_ input: Prompt.Input) {
-        switch input {
-        case .text(let text):
-            self = .text(.init(text: text.content))
-        case .file(let file):
-            self = .file(.init(fileData: file.content, fileID: file.id, filename: file.filename))
-        }
-    }
-}
 
-extension OpenAIModelReponseRequest {
-    init(_ prompt: Prompt, model: String, stream: Bool) {
-        let instructions =
-            prompt.instructions
-            ?? prompt.inputs.compactMap {
-                $0.content as? Prompt.Input.TextContent
-            }.first {
-                $0.role == .system
-            }?.content
 
-        let items: [OpenAIModelReponseRequestInputItem] = prompt.inputs.chunked(on: \.content.role)
-            .map { role, inputs in
-                let items = inputs.map {
-                    OpenAIModelReponseRequestInputItemMessageContentItem($0)
-                }
-
-                return OpenAIModelReponseRequestInputItemMessage(content: .inputs(items), role: .init(rawValue: role.rawValue) ?? .user, type: nil)
-            }.map {
-                .message($0)
-            }
-
-        self.init(
-            input: .items(items),
-            model: model,
-            background: nil,  // TODO: suppert backgroud mode.
-            include: nil,
-            instructions: instructions,
-            maxOutputTokens: nil,
-            metadata: nil,
-            parallelToolCalls: false,
-            previousResponseId: prompt.prev_id,
-            reasoning: nil,  // TODO: Add reasning configuration
-            store: prompt.store,
-            stream: stream,
-            temperature: nil,
-            text: nil,  // TODO: add expected ouput format support
-            toolChoice: nil,
-            tools: nil,
-            topP: nil,
-            truncation: nil,
-            user: nil  // TODO: provide session ID or user ID
-        )
-    }
-}
 
 extension OpenAIChatCompletionRequestMessageContentPart {
     init?(item: OpenAIModelReponseRequestInputItemMessageContentItem) {
@@ -219,5 +163,112 @@ extension OpenAIChatCompletionRequest {
             user: nil,
             webSearchOptions: nil
         )
+    }
+}
+
+struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
+
+    private let didSendCreate: LazyLockedValue<Bool> = .init(false)
+    private let hasEmittedFirstContent: LazyLockedValue<Bool> = .init(false)
+    private let currentContent: LazyLockedValue<(any GeneratedItem)?> = .init(nil)
+    private let stopReason: LazyLockedValue<GenerationStop?> = .init(nil)
+
+    func handle(_ event: OpenAIChatCompletionStreamResponse) -> [ModelStreamResponse] {
+        var result: [ModelStreamResponse] = []
+
+        let sent = self.didSendCreate.withLock { sent in
+            if sent {
+                return true
+            } else {
+                sent = true
+                return false
+            }
+        }
+
+        if !sent {
+            result.append(.create)
+        }
+
+        guard let choice = event.choices.first else {
+            let usage = TokenUsage(
+                input: event.usage?.prompt_tokens,
+                output: event.usage?.completion_tokens,
+                total: event.usage?.total_tokens
+            )
+            let item = currentItem(id: event.id)
+            let stop = stopReason.withLock { $0 }
+
+            let response = ModelResponse(id: event.id, items: [item], usage: usage, stop: stop, error: nil)
+            result.append(.completed(response))
+            return result
+        }
+
+        if let finish = choice.finish_reason {
+            switch finish {
+            case "stop":
+                let item = currentItem(id: event.id)
+                result.append(.itemDone(item))
+
+            default:
+                stopReason.withLock {
+                    $0 = .init(code: finish, message: nil)
+                }
+            }
+        }
+
+        if choice.delta.role != nil {
+            let textContent = TextContent(delta: nil, content: choice.delta.content, annotations: [])
+            currentContent.withLock { $0 = textContent }
+
+            let messageItem = MessageItem(id: event.id, index: 0, content: nil)
+            result.append(.contentAdded(messageItem))
+        }
+
+        if let delta = choice.delta.content {
+            currentContent.withLock {
+                let previous = ($0 as? TextContent)?.content
+                $0 = TextContent(delta: nil, content: (previous ?? "") + delta, annotations: [])
+            }
+            result.append(.contentDelta(TextContent(delta: delta, content: nil, annotations: [])))
+        }
+
+        if let refusal = choice.delta.refusal {
+            let content = TextRefusalContent(content: refusal)
+            currentContent.withLock { $0 = content }
+            result.append(.contentDone(content))
+        }
+
+        return result
+    }
+
+    func currentItem(id: String) -> any GeneratedItem {
+        let text = currentContent.withLock { $0 }
+        let content: [any GeneratedItem] = text.flatMap { [$0] } ?? []
+
+        let messageItem = MessageItem(id: id, index: 0, content: content)
+        return messageItem
+    }
+}
+
+public struct OpenAIChatCompletionStreamResponseAsyncAggregater<Base: AsyncSequence & Sendable>: Sendable, AsyncSequence
+where Base.Element == OpenAIChatCompletionStreamResponse {
+
+    let base: Base
+    public init(base: Base) {
+        self.base = base
+    }
+
+    public func makeAsyncIterator() -> AnyAsyncSequence<ModelStreamResponse>.AsyncIterator {
+        let aggregater = OpenAIChatCompletionStreamResponseAggregater()
+
+        return base.flatMap {
+            aggregater.handle($0).async
+        }.eraseToAnyAsyncSequence().makeAsyncIterator()
+    }
+}
+
+extension AsyncSequence where Self: Sendable, Self.Element == OpenAIChatCompletionStreamResponse {
+    func aggregateToModelStremResponse() -> OpenAIChatCompletionStreamResponseAsyncAggregater<Self> {
+        OpenAIChatCompletionStreamResponseAsyncAggregater<Self>(base: self)
     }
 }

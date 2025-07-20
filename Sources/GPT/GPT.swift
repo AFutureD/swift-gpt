@@ -15,13 +15,8 @@ struct GPTSession: Sendable {
 
     let sessionID: LazyLockedValue<String?> = .init(nil)
 
-    let encoder: JSONEncoder
-    let decoder: JSONDecoder
-
-    init(client: ClientTransport, encoder: JSONEncoder = .init(), decoder: JSONDecoder = .init()) {
+    init(client: ClientTransport) {
         self.client = client
-        self.decoder = decoder
-        self.encoder = encoder
     }
 
     func send(
