@@ -13,8 +13,7 @@ let package = Package(
             targets: ["GPT"]),
     ],
     dependencies: [
-        .package(path: "../swift-lazy"),
-        // .package(url: "https://github.com/Myoland/swift-lazy", branch: "main"),
+        .package(url: "https://github.com/Myoland/swift-lazy", branch: "main"),
         .package(url: "https://github.com/objecthub/swift-dynamicjson", from: "1.0.2"),
         .package(url: "https://github.com/apple/swift-openapi-runtime", from: "1.8.2"),
         .package(url: "https://github.com/apple/swift-algorithms", from: "1.2.1"),
