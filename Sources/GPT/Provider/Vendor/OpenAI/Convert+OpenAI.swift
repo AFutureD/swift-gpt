@@ -55,13 +55,13 @@ extension OpenAIModelReponseRequest {
 }
 
 extension OpenAIModelReponseContext {
-    func convert(idx: Int) -> (any GeneratedItem)? {
+    func convert(idx: Int) -> ResponseItem? {
         switch self {
         case .output(let output):
             let contents = output.content.map {
                 $0.convertToGenratedItem()
             }
-            return MessageItem(id: output.id, index: idx, content: contents)
+            return .message(MessageItem(id: output.id, index: idx, content: contents))
         default:
             return nil
         }
@@ -69,7 +69,7 @@ extension OpenAIModelReponseContext {
 }
 
 extension Collection where Element == OpenAIModelReponseContext {
-    func convert() -> [any GeneratedItem] {
+    func convert() -> [ResponseItem] {
         return self.enumerated().compactMap { index, context in
             context.convert(idx: index)
         }
@@ -136,7 +136,7 @@ extension ModelStreamResponse {
 
         case .response_output_text_delta(let textDelta):
             let content = TextContent(delta: textDelta.delta, content: nil, annotations: [])
-            self = .contentDelta(content)
+            self = .contentDelta(.text(content))
 
         default:
             return nil
@@ -145,12 +145,12 @@ extension ModelStreamResponse {
 }
 
 extension OpenAIModelReponseContextOutputContent {
-    func convertToGenratedItem() -> any GeneratedItem {
+    func convertToGenratedItem() -> ResponseContent {
         switch self {
         case .text(let text):
-            TextContent(delta: nil, content: text.text, annotations: [])  // TODO: support annotations
+            .text(TextContent(delta: nil, content: text.text, annotations: []))  // TODO: support annotations
         case .refusal(let refusal):
-            TextRefusalContent(content: refusal.refusal)
+            .refusal(TextRefusalContent(content: refusal.refusal))
         }
     }
 }

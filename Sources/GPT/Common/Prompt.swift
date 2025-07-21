@@ -5,8 +5,6 @@
 //  Created by AFuture on 2025/7/12.
 //
 
- 
-
 extension Prompt {
     public enum Input: Codable, Sendable {
         case text(TextContent)
@@ -37,6 +35,12 @@ extension Prompt.Input {
         public let role: ModelInputContentRole
         
         public let content: String
+        
+        enum CodingKeys: CodingKey {
+            case type
+            case role
+            case content
+        }
     }
 }
 
@@ -69,6 +73,14 @@ extension Prompt.Input {
         public let filename: String?
 
         public let content: String
+        
+        enum CodingKeys: CodingKey {
+            case type
+            case role
+            case id
+            case filename
+            case content
+        }
     }
 }
 

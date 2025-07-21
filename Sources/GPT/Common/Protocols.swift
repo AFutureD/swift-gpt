@@ -1,6 +1,7 @@
 // MARK: Model Generation
 
-public struct GeneratedContentType: RawRepresentable, Sendable {
+public struct GeneratedContentType: RawRepresentable, Codable, Hashable, Sendable {
+
     public let rawValue: String
     
     public init(rawValue: String) {

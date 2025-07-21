@@ -170,7 +170,7 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
 
     private let didSendCreate: LazyLockedValue<Bool> = .init(false)
     private let hasEmittedFirstContent: LazyLockedValue<Bool> = .init(false)
-    private let currentContent: LazyLockedValue<(any GeneratedItem)?> = .init(nil)
+    private let currentContent: LazyLockedValue<ResponseContent?> = .init(nil)
     private let stopReason: LazyLockedValue<GenerationStop?> = .init(nil)
 
     func handle(_ event: OpenAIChatCompletionStreamResponse) -> [ModelStreamResponse] {
@@ -217,23 +217,24 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
         }
 
         if choice.delta.role != nil {
-            let textContent = TextContent(delta: nil, content: choice.delta.content, annotations: [])
-            currentContent.withLock { $0 = textContent }
-
             let messageItem = MessageItem(id: event.id, index: 0, content: nil)
-            result.append(.contentAdded(messageItem))
+            result.append(.itemAdded(.message(messageItem)))
+            
+            let textContent: ResponseContent = .text(TextContent(delta: nil, content: choice.delta.content, annotations: []))
+            currentContent.withLock { $0 = textContent }
+            result.append(.contentAdded(textContent))
         }
 
         if let delta = choice.delta.content {
             currentContent.withLock {
-                let previous = ($0 as? TextContent)?.content
-                $0 = TextContent(delta: nil, content: (previous ?? "") + delta, annotations: [])
+                let previous = $0?.text?.content
+                $0 = .text(TextContent(delta: nil, content: (previous ?? "") + delta, annotations: []))
             }
-            result.append(.contentDelta(TextContent(delta: delta, content: nil, annotations: [])))
+            result.append(.contentDelta(.text(TextContent(delta: delta, content: nil, annotations: []))))
         }
 
         if let refusal = choice.delta.refusal {
-            let content = TextRefusalContent(content: refusal)
+            let content: ResponseContent = .refusal(TextRefusalContent(content: refusal))
             currentContent.withLock { $0 = content }
             result.append(.contentDone(content))
         }
@@ -241,12 +242,12 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
         return result
     }
 
-    func currentItem(id: String) -> any GeneratedItem {
-        let text = currentContent.withLock { $0 }
-        let content: [any GeneratedItem] = text.flatMap { [$0] } ?? []
+    func currentItem(id: String) -> ResponseItem {
+        let content = currentContent.withLock { $0 }
+        let contents: [ResponseContent] = content.flatMap { [$0] } ?? []
 
-        let messageItem = MessageItem(id: id, index: 0, content: content)
-        return messageItem
+        let messageItem = MessageItem(id: id, index: 0, content: contents)
+        return .message(messageItem)
     }
 }
 
