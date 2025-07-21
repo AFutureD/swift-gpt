@@ -8,7 +8,7 @@
  
 
 extension Prompt {
-    enum Input {
+    public enum Input: Codable, Sendable {
         case text(TextContent)
         case file(FileContent)
     }
@@ -32,16 +32,16 @@ extension ModelInputContentType {
 }
 
 extension Prompt.Input {
-    struct TextContent: ModelInputContent {
-        let type: ModelInputContentType = .text
-        let role: ModelInputContentRole
+    public struct TextContent: ModelInputContent, Codable {
+        public let type: ModelInputContentType = .text
+        public let role: ModelInputContentRole
         
-        let content: String
+        public let content: String
     }
 }
 
 extension Prompt.Input.TextContent: ExpressibleByStringLiteral {
-    init(stringLiteral value: String) {
+    public init(stringLiteral value: String) {
         self.init(role: .user, content: value)
     }
 }
@@ -59,16 +59,16 @@ extension ModelInputContentType {
 }
 
 extension Prompt.Input {
-    struct FileContent: ModelInputContent {
+    public struct FileContent: ModelInputContent, Codable {
 
-        let type: ModelInputContentType = .file
-        let role: ModelInputContentRole
+        public let type: ModelInputContentType = .file
+        public let role: ModelInputContentRole
         
-        let id: String?
+        public let id: String?
         
-        let filename: String?
+        public let filename: String?
 
-        let content: String
+        public let content: String
     }
 }
 
@@ -80,25 +80,25 @@ extension ModelInputContent {
 
 // MARK: Prompt
 
-public struct Prompt {
+public struct Prompt: Codable, Sendable {
     /// Optional. Previous Session ID.
     /// In OpenAI Response API, this value should be Response ID
-    let prev_id: String?
+    public let prev_id: String?
     
     /// System instructions for the prompt.
-    let instructions: String?
+    public let instructions: String?
     
-    let inputs: [Input]
+    public let inputs: [Input]
     
-    let store: Bool?
+    public let store: Bool?
     
     // perfer stream. true, only when caller calls the stream func.
-    let stream: Bool
+    public let stream: Bool
     
     // Not Implement For Now.
     // let tools: [String: Tool]
     
-    init(prev_id: String? = nil, instructions: String? = nil, inputs: [Input], store: Bool? = nil, stream: Bool = true) {
+    public init(prev_id: String? = nil, instructions: String? = nil, inputs: [Input], store: Bool? = nil, stream: Bool = true) {
         self.prev_id = prev_id
         self.instructions = instructions
         self.inputs = inputs

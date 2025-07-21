@@ -10,16 +10,16 @@ import SynchronizationKit
 
 public protocol PromptPart {}
 
-struct GPTSession: Sendable {
+public struct GPTSession: Sendable {
     let client: ClientTransport
 
     let sessionID: LazyLockedValue<String?> = .init(nil)
 
-    init(client: ClientTransport) {
+    public init(client: ClientTransport) {
         self.client = client
     }
 
-    func send(
+    public func send(
         _ prompt: Prompt,
         model: LLMModelReference
     ) async throws -> AnyAsyncSequence<ModelStreamResponse> {

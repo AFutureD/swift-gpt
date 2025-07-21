@@ -37,7 +37,7 @@ public typealias PartialUpdatableItem = PartialUpdatable & GeneratedItem
 
 // MARK: Model Inputs
 
-public struct ModelInputContentRole: RawRepresentable, Hashable, Sendable {
+public struct ModelInputContentRole: RawRepresentable, Hashable, Codable, Sendable {
     public let rawValue: String
     
     public init(rawValue: String) {
@@ -58,7 +58,7 @@ extension ModelInputContentRole {
     public static let developer = ModelInputContentRole(rawValue: "developer")
 }
 
-public struct ModelInputContentType: RawRepresentable, Sendable {
+public struct ModelInputContentType: RawRepresentable, Codable, Sendable {
     public let rawValue: String
     
     public init(rawValue: String) {
