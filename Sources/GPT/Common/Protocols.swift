@@ -59,7 +59,7 @@ extension ModelInputContentRole {
     public static let developer = ModelInputContentRole(rawValue: "developer")
 }
 
-public struct ModelInputContentType: RawRepresentable, Codable, Sendable {
+public struct ModelInputContentType: RawRepresentable, Codable, Hashable, Sendable {
     public let rawValue: String
     
     public init(rawValue: String) {

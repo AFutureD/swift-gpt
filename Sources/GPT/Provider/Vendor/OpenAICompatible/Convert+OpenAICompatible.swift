@@ -186,7 +186,7 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
         }
 
         if !sent {
-            result.append(.create)
+            result.append(.create(.init(event: .create, data: nil)))
         }
 
         guard let choice = event.choices.first else {
@@ -199,7 +199,7 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
             let stop = stopReason.withLock { $0 }
 
             let response = ModelResponse(id: event.id, items: [item], usage: usage, stop: stop, error: nil)
-            result.append(.completed(response))
+            result.append(.completed(.init(event: .completed, data: response)))
             return result
         }
 
@@ -207,7 +207,7 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
             switch finish {
             case "stop":
                 let item = currentItem(id: event.id)
-                result.append(.itemDone(item))
+                result.append(.itemDone(.init(event: .itemDone, data: item)))
 
             default:
                 stopReason.withLock {
@@ -218,11 +218,11 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
 
         if choice.delta.role != nil {
             let messageItem = MessageItem(id: event.id, index: 0, content: nil)
-            result.append(.itemAdded(.message(messageItem)))
+            result.append(.itemAdded(.init(event: .itemAdded, data: .message(messageItem))))
             
             let textContent: ResponseContent = .text(TextContent(delta: nil, content: choice.delta.content, annotations: []))
             currentContent.withLock { $0 = textContent }
-            result.append(.contentAdded(textContent))
+            result.append(.contentAdded(.init(event: .contentAdded, data: textContent)))
         }
 
         if let delta = choice.delta.content {
@@ -230,13 +230,13 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
                 let previous = $0?.text?.content
                 $0 = .text(TextContent(delta: nil, content: (previous ?? "") + delta, annotations: []))
             }
-            result.append(.contentDelta(.text(TextContent(delta: delta, content: nil, annotations: []))))
+            result.append(.contentDelta(.init(event: .contentDelta, data: .text(TextContent(delta: delta, content: nil, annotations: [])))))
         }
 
         if let refusal = choice.delta.refusal {
             let content: ResponseContent = .refusal(TextRefusalContent(content: refusal))
             currentContent.withLock { $0 = content }
-            result.append(.contentDone(content))
+            result.append(.contentDone(.init(event: .contentDone, data: content)))
         }
 
         return result

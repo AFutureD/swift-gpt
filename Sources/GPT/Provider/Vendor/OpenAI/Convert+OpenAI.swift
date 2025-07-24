@@ -98,45 +98,45 @@ extension ModelStreamResponse {
     init?(_ event: OpenAIModelStreamResponse) {
         switch event {
         case .response_created(_):
-            self = .create  // Pass id
+            self = .create(.init(event: .create, data: nil))
 
         case .response_completed(let completed):
-            self = .completed(ModelResponse(completed.response))
+            self = .completed(.init(event: .completed, data: ModelResponse(completed.response)))
 
         case .response_incomplete(let incomplete):
-            self = .completed(ModelResponse(incomplete.response))
+            self = .completed(.init(event: .completed, data: ModelResponse(incomplete.response)))
 
         case .response_failed(let failed):
-            self = .completed(ModelResponse(failed.response))
+            self = .completed(.init(event: .completed, data: ModelResponse(failed.response)))
 
         case .error(let error):
-            self = .error(.init(code: error.code, message: error.message))
+            self = .error(.init(event: .error, data: .init(code: error.code, message: error.message)))
 
         case .response_output_item_added(let itemAdded):
             if let item = itemAdded.item.convert(idx: itemAdded.output_index) {
-                self = .itemDone(item)
+                self = .itemAdded(.init(event: .itemAdded, data: item))
             } else {
                 return nil
             }
 
         case .response_output_item_done(let itemDone):
             if let item = itemDone.item.convert(idx: itemDone.output_index) {
-                self = .itemDone(item)
+                self = .itemDone(.init(event: .itemDone, data: item))
             } else {
                 return nil
             }
 
         case .response_content_part_added(let partAdded):
             let content = partAdded.part.convertToGenratedItem()
-            self = .contentAdded(content)
+            self = .contentAdded(.init(event: .contentAdded, data: content))
 
         case .response_content_part_done(let partDone):
             let content = partDone.part.convertToGenratedItem()
-            self = .contentDone(content)
+            self = .contentDone(.init(event: .contentDone, data: content))
 
         case .response_output_text_delta(let textDelta):
             let content = TextContent(delta: textDelta.delta, content: nil, annotations: [])
-            self = .contentDelta(.text(content))
+            self = .contentDelta(.init(event: .contentDelta, data: .text(content)))
 
         default:
             return nil

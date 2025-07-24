@@ -6,11 +6,41 @@
 //
 
 extension Prompt {
-    public enum Input: Codable, Sendable {
+    public enum Input: Sendable {
         case text(TextContent)
         case file(FileContent)
     }
 }
+
+extension Prompt.Input: Codable {
+    enum CodingKeys: String, CodingKey {
+        case type
+    }
+    
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try container.decode(ModelInputContentType.self, forKey: .type)
+        switch type {
+        case .text:
+            self = try .text(.init(from: decoder))
+        case .file:
+            self = try .file(.init(from: decoder))
+        default:
+            throw DecodingError.typeMismatch(MessageItem.self, .init(codingPath: [], debugDescription: "Only Support 'MessageItem'"))
+        }
+    }
+    
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .text(let value):
+            try container.encode(value)
+        case .file(let value):
+            try container.encode(value)
+        }
+    }
+}
+
 
 extension Prompt.Input {
     var content: any ModelInputContent {

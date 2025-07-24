@@ -40,15 +40,29 @@ public struct LLMProviderConfiguration: Hashable, Codable, Sendable {
 
 public struct LLMModel: Hashable, Codable, Sendable  {
     public let name: String
+    
+    public init(name: String) {
+        self.name = name
+    }
 }
 
 public struct LLMModelReference: Hashable, Codable, Sendable {
     public let model: LLMModel
     public let provider: LLMProviderConfiguration
+    
+    public init(model: LLMModel, provider: LLMProviderConfiguration) {
+        self.model = model
+        self.provider = provider
+    }
 }
 
 public struct LLMQualifiedModel: Sendable {
     public let name: String
     
     public let models: [LLMModelReference]
+    
+    public init(name: String, models: [LLMModelReference]) {
+        self.name = name
+        self.models = models
+    }
 }
