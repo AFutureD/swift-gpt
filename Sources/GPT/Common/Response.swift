@@ -57,14 +57,14 @@ public enum ResponseContent: Sendable {
 }
 
 extension ResponseContent {
-    var text: TextContent? {
+    public var text: TextContent? {
         guard case let .text(value) = self else {
             return nil
         }
         return value
     }
     
-    var refusal: TextRefusalContent? {
+    public var refusal: TextRefusalContent? {
         guard case let .refusal(value) = self else {
             return nil
         }
@@ -106,14 +106,22 @@ extension ResponseContent: Codable {
 // MARK: ModelResponse
 
 public struct ModelResponse: Codable, Sendable {
-    let id: String?
+    public let id: String?
 
-    let items: [ResponseItem]
+    public let items: [ResponseItem]
 
-    let usage: TokenUsage?
+    public let usage: TokenUsage?
 
-    let stop: GenerationStop?
-    let error: GenerationError?
+    public let stop: GenerationStop?
+    public let error: GenerationError?
+
+    public init(id: String?, items: [ResponseItem], usage: TokenUsage?, stop: GenerationStop?, error: GenerationError?) {
+        self.id = id
+        self.items = items
+        self.usage = usage
+        self.stop = stop
+        self.error = error
+    }
 }
 
 // MARK: ModelStreamResponse
@@ -142,6 +150,11 @@ extension ModelStreamResponse {
     public struct Event<T>: Codable, Sendable where T: Codable & Sendable {
         public let event: EventName
         public let data: T
+
+        public init(event: EventName, data: T) {
+            self.event = event
+            self.data = data
+        }
     }
 }
 
@@ -164,14 +177,14 @@ extension ModelStreamResponse {
 }
 
 extension ModelStreamResponse.EventName {
-    static let error = Self(rawValue: "error")
-    static let create = Self(rawValue: "response.create")
-    static let completed = Self(rawValue: "response.completed")
-    static let itemAdded = Self(rawValue: "response.item.added")
-    static let itemDone = Self(rawValue: "response.item.done")
-    static let contentAdded = Self(rawValue: "response.item.content.added")
-    static let contentDelta = Self(rawValue: "response.item.content.delta")
-    static let contentDone = Self(rawValue: "response.item.content.done")
+    public static let error = Self(rawValue: "error")
+    public static let create = Self(rawValue: "response.create")
+    public static let completed = Self(rawValue: "response.completed")
+    public static let itemAdded = Self(rawValue: "response.item.added")
+    public static let itemDone = Self(rawValue: "response.item.done")
+    public static let contentAdded = Self(rawValue: "response.item.content.added")
+    public static let contentDelta = Self(rawValue: "response.item.content.delta")
+    public static let contentDone = Self(rawValue: "response.item.content.done")
 }
 
 // MARK: ModelStreamResponse + Codable

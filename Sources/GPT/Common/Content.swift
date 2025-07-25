@@ -27,6 +27,12 @@ public struct TextContent: PartialUpdatable, GeneratedItem, Codable {
         case content
         case annotations
     }
+
+    public init(delta: String?, content: String?, annotations: [Annotation]) {
+        self.delta = delta
+        self.content = content
+        self.annotations = annotations
+    }
 }
 
 // MARK: Content - Text Annotation
@@ -47,6 +53,11 @@ extension TextContent {
             case type
             case content
         }
+
+        public init(id: String, content: String?) {
+            self.id = id
+            self.content = content
+        }
     }
 }
 
@@ -65,6 +76,10 @@ public struct TextRefusalContent: GeneratedItem, Codable {
     enum CodingKeys: CodingKey {
         case type
         case content
+    }
+
+    public init(content: String?) {
+        self.content = content
     }
 }
 
@@ -87,5 +102,11 @@ public struct MessageItem: Identifiable, GeneratedSortableItem, Codable {
         case type
         case index
         case content
+    }
+
+    public init(id: String, index: Int?, content: [ResponseContent]?) {
+        self.id = id
+        self.index = index
+        self.content = content
     }
 }

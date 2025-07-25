@@ -43,7 +43,7 @@ extension Prompt.Input: Codable {
 
 
 extension Prompt.Input {
-    var content: any ModelInputContent {
+    public var content: any ModelInputContent {
         switch self {
         case .text(let content):
             return content
@@ -71,6 +71,11 @@ extension Prompt.Input {
             case role
             case content
         }
+
+        public init(role: ModelInputContentRole, content: String) {
+            self.role = role
+            self.content = content
+        }
     }
 }
 
@@ -81,7 +86,7 @@ extension Prompt.Input.TextContent: ExpressibleByStringLiteral {
 }
 
 extension ModelInputContent {
-    static func text(_ content: Prompt.Input.TextContent) -> any ModelInputContent {
+    public static func text(_ content: Prompt.Input.TextContent) -> any ModelInputContent {
         content
     }
 }
@@ -111,11 +116,18 @@ extension Prompt.Input {
             case filename
             case content
         }
+
+        public init(role: ModelInputContentRole, id: String?, filename: String?, content: String) {
+            self.role = role
+            self.id = id
+            self.filename = filename
+            self.content = content
+        }
     }
 }
 
 extension ModelInputContent {
-    static func file(_ content: Prompt.Input.FileContent) -> any ModelInputContent {
+    public static func file(_ content: Prompt.Input.FileContent) -> any ModelInputContent {
         content
     }
 }
