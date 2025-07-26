@@ -22,6 +22,15 @@ public enum ResponseItem: Sendable {
     case message(MessageItem)
 }
 
+extension ResponseItem {
+    public var message: MessageItem? {
+        guard case let .message(value) = self else {
+            return nil
+        }
+        return value
+    }
+}
+
 // MARK: ResponseItem + Codable
 
 extension ResponseItem: Codable {
@@ -127,9 +136,6 @@ public struct ModelResponse: Codable, Sendable {
 // MARK: ModelStreamResponse
 
 public enum ModelStreamResponse: Sendable {
-    // ERROR
-    case error(Event<GenerationError?>)
-
     // Response
     case create(Event<ModelResponse?>)
     case completed(Event<ModelResponse>)
@@ -177,7 +183,6 @@ extension ModelStreamResponse {
 }
 
 extension ModelStreamResponse.EventName {
-    public static let error = Self(rawValue: "error")
     public static let create = Self(rawValue: "response.create")
     public static let completed = Self(rawValue: "response.completed")
     public static let itemAdded = Self(rawValue: "response.item.added")
@@ -200,8 +205,6 @@ extension ModelStreamResponse: Codable {
         let event = try conatiner.decode(EventName.self, forKey: .event)
         
         switch event {
-        case .error:
-            self = try .error(.init(from: decoder))
         case .create:
             self = try .create(.init(from: decoder))
         case .completed:
@@ -224,8 +227,6 @@ extension ModelStreamResponse: Codable {
     public func encode(to encoder: any Encoder) throws {
         var container = try encoder.singleValueContainer()
         switch self {
-        case .error(let event):
-            try container.encode(event)
         case .create(let event):
             try container.encode(event)
         case .completed(let event):

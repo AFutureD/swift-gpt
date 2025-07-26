@@ -110,7 +110,12 @@ extension ModelStreamResponse {
             self = .completed(.init(event: .completed, data: ModelResponse(failed.response)))
 
         case .error(let error):
-            self = .error(.init(event: .error, data: .init(code: error.code, message: error.message)))
+            self = .completed(.init(event: .completed,
+                                    data: ModelResponse(id: nil,
+                                                        items: [],
+                                                        usage: nil,
+                                                        stop: nil,
+                                                        error: .init(code: error.code, message: error.message))))
 
         case .response_output_item_added(let itemAdded):
             if let item = itemAdded.item.convert(idx: itemAdded.output_index) {
