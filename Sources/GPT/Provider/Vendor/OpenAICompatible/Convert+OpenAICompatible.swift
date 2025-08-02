@@ -169,6 +169,8 @@ extension OpenAIChatCompletionRequest {
 struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
 
     private let didSendCreate: LazyLockedValue<Bool> = .init(false)
+    private let didSendItemCreate: LazyLockedValue<Bool> = .init(false)
+    
     private let hasEmittedFirstContent: LazyLockedValue<Bool> = .init(false)
     private let currentContent: LazyLockedValue<ResponseContent?> = .init(nil)
     private let stopReason: LazyLockedValue<GenerationStop?> = .init(nil)
@@ -188,8 +190,8 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
         if !sent {
             result.append(.create(.init(event: .create, data: nil)))
         }
-
-        guard let choice = event.choices.first else {
+        
+        if event.choices.first == nil || event.usage != nil {
             let usage = TokenUsage(
                 input: event.usage?.prompt_tokens,
                 output: event.usage?.completion_tokens,
@@ -197,26 +199,24 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
             )
             let item = currentItem(id: event.id)
             let stop = stopReason.withLock { $0 }
-
+            
             let response = ModelResponse(id: event.id, items: [item], usage: usage, stop: stop, error: nil)
             result.append(.completed(.init(event: .completed, data: response)))
             return result
         }
+        
+        let choice = event.choices.first!
 
-        if let finish = choice.finish_reason {
-            switch finish {
-            case "stop":
-                let item = currentItem(id: event.id)
-                result.append(.itemDone(.init(event: .itemDone, data: item)))
-
-            default:
-                stopReason.withLock {
-                    $0 = .init(code: finish, message: nil)
-                }
+        let itemAddSent = self.didSendItemCreate.withLock { sent in
+            if sent {
+                return true
+            } else {
+                sent = true
+                return false
             }
         }
-
-        if choice.delta.role != nil {
+        
+        if !itemAddSent, choice.delta.role != nil {
             let messageItem = MessageItem(id: event.id, index: 0, content: nil)
             result.append(.itemAdded(.init(event: .itemAdded, data: .message(messageItem))))
             
@@ -224,7 +224,7 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
             currentContent.withLock { $0 = textContent }
             result.append(.contentAdded(.init(event: .contentAdded, data: textContent)))
         }
-
+        
         if let delta = choice.delta.content {
             currentContent.withLock {
                 let previous = $0?.text?.content
@@ -239,6 +239,19 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
             result.append(.contentDone(.init(event: .contentDone, data: content)))
         }
 
+        if let finish = choice.finish_reason {
+            switch finish {
+            case "stop":
+                let item = currentItem(id: event.id)
+                result.append(.itemDone(.init(event: .itemDone, data: item)))
+                
+            default:
+                stopReason.withLock {
+                    $0 = .init(code: finish, message: nil)
+                }
+            }
+        }
+        
         return result
     }
 

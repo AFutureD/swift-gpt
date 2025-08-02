@@ -120,16 +120,15 @@ public struct OpenAIChatCompletionResponseUsage: Codable, Sendable {
 }
 
 public struct OpenAIChatCompletionResponseUsageCompletionDetails: Codable, Sendable {
-    public let accepted_prediction_tokens: Int
-    public let audio_tokens: Int
-    public let reasoning_tokens: Int
-    public let rejected_prediction_tokens: Int
+    public let accepted_prediction_tokens: Int?
+    public let audio_tokens: Int?
+    public let reasoning_tokens: Int?
+    public let rejected_prediction_tokens: Int?
 }
 
 public struct OpenAIChatCompletionResponseUsagePromptDetails: Codable, Sendable {
-    let audio_tokens: Int
-    let cached_tokens: Int
-    
+    let audio_tokens: Int?
+    let cached_tokens: Int?
 }
 
 public struct OpenAIChatCompletionStreamResponseChoice: Codable, Sendable {
