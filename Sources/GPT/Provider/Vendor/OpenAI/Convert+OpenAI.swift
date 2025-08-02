@@ -19,20 +19,18 @@ extension OpenAIModelReponseRequest {
                 $0.role == .system
             }?.content
 
-        let items: [OpenAIModelReponseRequestInputItem] = prompt.inputs.chunked(on: \.content.role)
-            .map { role, inputs in
-                let inputItems = inputs.filter { $0.content.role != .assistant }.map {
-                    OpenAIModelReponseRequestInputItemMessageContentItem($0)
-                }
-                let outputItems = inputs.filter { $0.content.role == .assistant }.map {
-                    OpenAIModelReponseRequestInputItemMessageContentItem($0)
-                }
-
-                return OpenAIModelReponseRequestInputItemMessage(content: .inputs(inputItems), role: .init(rawValue: role.rawValue) ?? .user, type: nil)
-            }.map {
-                .message($0)
+        let items: [OpenAIModelReponseRequestInputItem] = prompt.inputs.chunked(on: \.content.role).map { role, inputs in
+            switch role {
+            case .assistant:
+                let outputItems = inputs.map { OpenAIModelReponseRequestInputItemMessageContentItem($0) }
+                // TODO: convert to outputItems
+                return .message(OpenAIModelReponseRequestInputItemMessage(content: .inputs(outputItems), role: .init(rawValue: role.rawValue) ?? .user, type: nil))
+            default:
+                let inputItems = inputs.map { OpenAIModelReponseRequestInputItemMessageContentItem($0) }
+                return .message(OpenAIModelReponseRequestInputItemMessage(content: .inputs(inputItems), role: .init(rawValue: role.rawValue) ?? .user, type: nil))
             }
-
+        }
+        
         self.init(
             input: .items(items),
             model: model,
