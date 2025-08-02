@@ -152,11 +152,28 @@ public struct Prompt: Codable, Sendable {
     // Not Implement For Now.
     // let tools: [String: Tool]
     
-    public init(prev_id: String? = nil, instructions: String? = nil, inputs: [Input], store: Bool? = nil, stream: Bool = true) {
+    public let tempture: Double?
+    public let topP: Double?
+    public let maxTokens: Int?
+    
+    
+    public init(
+        prev_id: String? = nil,
+        instructions: String? = nil,
+        inputs: [Input],
+        store: Bool? = nil,
+        stream: Bool = true,
+        tempture: Double?,
+        topP: Double?,
+        maxTokens: Int?
+    ) {
         self.prev_id = prev_id
         self.instructions = instructions
         self.inputs = inputs
         self.store = store
         self.stream = stream
+        self.tempture = tempture
+        self.topP = topP
+        self.maxTokens = maxTokens
     }
 }

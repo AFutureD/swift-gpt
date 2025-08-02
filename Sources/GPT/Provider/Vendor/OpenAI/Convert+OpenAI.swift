@@ -21,11 +21,14 @@ extension OpenAIModelReponseRequest {
 
         let items: [OpenAIModelReponseRequestInputItem] = prompt.inputs.chunked(on: \.content.role)
             .map { role, inputs in
-                let items = inputs.map {
+                let inputItems = inputs.filter { $0.content.role != .assistant }.map {
+                    OpenAIModelReponseRequestInputItemMessageContentItem($0)
+                }
+                let outputItems = inputs.filter { $0.content.role == .assistant }.map {
                     OpenAIModelReponseRequestInputItemMessageContentItem($0)
                 }
 
-                return OpenAIModelReponseRequestInputItemMessage(content: .inputs(items), role: .init(rawValue: role.rawValue) ?? .user, type: nil)
+                return OpenAIModelReponseRequestInputItemMessage(content: .inputs(inputItems), role: .init(rawValue: role.rawValue) ?? .user, type: nil)
             }.map {
                 .message($0)
             }
@@ -36,18 +39,18 @@ extension OpenAIModelReponseRequest {
             background: nil,  // TODO: suppert backgroud mode.
             include: nil,
             instructions: instructions,
-            maxOutputTokens: nil,
+            maxOutputTokens: prompt.maxTokens,
             metadata: nil,
             parallelToolCalls: false,
             previousResponseId: prompt.prev_id,
             reasoning: nil,  // TODO: Add reasning configuration
             store: prompt.store,
             stream: stream,
-            temperature: nil,
+            temperature: prompt.tempture,
             text: nil,  // TODO: add expected ouput format support
             toolChoice: nil,
             tools: nil,
-            topP: nil,
+            topP: prompt.topP,
             truncation: nil,
             user: nil  // TODO: provide session ID or user ID
         )

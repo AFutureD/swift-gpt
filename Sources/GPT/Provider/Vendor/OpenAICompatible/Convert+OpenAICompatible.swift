@@ -140,7 +140,7 @@ extension OpenAIChatCompletionRequest {
             frequencyPenalty: nil,
             logitBias: nil,
             logprobs: nil,
-            maxCompletionTokens: nil,
+            maxCompletionTokens: prompt.maxTokens,
             metadata: nil,
             modalities: nil,
             n: nil,
@@ -155,11 +155,11 @@ extension OpenAIChatCompletionRequest {
             store: prompt.store,
             stream: stream,
             streamOptions: .init(includeUsage: true),
-            temperature: nil,
+            temperature: prompt.tempture,
             toolChoice: nil,
             tools: nil,
             topLogprobs: nil,
-            topP: nil,
+            topP: prompt.topP,
             user: nil,
             webSearchOptions: nil
         )
