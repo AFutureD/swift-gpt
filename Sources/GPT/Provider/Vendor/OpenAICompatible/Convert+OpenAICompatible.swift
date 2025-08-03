@@ -226,7 +226,7 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
             let messageItem = MessageItem(id: event.id, index: 0, content: nil)
             result.append(.itemAdded(.init(event: .itemAdded, data: .message(messageItem))))
             
-            let textContent: ResponseContent = .text(TextContent(delta: nil, content: choice.delta.content, annotations: []))
+            let textContent: ResponseContent = .text(TextContent(delta: nil, content: "", annotations: []))
             currentContent.withLock { $0 = textContent }
             result.append(.contentAdded(.init(event: .contentAdded, data: textContent)))
         }
