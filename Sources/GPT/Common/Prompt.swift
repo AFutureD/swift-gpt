@@ -152,10 +152,9 @@ public struct Prompt: Codable, Sendable {
     // Not Implement For Now.
     // let tools: [String: Tool]
     
-    public let tempture: Double?
+    public let temperature: Double?
     public let topP: Double?
     public let maxTokens: Int?
-    
     
     public init(
         prev_id: String? = nil,
@@ -163,7 +162,7 @@ public struct Prompt: Codable, Sendable {
         inputs: [Input],
         store: Bool? = nil,
         stream: Bool = true,
-        tempture: Double?,
+        temperature: Double?,
         topP: Double?,
         maxTokens: Int?
     ) {
@@ -172,7 +171,7 @@ public struct Prompt: Codable, Sendable {
         self.inputs = inputs
         self.store = store
         self.stream = stream
-        self.tempture = tempture
+        self.temperature = temperature
         self.topP = topP
         self.maxTokens = maxTokens
     }

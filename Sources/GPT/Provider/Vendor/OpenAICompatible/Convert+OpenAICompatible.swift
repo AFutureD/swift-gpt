@@ -112,8 +112,13 @@ extension OpenAIChatCompletionRequestMessageContentPart {
 
 extension OpenAIChatCompletionRequest {
     init(_ prompt: Prompt, model: String, stream: Bool) {
-
-        let messages: [OpenAIChatCompletionRequestMessage] = prompt.inputs.chunked(
+        var messages: [OpenAIChatCompletionRequestMessage] = []
+        
+        if let instruction = prompt.instructions {
+            messages.append(.system(.init(content: .text(instruction), name: nil)))
+        }
+        
+        let inputs: [OpenAIChatCompletionRequestMessage] = prompt.inputs.chunked(
             on: \.content.role
         ).compactMap { role, inputs in
             let parts = inputs.compactMap {
@@ -132,6 +137,7 @@ extension OpenAIChatCompletionRequest {
                 return nil
             }
         }
+        messages.append(contentsOf: inputs)
 
         self.init(
             messages: messages,
@@ -155,7 +161,7 @@ extension OpenAIChatCompletionRequest {
             store: prompt.store,
             stream: stream,
             streamOptions: .init(includeUsage: true),
-            temperature: prompt.tempture,
+            temperature: prompt.temperature,
             toolChoice: nil,
             tools: nil,
             topLogprobs: nil,

@@ -1,3 +1,5 @@
+import Foundation
+
 extension OpenAIModelReponseRequestInputItemMessageContentItem {
     init(_ input: Prompt.Input) {
         switch input {
@@ -9,6 +11,18 @@ extension OpenAIModelReponseRequestInputItemMessageContentItem {
     }
 }
 
+extension OpenAIModelReponseContextOutputContent {
+    init?(_ input: Prompt.Input) {
+        switch input {
+        case .text(let text):
+            self = .text(.init(annotations: [], text: text.content))
+        default:
+            return nil
+        }
+    }
+}
+
+
 extension OpenAIModelReponseRequest {
     init(_ prompt: Prompt, model: String, stream: Bool) {
         let instructions =
@@ -19,15 +33,17 @@ extension OpenAIModelReponseRequest {
                 $0.role == .system
             }?.content
 
-        let items: [OpenAIModelReponseRequestInputItem] = prompt.inputs.chunked(on: \.content.role).map { role, inputs in
+        let items: [OpenAIModelReponseRequestInputItem] = prompt.inputs.chunked(on: \.content.role).compactMap { role, inputs in
             switch role {
             case .assistant:
-                let outputItems = inputs.map { OpenAIModelReponseRequestInputItemMessageContentItem($0) }
-                // TODO: convert to outputItems
-                return .message(OpenAIModelReponseRequestInputItemMessage(content: .inputs(outputItems), role: .init(rawValue: role.rawValue) ?? .user, type: nil))
+                let outputContenxt = inputs.compactMap { OpenAIModelReponseContextOutputContent($0) }
+                guard !outputContenxt.isEmpty else { return nil }
+                let output = OpenAIModelReponseContextOutput(id: nil, content: outputContenxt)
+                return .output(.output(output))
             default:
                 let inputItems = inputs.map { OpenAIModelReponseRequestInputItemMessageContentItem($0) }
-                return .message(OpenAIModelReponseRequestInputItemMessage(content: .inputs(inputItems), role: .init(rawValue: role.rawValue) ?? .user, type: nil))
+                let message = OpenAIModelReponseRequestInputItemMessage(content: .inputs(inputItems), role: .init(rawValue: role.rawValue) ?? .user, type: nil)
+                return .message(message)
             }
         }
         
@@ -44,7 +60,7 @@ extension OpenAIModelReponseRequest {
             reasoning: nil,  // TODO: Add reasning configuration
             store: prompt.store,
             stream: stream,
-            temperature: prompt.tempture,
+            temperature: prompt.temperature,
             text: nil,  // TODO: add expected ouput format support
             toolChoice: nil,
             tools: nil,
@@ -62,7 +78,7 @@ extension OpenAIModelReponseContext {
             let contents = output.content.map {
                 $0.convertToGenratedItem()
             }
-            return .message(MessageItem(id: output.id, index: idx, content: contents))
+            return .message(MessageItem(id: output.id ?? UUID().uuidString, index: idx, content: contents))
         default:
             return nil
         }

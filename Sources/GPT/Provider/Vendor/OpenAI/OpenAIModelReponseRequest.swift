@@ -342,7 +342,7 @@ public enum OpenAIModelReponseContextOutputContent: Codable, Sendable {
 public struct OpenAIModelReponseContextOutput: Codable, Sendable {
 
     /// The unique ID of the output message.
-    let id: String
+    let id: String?
     let content: [OpenAIModelReponseContextOutputContent]
     let role: String = "assistant"
     let type: OpenAIModelReponseContextType = .message
