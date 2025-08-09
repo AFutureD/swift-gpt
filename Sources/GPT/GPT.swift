@@ -44,7 +44,10 @@ public struct GPTSession: Sendable {
         _ prompt: Prompt,
         model: LLMQualifiedModel
     ) async throws -> AnyAsyncSequence<ModelStreamResponse> {
-        
+        guard !model.models.isEmpty else {
+            throw RuntimeError.emptyModelList
+        }
+
         var iter = model.models.makeIterator()
         var model = iter.next()
         
@@ -58,6 +61,7 @@ public struct GPTSession: Sendable {
                 
                 if retryAdviser.skip(ctx) {
                     ctx.errors.append(RuntimeError.skipByRetryAdvice)
+                    model = iter.next()
                     continue
                 }
                 
@@ -67,7 +71,7 @@ public struct GPTSession: Sendable {
                 
                 return response
             } catch {
-                logger.notice("[*] GPTSession send prompt failed. Prompt: `\(prompt)` Model: `\(model)`. Error: \(error)")
+                logger.notice("[*] GPTSession send prompt failed. Prompt: `\(prompt)` Model: `\(cur)`. Error: \(error)")
                 ctx.errors.append(error)
                 
                 if !retryAdviser.retry(ctx, error: error) {

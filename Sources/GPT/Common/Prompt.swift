@@ -162,9 +162,9 @@ public struct Prompt: Codable, Sendable {
         inputs: [Input],
         store: Bool? = nil,
         stream: Bool = true,
-        temperature: Double?,
-        topP: Double?,
-        maxTokens: Int?
+        temperature: Double? = nil,
+        topP: Double? = nil,
+        maxTokens: Int? = nil
     ) {
         self.prev_id = prev_id
         self.instructions = instructions

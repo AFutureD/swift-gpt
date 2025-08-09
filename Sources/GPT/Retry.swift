@@ -12,7 +12,7 @@ extension RetryAdviser {
     // in nano seconds
     public enum BackOffPolicy: Sendable {
         case simple(delay: UInt64)
-        case exponential(base: UInt64, max: UInt64, multiplier: Int)
+        case exponential(delay: UInt64, maxDelay: UInt64, multiplier: Double)
     }
     
     public struct Strategy: Sendable {
@@ -42,7 +42,13 @@ extension RetryAdviser {
 
 extension RetryAdviser.BackOffPolicy {
     func delay(_ count: UInt) -> UInt64 {
-        0
+        switch self {
+        case let .simple(delay):
+            return delay
+        case let .exponential(delay, maxDelay, multiplier):
+            guard count > 0 else { return 0 }
+            return min(delay * UInt64(pow(multiplier, Double(count - 1))), maxDelay)
+        }
     }
 }
 
@@ -85,7 +91,7 @@ public final class RetryAdviser: Sendable {
         switch advice {
         case .skip:
             return true
-        case let .wait(base: base, count: count, delay: delay):
+        case let .wait(base: base, count: _, delay: delay):
             return base + delay > now
         case nil:
             return false
@@ -93,16 +99,19 @@ public final class RetryAdviser: Sendable {
     }
 
     func retry(_ context: Context, error: any Error) -> Bool {
-        if self.strategy.preferNextProvider { return false }
-        
         guard let model = context.model else { return false }
         let previous = self.cached.withLock { $0[model] }
         
         if case .skip = previous { return false }
-        guard case .wait(_, let count, _) = previous else { unreachable() }
+        
+        let count: UInt = if case .wait(_, let count, _) = previous {
+            count
+        } else {
+            0
+        }
         
         let backoff = self.strategy.backOff
-        let delay = backoff.delay(count)
+        let delay = backoff.delay(count + 1)
         
         let now = timeNow()
         
@@ -111,7 +120,7 @@ public final class RetryAdviser: Sendable {
             switch err {
             case .invalidApiURL(_), .unsupportedModelProvider(_):
                 advice = .skip
-            case .httpError(let status, _):
+            case .httpError(_, _):
                 advice = .wait(base: now, count: count + 1, delay: delay)
             default:
                 advice = .wait(base: now, count: count + 1, delay: delay)
@@ -122,6 +131,7 @@ public final class RetryAdviser: Sendable {
         
         self.cached.withLock { $0[model]  = advice }
         
+        if self.strategy.preferNextProvider { return false }
         return true
     }
 }
