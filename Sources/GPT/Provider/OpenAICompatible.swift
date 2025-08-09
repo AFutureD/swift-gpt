@@ -10,6 +10,7 @@ import LazyKit
 import HTTPTypes
 import OpenAPIRuntime
 import NetworkKit
+import Logging
 
 struct OpenAICompatibleProvider: LLMProvider {
     
@@ -17,7 +18,8 @@ struct OpenAICompatibleProvider: LLMProvider {
         client: ClientTransport,
         provider: LLMProviderConfiguration,
         model: LLMModel,
-        _ prompt: Prompt
+        _ prompt: Prompt,
+        logger: Logger
     ) async throws -> AnyAsyncSequence<ModelStreamResponse> {
         assert(prompt.stream == true, "The prompt perfer do not use stream.")
         

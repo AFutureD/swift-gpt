@@ -10,6 +10,7 @@ import LazyKit
 import HTTPTypes
 import OpenAPIRuntime
 import NetworkKit
+import Logging
 
 struct OpenAIProvider: LLMProvider {
     
@@ -17,7 +18,8 @@ struct OpenAIProvider: LLMProvider {
         client: ClientTransport,
         provider: LLMProviderConfiguration,
         model: LLMModel,
-        _ prompt: Prompt
+        _ prompt: Prompt,
+        logger: Logger
     ) async throws -> AnyAsyncSequence<ModelStreamResponse> {
         assert(prompt.stream == true, "The prompt perfer do not use stream.")
         
@@ -53,12 +55,12 @@ struct OpenAIProvider: LLMProvider {
         )
         
         guard response.status == .ok else {
-            let errorStr: String? =
-            if let responseBody {
+            let errorStr: String? = if let responseBody {
                 try await String(collecting: responseBody, upTo: .max)
             } else {
                 nil
             }
+            
             throw RuntimeError.httpError(response.status, errorStr)
         }
         

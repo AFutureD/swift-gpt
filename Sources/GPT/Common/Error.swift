@@ -7,4 +7,6 @@ public enum RuntimeError: Error, Sendable {
     case httpError(HTTPResponse.Status, String?)
     case emptyResponseBody
     case unsupportedModelProvider(LLMProviderType)
+    case skipByRetryAdvice
+    case retryFailed([Error])
 }

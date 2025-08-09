@@ -7,6 +7,7 @@
 
 import OpenAPIRuntime
 import LazyKit
+import Logging
 
 public enum LLMProviderType: String, Hashable, Codable, Sendable {
     case OpenAI
@@ -19,7 +20,8 @@ protocol LLMProvider: Sendable {
         client: ClientTransport,
         provider: LLMProviderConfiguration,
         model: LLMModel,
-        _ prompt: Prompt
+        _ prompt: Prompt,
+        logger: Logger
     ) async throws -> AnyAsyncSequence<ModelStreamResponse>
 }
 
