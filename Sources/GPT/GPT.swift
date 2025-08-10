@@ -74,13 +74,13 @@ public struct GPTSession: Sendable {
                 logger.notice("[*] GPTSession send prompt failed. Prompt: `\(prompt)` Model: `\(cur)`. Error: \(error)")
                 ctx.errors.append(error)
                 
-                if !retryAdviser.retry(ctx, error: error) {
+                guard let retry = retryAdviser.retry(ctx, error: error) else {
                     model = iter.next()
                     continue
                 }
                 
                 do {
-                    try await Task.sleep(nanoseconds: 1_000_000 * 0)
+                    try await Task.sleep(nanoseconds: retry)
                 } catch {
                     logger.notice("[*] GPTSession retry failed when sleep. ignored.")
                 }

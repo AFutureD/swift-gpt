@@ -98,41 +98,46 @@ public final class RetryAdviser: Sendable {
         }
     }
 
-    func retry(_ context: Context, error: any Error) -> Bool {
-        guard let model = context.model else { return false }
+    // return retry time or current model, return nil to skip.
+    func retry(_ context: Context, error: any Error) -> UInt64? {
+        guard let model = context.model else { return nil }
         let previous = self.cached.withLock { $0[model] }
         
-        if case .skip = previous { return false }
+        if case .skip = previous { return nil }
         
         let count: UInt = if case .wait(_, let count, _) = previous {
-            count
+            count + 1
         } else {
-            0
+            1
         }
         
-        let backoff = self.strategy.backOff
-        let delay = backoff.delay(count + 1)
+        let delay = strategy.backOff.delay(count)
         
+        let advice = getAdvice(count: count, error: error, delay: delay)
+        self.cached.withLock { $0[model]  = advice }
+        
+        if self.strategy.preferNextProvider {
+            return nil
+        } else {
+            return count <= strategy.maxAttemptsPerProvider ? delay : nil
+        }
+    }
+    
+    func getAdvice(count: UInt, error: any Error, delay: UInt64) -> Advice {
         let now = timeNow()
         
-        let advice: Advice
         if let err = error as? RuntimeError {
             switch err {
             case .invalidApiURL(_), .unsupportedModelProvider(_):
-                advice = .skip
+                return .skip
             case .httpError(_, _):
-                advice = .wait(base: now, count: count + 1, delay: delay)
+                return .wait(base: now, count: count, delay: delay)
             default:
-                advice = .wait(base: now, count: count + 1, delay: delay)
+                return .wait(base: now, count: count, delay: delay)
             }
         } else {
-            advice = .wait(base: now, count: count + 1, delay: delay)
+            return .wait(base: now, count: count, delay: delay)
         }
-        
-        self.cached.withLock { $0[model]  = advice }
-        
-        if self.strategy.preferNextProvider { return false }
-        return true
     }
 }
 
