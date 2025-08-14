@@ -7,6 +7,7 @@
 
 import SynchronizationKit
 import LazyKit
+import Foundation
 
 extension RetryAdviser {
     // in nano seconds
