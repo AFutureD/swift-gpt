@@ -1,45 +1,11 @@
 //
-//  Retry.swift
+//  Retry+Implement.swift
 //  swift-gpt
 //
-//  Created by AFuture on 2025/8/4.
+//  Created by AFuture on 2025-08-15.
 //
 
-import SynchronizationKit
-import LazyKit
-import Foundation
-
-extension RetryAdviser {
-    // in nano seconds
-    public enum BackOffPolicy: Sendable {
-        case simple(delay: UInt64)
-        case exponential(delay: UInt64, maxDelay: UInt64, multiplier: Double)
-    }
-    
-    public struct Strategy: Sendable {
-        let preferNextProvider: Bool
-        let maxAttemptsPerProvider: Int
-        
-        let backOff: BackOffPolicy
-        
-        public init(
-            maxAttemptsPerProvider: Int = 3,
-            preferNextProvider: Bool = true,
-            backOff: BackOffPolicy = .simple(delay: 100 * 1_000_000)
-        ) {
-            self.maxAttemptsPerProvider = maxAttemptsPerProvider
-            self.preferNextProvider = preferNextProvider
-            self.backOff = backOff
-        }
-    }
-}
-
-extension RetryAdviser {
-    enum Advice: Hashable {
-        case wait(base: UInt64, count: UInt, delay: UInt64)
-        case skip
-    }
-}
+import CoreFoundation
 
 extension RetryAdviser.BackOffPolicy {
     func delay(_ count: UInt) -> UInt64 {
@@ -53,33 +19,11 @@ extension RetryAdviser.BackOffPolicy {
     }
 }
 
-
 extension RetryAdviser {
-    struct Context {
-        var model: LLMModelReference?
-        var errors: [Error] = []
-    }
-}
-
-
-public final class RetryAdviser: Sendable {
-    public static let shared = RetryAdviser()
-    
-    let strategy: Strategy
-    
-    let cached: LazyLockedValue<[LLMModelReference: Advice]>
-    
-    public init(
-        strategy: Strategy = .init()
-    ) {
-        self.strategy = strategy
-        self.cached = .init([:])
-    }
-        
     func cleanCache(model: LLMModelReference) {
         self.cached.withLock { $0[model] = nil }
     }
-
+    
     func skip(_ context: Context) -> Bool {
         guard let model = context.model else {
             return true
@@ -87,7 +31,7 @@ public final class RetryAdviser: Sendable {
         
         let advice = cached.withLock { $0[model] }
         
-        let now = timeNow()
+        let now = uptimeInNanoseconds()
         
         switch advice {
         case .skip:
@@ -98,7 +42,7 @@ public final class RetryAdviser: Sendable {
             return false
         }
     }
-
+    
     // return retry time or current model, return nil to skip.
     func retry(_ context: Context, error: any Error) -> UInt64? {
         guard let model = context.model else { return nil }
@@ -125,7 +69,7 @@ public final class RetryAdviser: Sendable {
     }
     
     func getAdvice(count: UInt, error: any Error, delay: UInt64) -> Advice {
-        let now = timeNow()
+        let now = uptimeInNanoseconds()
         
         if let err = error as? RuntimeError {
             switch err {
@@ -140,15 +84,4 @@ public final class RetryAdviser: Sendable {
             return .wait(base: now, count: count, delay: delay)
         }
     }
-}
-
-
-
-import Dispatch
-
-/// A convenience method to get system UPTIME.
-///
-/// A better method may refer to `NIODeadline.timeNow()`, but in out satiation we do not need such accuracy.
-fileprivate func timeNow() -> UInt64 {
-    return DispatchTime.now().uptimeNanoseconds
 }

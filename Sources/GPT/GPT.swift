@@ -62,6 +62,7 @@ public struct GPTSession: Sendable {
                 if retryAdviser.skip(ctx) {
                     ctx.errors.append(RuntimeError.skipByRetryAdvice)
                     model = iter.next()
+                    logger.notice("[*] GPTSession skip modal(\(cur)). Reason: skiped by RetryAdviser.")
                     continue
                 }
                 
@@ -71,14 +72,16 @@ public struct GPTSession: Sendable {
                 
                 return response
             } catch {
-                logger.notice("[*] GPTSession send prompt failed. Prompt: `\(prompt)` Model: `\(cur)`. Error: \(error)")
+                logger.error("[*] GPTSession send prompt failed. Model: `\(cur)` Prompt: `\(prompt)` Error: \(error)")
                 ctx.errors.append(error)
                 
                 guard let retry = retryAdviser.retry(ctx, error: error) else {
                     model = iter.next()
+                    logger.notice("[*] GPTSession retry failed when sleep. ignored.")
                     continue
                 }
                 
+                logger.notice("[*] GPTSession retry with same model(\(model?.description ?? "nil"))")
                 do {
                     try await Task.sleep(nanoseconds: retry)
                 } catch {

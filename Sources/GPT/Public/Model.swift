@@ -40,6 +40,12 @@ public struct LLMProviderConfiguration: Hashable, Codable, Sendable {
     }
 }
 
+extension LLMProviderConfiguration: CustomStringConvertible {
+    public var description: String {
+        "LLMProviderConfiguration(type: '\(type)', name: '\(name)', url: '\(apiURL)', key: '\(apiKey.prefix(4))****\(apiKey.suffix(4))')"
+    }
+}
+
 public struct LLMModel: Hashable, Codable, Sendable  {
     public let name: String
     
@@ -55,6 +61,12 @@ public struct LLMModelReference: Hashable, Codable, Sendable {
     public init(model: LLMModel, provider: LLMProviderConfiguration) {
         self.model = model
         self.provider = provider
+    }
+}
+
+extension LLMModelReference: CustomStringConvertible {
+    public var description: String {
+        "LLMModelReference(model: '\(model)', provider: '\(provider)')"
     }
 }
 
