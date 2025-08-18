@@ -104,6 +104,7 @@ extension ModelResponse {
 
         self.init(
             id: response.id,
+            model: response.model,
             items: items,
             usage: usage,
             stop: .init(code: nil, message: response.incomplete_details?.reason),
@@ -129,6 +130,7 @@ extension ModelStreamResponse {
         case .error(let error):
             self = .completed(.init(event: .completed,
                                     data: ModelResponse(id: nil,
+                                                        model: nil,
                                                         items: [],
                                                         usage: nil,
                                                         stop: nil,

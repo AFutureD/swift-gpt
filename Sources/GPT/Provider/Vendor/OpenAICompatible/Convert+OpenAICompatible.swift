@@ -206,7 +206,7 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
             let item = currentItem(id: event.id)
             let stop = stopReason.withLock { $0 }
             
-            let response = ModelResponse(id: event.id, items: [item], usage: usage, stop: stop, error: nil)
+            let response = ModelResponse(id: event.id, model: event.model, items: [item], usage: usage, stop: stop, error: nil)
             result.append(.completed(.init(event: .completed, data: response)))
             return result
         }

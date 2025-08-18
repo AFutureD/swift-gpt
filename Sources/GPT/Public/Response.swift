@@ -116,7 +116,9 @@ extension ResponseContent: Codable {
 
 public struct ModelResponse: Codable, Sendable {
     public let id: String?
-
+    
+    public let model: String?
+    
     public let items: [ResponseItem]
 
     public let usage: TokenUsage?
@@ -124,8 +126,9 @@ public struct ModelResponse: Codable, Sendable {
     public let stop: GenerationStop?
     public let error: GenerationError?
 
-    public init(id: String?, items: [ResponseItem], usage: TokenUsage?, stop: GenerationStop?, error: GenerationError?) {
+    public init(id: String?, model: String?, items: [ResponseItem], usage: TokenUsage?, stop: GenerationStop?, error: GenerationError?) {
         self.id = id
+        self.model = model
         self.items = items
         self.usage = usage
         self.stop = stop
