@@ -197,7 +197,7 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
             result.append(.create(.init(event: .create, data: nil)))
         }
         
-        if event.choices.first == nil || event.usage != nil {
+        if event.choices.first == nil || (event.usage != nil && event.usage?.total_tokens != 0) {
             let usage = TokenUsage(
                 input: event.usage?.prompt_tokens,
                 output: event.usage?.completion_tokens,
