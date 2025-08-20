@@ -19,7 +19,7 @@ struct OpenAIChatCompletionResponse: Codable, Sendable {
     
     let service_tier: OpenAIChatCompletionServiceTier?
     
-    let system_fingerprint: String
+    let system_fingerprint: String?
     
     let usage: OpenAIChatCompletionResponseUsage?
     
