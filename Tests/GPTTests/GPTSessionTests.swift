@@ -40,7 +40,7 @@ struct GPTSessionTests {
         )
         
         do {
-            _ = try await session.send(prompt, model: qualifiedModel)
+            _ = try await session.stream(prompt, model: qualifiedModel)
             Issue.record("Should have thrown error")
         } catch let error as RuntimeError {
             if case .emptyModelList = error {
@@ -67,7 +67,7 @@ struct GPTSessionTests {
         )
         
         do {
-            _ = try await session.send(prompt, model: qualifiedModel)
+            _ = try await session.stream(prompt, model: qualifiedModel)
             Issue.record("Should have thrown error due to invalid configuration")
         } catch {
             #expect(error is RuntimeError)
@@ -95,7 +95,7 @@ struct GPTSessionTests {
         )
         
         do {
-            _ = try await session.send(prompt, model: qualifiedModel)
+            _ = try await session.stream(prompt, model: qualifiedModel)
             Issue.record("Should have thrown error")
         } catch let error as RuntimeError {
             if case .retryFailed(let errors) = error {

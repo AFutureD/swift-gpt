@@ -13,8 +13,58 @@ import NetworkKit
 import Logging
 
 struct OpenAICompatibleProvider: LLMProvider {
+    func generate(client: any OpenAPIRuntime.ClientTransport, provider: LLMProviderConfiguration, model: LLMModel, _ prompt: Prompt, logger: Logging.Logger) async throws -> ModelResponse {
+        assert(prompt.stream == false, "The prompt perfer to use stream.")
+        
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+        
+        
+        guard let providerURL = URL(string: provider.apiURL) else {
+            throw RuntimeError.invalidApiURL(provider.apiURL)
+        }
+        
+        let url = providerURL.appending(path: "/chat/completions")
+        
+        let request = HTTPRequest(
+            method: .post,
+            scheme: nil,
+            authority: nil,
+            path: nil,
+            headerFields: [
+                .contentType: "application/json",
+                .authorization: "Bearer \(provider.apiKey)",
+            ]
+        )
+        
+        let body = OpenAIChatCompletionRequest(prompt, model: model.name, stream: false)
+        let bodyData = try encoder.encode(body)
+        
+        let (response, responseBody) = try await client.send(
+            request, body: .init(bodyData), baseURL: url, operationID: UUID().uuidString)
+        
+        guard response.status == .ok else {
+            let errorStr: String? =
+            if let responseBody {
+                try await String(collecting: responseBody, upTo: .max)
+            } else {
+                nil
+            }
+            throw RuntimeError.httpError(response.status, errorStr)
+        }
+        guard let responseBody else {
+            throw RuntimeError.emptyResponseBody
+        }
+        
+        let data = try await Data(collecting: responseBody, upTo: .max)
+        let openAIChatCompletionResponse = try decoder.decode(OpenAIChatCompletionResponse.self, from: data)
+        let modelReponse = ModelResponse(openAIChatCompletionResponse)
+        
+        return modelReponse
+    }
+
     
-    func send(
+    func generate(
         client: ClientTransport,
         provider: LLMProviderConfiguration,
         model: LLMModel,

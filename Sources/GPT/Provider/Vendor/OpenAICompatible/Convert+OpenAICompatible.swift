@@ -5,8 +5,6 @@ import LazyKit
 import SynchronizationKit
 
 
-
-
 extension OpenAIChatCompletionRequestMessageContentPart {
     init?(item: OpenAIModelReponseRequestInputItemMessageContentItem) {
         switch item {
@@ -160,7 +158,7 @@ extension OpenAIChatCompletionRequest {
             stop: nil,
             store: prompt.store,
             stream: stream,
-            streamOptions: .init(includeUsage: true),
+            streamOptions: stream ? .init(includeUsage: true) : nil,
             temperature: prompt.temperature,
             toolChoice: nil,
             tools: nil,
@@ -270,8 +268,7 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
     }
 }
 
-public struct OpenAIChatCompletionStreamResponseAsyncAggregater<Base: AsyncSequence & Sendable>: Sendable, AsyncSequence
-where Base.Element == OpenAIChatCompletionStreamResponse {
+public struct OpenAIChatCompletionStreamResponseAsyncAggregater<Base: AsyncSequence & Sendable>: Sendable, AsyncSequence where Base.Element == OpenAIChatCompletionStreamResponse {
 
     let base: Base
     public init(base: Base) {
@@ -290,5 +287,25 @@ where Base.Element == OpenAIChatCompletionStreamResponse {
 extension AsyncSequence where Self: Sendable, Self.Element == OpenAIChatCompletionStreamResponse {
     func aggregateToModelStremResponse() -> OpenAIChatCompletionStreamResponseAsyncAggregater<Self> {
         OpenAIChatCompletionStreamResponseAsyncAggregater<Self>(base: self)
+    }
+}
+
+extension ModelResponse {
+    init(_ response: OpenAIChatCompletionResponse) {
+        let usage = response.usage.map { TokenUsage(input: $0.prompt_tokens, output: $0.completion_tokens, total: $0.total_tokens) }
+        
+        let choice = response.choices.first
+        let stop: GenerationStop? = choice?.finish_reason.map { .init(code: $0, message: nil) }
+        var contents: [ResponseContent] = []
+        if let content = choice?.message.content {
+            let text = TextContent(delta: nil, content: content, annotations: [])
+            contents.append(.text(text))
+        } else if let refusal = choice?.message.refusal {
+            let refusal = TextRefusalContent(content: refusal)
+            contents.append(.refusal(refusal))
+        }
+        
+        let item = MessageItem(id: response.id, index: 0, content: contents)
+        self.init(id: response.id, model: response.model, items: [.message(item)], usage: usage, stop: stop, error: nil)
     }
 }

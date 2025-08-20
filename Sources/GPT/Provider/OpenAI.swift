@@ -14,7 +14,70 @@ import Logging
 
 struct OpenAIProvider: LLMProvider {
     
-    func send(
+    func generate(
+        client: ClientTransport,
+        provider: LLMProviderConfiguration,
+        model: LLMModel,
+        _ prompt: Prompt,
+        logger: Logger
+    ) async throws -> ModelResponse {
+        assert(prompt.stream == false, "The prompt perfer to use stream.")
+        
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+        
+        guard let providerURL = URL(string: provider.apiURL) else {
+            throw RuntimeError.invalidApiURL(provider.apiURL)
+        }
+        
+        let url = providerURL.appending(path: "responses")
+        
+        let request = HTTPRequest(
+            method: .post,
+            scheme: nil,
+            authority: nil,
+            path: nil,
+            headerFields: [
+                .contentType: "application/json",
+                .authorization: "Bearer \(provider.apiKey)",
+            ]
+        )
+        
+        let body = OpenAIModelReponseRequest(prompt, model: model.name, stream: false)
+        let bodyData = try encoder.encode(body)
+        
+        // Send Request
+        let (response, responseBody) = try await client.send(
+            request,
+            body: .init(bodyData),
+            baseURL: url,
+            operationID: UUID().uuidString
+        )
+        
+        
+        guard response.status == .ok else {
+            let errorStr: String? = if let responseBody {
+                try await String(collecting: responseBody, upTo: .max)
+            } else {
+                nil
+            }
+            
+            throw RuntimeError.httpError(response.status, errorStr)
+        }
+        
+        guard let responseBody else {
+            throw RuntimeError.emptyResponseBody
+        }
+        
+        let data = try await Data(collecting: responseBody, upTo: .max)
+        let openaiModelResponse = try decoder.decode(OpenAIModelReponse.self, from: data)
+        let modelReponse = ModelResponse(openaiModelResponse)
+        
+        return modelReponse
+    }
+
+    
+    func generate(
         client: ClientTransport,
         provider: LLMProviderConfiguration,
         model: LLMModel,
@@ -83,4 +146,5 @@ struct OpenAIProvider: LLMProvider {
             ModelStreamResponse($0)
         }.compacted().eraseToAnyAsyncSequence()
     }
+    
 }

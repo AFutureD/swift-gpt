@@ -156,7 +156,7 @@ struct RetryAdviserTests {
         let context = RetryAdviser.Context(model: model, errors: [])
         let error = RuntimeError.unknown
         
-        #expect(adviser.retry(context, error: error) == false)
+        #expect(adviser.retry(context, error: error) == nil)
     }
     
     @Test("RetryAdviser retry without model")
@@ -166,7 +166,7 @@ struct RetryAdviserTests {
         let context = RetryAdviser.Context(model: nil, errors: [])
         let error = RuntimeError.unknown
         
-        #expect(adviser.retry(context, error: error) == false)
+        #expect(adviser.retry(context, error: error) == nil)
     }
     
     @Test("RetryAdviser retry with skip advice")
@@ -189,7 +189,7 @@ struct RetryAdviserTests {
         let context = RetryAdviser.Context(model: model, errors: [])
         let error = RuntimeError.unknown
         
-        #expect(adviser.retry(context, error: error) == false)
+        #expect(adviser.retry(context, error: error) == nil)
     }
     
     @Test("RetryAdviser retry with invalidApiURL error")
@@ -215,7 +215,7 @@ struct RetryAdviserTests {
         let error = RuntimeError.invalidApiURL("test")
         
         let result = adviser.retry(context, error: error)
-        #expect(result == true)
+        #expect(result != nil)
         
         let cachedAdvice = adviser.cached.withLock { $0[model] }
         #expect(cachedAdvice == .skip)
@@ -244,7 +244,7 @@ struct RetryAdviserTests {
         let error = RuntimeError.httpError(.internalServerError, "Server error")
         
         let result = adviser.retry(context, error: error)
-        #expect(result == true)
+        #expect(result != nil)
         
         let cachedAdvice = adviser.cached.withLock { $0[model] }
         if case .wait(_, let count, _) = cachedAdvice {

@@ -16,13 +16,21 @@ public enum LLMProviderType: String, Hashable, Codable, Sendable {
 }
 
 protocol LLMProvider: Sendable {
-    func send(
+    func generate(
         client: ClientTransport,
         provider: LLMProviderConfiguration,
         model: LLMModel,
         _ prompt: Prompt,
         logger: Logger
     ) async throws -> AnyAsyncSequence<ModelStreamResponse>
+    
+    func generate(
+        client: ClientTransport,
+        provider: LLMProviderConfiguration,
+        model: LLMModel,
+        _ prompt: Prompt,
+        logger: Logger
+    ) async throws -> ModelResponse
 }
 
 public struct LLMProviderConfiguration: Hashable, Codable, Sendable {
