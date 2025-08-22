@@ -9,9 +9,13 @@ import OpenAPIRuntime
 import LazyKit
 import Logging
 
+/// An enumeration of the supported LLM provider types.
 public enum LLMProviderType: String, Hashable, Codable, Sendable {
+    /// For OpenAI's official API.
     case OpenAI
+    /// For services that are compatible with the OpenAI API.
     case OpenAICompatible
+    /// For Google's Gemini models.
     case Gemini
 }
 
@@ -33,13 +37,25 @@ protocol LLMProvider: Sendable {
     ) async throws -> ModelResponse
 }
 
+/// Configuration for an LLM provider.
 public struct LLMProviderConfiguration: Hashable, Codable, Sendable {
+    /// The type of the provider.
     public let type: LLMProviderType
     
+    /// A user-defined name for the provider configuration.
     public let name: String
+    /// The API key for the provider.
     public let apiKey: String
+    /// The base URL for the provider's API.
     public let apiURL: String
     
+    /// Creates a new provider configuration.
+    ///
+    /// - Parameters:
+    ///   - type: The type of the provider.
+    ///   - name: A user-defined name for the configuration.
+    ///   - apiKey: The API key for the provider.
+    ///   - apiURL: The base URL for the provider's API.
     public init(type: LLMProviderType, name: String, apiKey: String, apiURL: String) {
         self.type = type
         self.name = name
@@ -54,7 +70,9 @@ extension LLMProviderConfiguration: CustomStringConvertible {
     }
 }
 
+/// Represents a specific LLM model.
 public struct LLMModel: Hashable, Codable, Sendable  {
+    /// The name of the model (e.g., "gpt-4o").
     public let name: String
     
     public init(name: String) {
@@ -62,8 +80,11 @@ public struct LLMModel: Hashable, Codable, Sendable  {
     }
 }
 
+/// A reference to a specific model from a specific provider.
 public struct LLMModelReference: Hashable, Codable, Sendable {
+    /// The model being referenced.
     public let model: LLMModel
+    /// The provider of the model.
     public let provider: LLMProviderConfiguration
     
     public init(model: LLMModel, provider: LLMProviderConfiguration) {
@@ -78,11 +99,19 @@ extension LLMModelReference: CustomStringConvertible {
     }
 }
 
+/// A qualified model that can include multiple model references, used for fallbacks and retries.
 public struct LLMQualifiedModel: Sendable {
+    /// A user-defined name for the qualified model.
     public let name: String
     
+    /// A list of model references to be tried in sequence.
     public let models: [LLMModelReference]
     
+    /// Creates a new qualified model.
+    ///
+    /// - Parameters:
+    ///   - name: A user-defined name for the qualified model.
+    ///   - models: A list of model references to be tried in sequence.
     public init(name: String, models: [LLMModelReference]) {
         self.name = name
         self.models = models

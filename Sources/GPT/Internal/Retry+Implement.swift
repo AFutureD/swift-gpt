@@ -7,7 +7,9 @@
 
 import CoreFoundation
 
+/// Internal implementation of the retry logic.
 extension RetryAdviser.BackOffPolicy {
+    /// Calculates the delay for a given retry count.
     func delay(_ count: UInt) -> UInt64 {
         switch self {
         case let .simple(delay):
@@ -20,10 +22,12 @@ extension RetryAdviser.BackOffPolicy {
 }
 
 extension RetryAdviser {
+    /// Clears the cached advice for a given model.
     func cleanCache(model: LLMModelReference) {
         self.cached.withLock { $0[model] = nil }
     }
     
+    /// Determines whether to skip a model based on cached advice.
     func skip(_ context: Context) -> Bool {
         guard let model = context.model else {
             return true
@@ -43,7 +47,8 @@ extension RetryAdviser {
         }
     }
     
-    // return retry time or current model, return nil to skip.
+    /// Determines the retry delay for a given context and error.
+    /// - Returns: The delay in nanoseconds, or `nil` to skip to the next model.
     func retry(_ context: Context, error: any Error) -> UInt64? {
         guard let model = context.model else { return nil }
         let previous = self.cached.withLock { $0[model] }
@@ -68,6 +73,7 @@ extension RetryAdviser {
         }
     }
     
+    /// Generates advice based on the error and retry count.
     func getAdvice(count: UInt, error: any Error, delay: UInt64) -> Advice {
         let now = uptimeInNanoseconds()
         

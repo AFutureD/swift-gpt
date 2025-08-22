@@ -63,7 +63,6 @@ struct OpenAICompatibleProvider: LLMProvider {
         return modelReponse
     }
 
-    
     func generate(
         client: ClientTransport,
         provider: LLMProviderConfiguration,

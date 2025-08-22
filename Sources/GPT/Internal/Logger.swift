@@ -7,6 +7,8 @@
 
 import Logging
 
+/// Internal extension for creating a disabled logger.
 extension Logger {
-    static let disabled = Self(label: "me.afuture.gpt", factory: { _ in SwiftLogNoOpLogHandler() })
+    /// A logger that performs no operations.
+    static let disabled = Logger(label: "com.swift-gpt.disabled", factory: { _ in SwiftLogNoOpLogHandler() })
 }

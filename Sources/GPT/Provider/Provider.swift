@@ -7,7 +7,9 @@
 
 import LazyKit
 
+/// Internal mapping from provider type to provider implementation.
 extension LLMProviderType {
+    /// The concrete provider implementation for this provider type.
     var provider: any LLMProvider {
         switch self {
         case .OpenAI:
@@ -15,7 +17,7 @@ extension LLMProviderType {
         case .OpenAICompatible:
             return OpenAICompatibleProvider()
         case .Gemini:
-            todo("Unsupported Yet")
+            fatalError("Not Implemented")
         }
     }
 }

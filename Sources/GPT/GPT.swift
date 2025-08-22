@@ -8,6 +8,10 @@ import OpenAPIRuntime
 import SynchronizationKit
 import Logging
 
+/// The Session for interacting with LLMs.
+///
+/// A `GPTSession` is used to send prompts to LLM providers and receive responses.
+/// It handles the underlying network requests, streaming, and retry logic.
 public struct GPTSession: Sendable {
     let client: ClientTransport
     let retryAdviser: RetryAdviser
@@ -16,6 +20,12 @@ public struct GPTSession: Sendable {
     
     let logger: Logger
     
+    /// Creates a new `GPTSession`.
+    ///
+    /// - Parameters:
+    ///   - client: The `ClientTransport` to use for network requests.
+    ///   - retryAdviser: The ``RetryAdviser`` to use for handling failures. Defaults to the shared instance.
+    ///   - logger: The `Logger` to use for logging. Defaults to a disabled logger.
     public init(client: ClientTransport, retryAdviser: RetryAdviser = .shared, logger: Logger? = nil) {
         self.client = client
         self.retryAdviser = retryAdviser
@@ -25,6 +35,15 @@ public struct GPTSession: Sendable {
 
 extension GPTSession {
     
+    /// Streams partial results from the LLM as they become available.
+    ///
+    /// The returned asynchronous sequence yields ``ModelStreamResponse`` events, allowing you to process the response incrementally.
+    ///
+    /// - Parameters:
+    ///   - prompt: The prompt to send. The `stream` property must be `true`.
+    ///   - model: The specific model and provider to use for the request.
+    /// - Returns: An `AnyAsyncSequence` of ``ModelStreamResponse`` events.
+    /// - Throws: A ``RuntimeError`` or other transport-level error if the request fails.
     public func stream(
         _ prompt: Prompt,
         model: LLMModelReference
@@ -38,6 +57,15 @@ extension GPTSession {
         return stream
     }
     
+    /// Generates a complete, non-streaming response from the LLM.
+    ///
+    /// This method waits for the full response from the LLM before returning.
+    ///
+    /// - Parameters:
+    ///   - prompt: The prompt to send. The `stream` property must be `false`.
+    ///   - model: The specific model and provider to use for the request.
+    /// - Returns: A ``ModelResponse`` containing the full response from the LLM.
+    /// - Throws: A ``RuntimeError`` or other transport-level error if the request fails.
     public func generate(
         _ prompt: Prompt,
         model: LLMModelReference
@@ -54,9 +82,15 @@ extension GPTSession {
 
 
 extension GPTSession {
-    /// Send LLM Requests with Guaranteed Retries Using Mutiple Models
+    /// Streams partial results from a qualified model, with automatic retries and fallbacks.
     ///
+    /// This method iterates through the models in the ``LLMQualifiedModel``, attempting the request according to the ``RetryAdviser``'s strategy.
     ///
+    /// - Parameters:
+    ///   - prompt: The prompt to send. The `stream` property must be `true`.
+    ///   - model: A qualified model containing one or more models to try in sequence.
+    /// - Returns: An `AnyAsyncSequence` of ``ModelStreamResponse`` events from the first successful model.
+    /// - Throws: A ``RuntimeError`` if all models and retry attempts fail.
     public func stream(
         _ prompt: Prompt,
         model: LLMQualifiedModel
@@ -110,6 +144,15 @@ extension GPTSession {
         throw RuntimeError.retryFailed(ctx.errors)
     }
     
+    /// Generates a complete, non-streaming response from a qualified model, with automatic retries and fallbacks.
+    ///
+    /// This method iterates through the models in the ``LLMQualifiedModel``, attempting the request according to the ``RetryAdviser``'s strategy.
+    ///
+    /// - Parameters:
+    ///   - prompt: The prompt to send. The `stream` property must be `false`.
+    ///   - model: A qualified model containing one or more models to try in sequence.
+    /// - Returns: A ``ModelResponse`` from the first successful model.
+    /// - Throws: A ``RuntimeError`` if all models and retry attempts fail.
     public func generate(
         _ prompt: Prompt,
         model: LLMQualifiedModel

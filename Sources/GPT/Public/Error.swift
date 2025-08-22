@@ -1,14 +1,24 @@
 import HTTPTypes
 
+/// An enumeration of runtime errors that can occur in `swift-gpt`.
 public enum RuntimeError: Error, Sendable {
+    /// An unknown or unexpected error occurred.
     case unknown
+    /// The list of models to try was empty.
     case emptyModelList
+    /// The provided API URL was invalid.
     case invalidApiURL(String)
+    /// The response from the server had an unsupported content type.
     case reveiveUnsupportedContentTypeInResponse
+    /// An HTTP error occurred during the request.
     case httpError(HTTPResponse.Status, String?)
+    /// The response body was empty when content was expected.
     case emptyResponseBody
+    /// The specified model provider is not supported.
     case unsupportedModelProvider(LLMProviderType)
+    /// The request was skipped based on the ``RetryAdviser``'s advice.
     case skipByRetryAdvice
+    /// All retry attempts failed for all available models.
     case retryFailed([Error])
 }
 

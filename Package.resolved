@@ -1,5 +1,5 @@
 {
-  "originHash" : "bdd0ecdbbafb64e0f1adc89718f067504dcc15423c16db1ec4846dafa3bf9ebf",
+  "originHash" : "3da4905deed6141bcb16d010b2626b6d99d80ade42ab4896edd2bac5594873b5",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -74,6 +74,24 @@
       }
     },
     {
+      "identity" : "swift-docc-plugin",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-docc-plugin",
+      "state" : {
+        "revision" : "3e4f133a77e644a5812911a0513aeb7288b07d06",
+        "version" : "1.4.5"
+      }
+    },
+    {
+      "identity" : "swift-docc-symbolkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swiftlang/swift-docc-symbolkit",
+      "state" : {
+        "revision" : "b45d1f2ed151d057b54504d653e0da5552844e34",
+        "version" : "1.0.0"
+      }
+    },
+    {
       "identity" : "swift-dotenv",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/thebarndog/swift-dotenv.git",
@@ -114,8 +132,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Myoland/swift-lazy",
       "state" : {
-        "branch" : "main",
-        "revision" : "cade35858a0f3fe22dc25e2f2c94c788bc1a13ee"
+        "revision" : "059a3554ea6f73b0a95366d632c148a6d32876c0",
+        "version" : "0.1.0"
       }
     },
     {
@@ -213,8 +231,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/AFutureD/swift-synchronization",
       "state" : {
-        "branch" : "main",
-        "revision" : "2796e5cc569acd8774468ab45bb294ba41028d30"
+        "revision" : "5995386326f11f1eeb4848171c709e75077a389b",
+        "version" : "0.1.0"
       }
     },
     {
