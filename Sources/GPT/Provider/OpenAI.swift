@@ -19,6 +19,7 @@ struct OpenAIProvider: LLMProvider {
         provider: LLMProviderConfiguration,
         model: LLMModel,
         _ prompt: Prompt,
+        history: inout Conversation?,
         logger: Logger
     ) async throws -> ModelResponse {
         assert(prompt.stream == false, "The prompt perfer to use stream.")
@@ -82,6 +83,7 @@ struct OpenAIProvider: LLMProvider {
         provider: LLMProviderConfiguration,
         model: LLMModel,
         _ prompt: Prompt,
+        history: inout Conversation?,
         logger: Logger
     ) async throws -> AnyAsyncSequence<ModelStreamResponse> {
         assert(prompt.stream == true, "The prompt perfer do not use stream.")
