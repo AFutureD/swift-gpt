@@ -72,7 +72,7 @@ extension OpenAIModelReponseRequest {
 }
 
 extension OpenAIModelReponseContext {
-    func convert(idx: Int) -> ResponseItem? {
+    func convert(idx: Int) -> GeneratedItem? {
         switch self {
         case .output(let output):
             let contents = output.content.map {
@@ -86,7 +86,7 @@ extension OpenAIModelReponseContext {
 }
 
 extension Collection where Element == OpenAIModelReponseContext {
-    func convert() -> [ResponseItem] {
+    func convert() -> [GeneratedItem] {
         return self.enumerated().compactMap { index, context in
             context.convert(idx: index)
         }
@@ -169,7 +169,7 @@ extension ModelStreamResponse {
 }
 
 extension OpenAIModelReponseContextOutputContent {
-    func convertToGenratedItem() -> ResponseContent {
+    func convertToGenratedItem() -> MessageContent {
         switch self {
         case .text(let text):
             .text(TextGeneratedContent(delta: nil, content: text.text, annotations: []))  // TODO: support annotations

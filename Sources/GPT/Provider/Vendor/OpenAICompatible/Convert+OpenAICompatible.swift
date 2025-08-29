@@ -176,7 +176,7 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
     private let didSendItemCreate: LazyLockedValue<Bool> = .init(false)
     
     private let hasEmittedFirstContent: LazyLockedValue<Bool> = .init(false)
-    private let currentContent: LazyLockedValue<ResponseContent?> = .init(nil)
+    private let currentContent: LazyLockedValue<MessageContent?> = .init(nil)
     private let stopReason: LazyLockedValue<GenerationStop?> = .init(nil)
 
     func handle(_ event: OpenAIChatCompletionStreamResponse) -> [ModelStreamResponse] {
@@ -224,7 +224,7 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
             let messageItem = MessageItem(id: event.id, index: 0, content: nil)
             result.append(.itemAdded(.init(event: .itemAdded, data: .message(messageItem))))
             
-            let textContent: ResponseContent = .text(TextGeneratedContent(delta: nil, content: "", annotations: []))
+            let textContent: MessageContent = .text(TextGeneratedContent(delta: nil, content: "", annotations: []))
             currentContent.withLock { $0 = textContent }
             result.append(.contentAdded(.init(event: .contentAdded, data: textContent)))
         }
@@ -238,7 +238,7 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
         }
 
         if let refusal = choice.delta.refusal {
-            let content: ResponseContent = .refusal(TextRefusalGeneratedContent(content: refusal))
+            let content: MessageContent = .refusal(TextRefusalGeneratedContent(content: refusal))
             currentContent.withLock { $0 = content }
             result.append(.contentDone(.init(event: .contentDone, data: content)))
         }
@@ -259,9 +259,9 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
         return result
     }
 
-    func currentItem(id: String) -> ResponseItem {
+    func currentItem(id: String) -> GeneratedItem {
         let content = currentContent.withLock { $0 }
-        let contents: [ResponseContent] = content.flatMap { [$0] } ?? []
+        let contents: [MessageContent] = content.flatMap { [$0] } ?? []
 
         let messageItem = MessageItem(id: id, index: 0, content: contents)
         return .message(messageItem)
@@ -296,7 +296,7 @@ extension ModelResponse {
         
         let choice = response.choices.first
         let stop: GenerationStop? = choice?.finish_reason.map { .init(code: $0, message: nil) }
-        var contents: [ResponseContent] = []
+        var contents: [MessageContent] = []
         if let content = choice?.message.content {
             let text = TextGeneratedContent(delta: nil, content: content, annotations: [])
             contents.append(.text(text))
