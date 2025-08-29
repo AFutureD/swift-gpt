@@ -54,7 +54,7 @@ extension ResponseItem: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let type = try container.decode(GeneratedContentType.self, forKey: .type)
         switch type {
-        case .message:
+        case .generatedMessage:
             self = try .message(.init(from: decoder))
         default:
             throw DecodingError.typeMismatch(MessageItem.self, .init(codingPath: [], debugDescription: "Only Support 'MessageItem'"))
@@ -74,6 +74,9 @@ extension ResponseItem: Codable {
 
 /// An enumeration of the types of content that can be included in a message item.
 public enum ResponseContent: Sendable {
+    public typealias TextContent = TextGeneratedContent
+    public typealias TextRefusalContent = TextRefusalGeneratedContent
+
     /// Text-based content.
     case text(TextContent)
     /// A refusal to provide content.
@@ -107,9 +110,9 @@ extension ResponseContent: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let type = try container.decode(GeneratedContentType.self, forKey: .type)
         switch type {
-        case .text:
+        case .generatedText:
             self = try .text(.init(from: decoder))
-        case .textRefusal:
+        case .generatedTextRefusal:
             self = try .refusal(.init(from: decoder))
         default:
             throw DecodingError.typeMismatch(MessageItem.self, .init(codingPath: [], debugDescription: "Only Support 'MessageItem'"))

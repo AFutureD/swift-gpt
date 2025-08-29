@@ -159,7 +159,7 @@ extension ModelStreamResponse {
             self = .contentDone(.init(event: .contentDone, data: content))
 
         case .response_output_text_delta(let textDelta):
-            let content = TextContent(delta: textDelta.delta, content: nil, annotations: [])
+            let content = TextGeneratedContent(delta: textDelta.delta, content: nil, annotations: [])
             self = .contentDelta(.init(event: .contentDelta, data: .text(content)))
 
         default:
@@ -172,9 +172,9 @@ extension OpenAIModelReponseContextOutputContent {
     func convertToGenratedItem() -> ResponseContent {
         switch self {
         case .text(let text):
-            .text(TextContent(delta: nil, content: text.text, annotations: []))  // TODO: support annotations
+            .text(TextGeneratedContent(delta: nil, content: text.text, annotations: []))  // TODO: support annotations
         case .refusal(let refusal):
-            .refusal(TextRefusalContent(content: refusal.refusal))
+            .refusal(TextRefusalGeneratedContent(content: refusal.refusal))
         }
     }
 }

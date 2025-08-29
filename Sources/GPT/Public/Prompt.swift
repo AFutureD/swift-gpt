@@ -8,6 +8,9 @@
 extension Prompt {
     /// Represents a single input item in a prompt, which can be either text or a file.
     public enum Input: Sendable {
+        public typealias TextContent = TextInputContent
+        public typealias FileContent = FileInputContent
+
         /// A text-based input.
         case text(TextContent)
         /// A file-based input.
@@ -24,9 +27,9 @@ extension Prompt.Input: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let type = try container.decode(ModelInputContentType.self, forKey: .type)
         switch type {
-        case .text:
+        case .inputText:
             self = try .text(.init(from: decoder))
-        case .file:
+        case .inputFile:
             self = try .file(.init(from: decoder))
         default:
             throw DecodingError.typeMismatch(MessageItem.self, .init(codingPath: [], debugDescription: "Only Support 'MessageItem'"))
@@ -57,44 +60,6 @@ extension Prompt.Input {
     }
 }
 
-// MARK: Text
-
-extension ModelInputContentType {
-    static let text = ModelInputContentType(rawValue: "text")
-}
-
-extension Prompt.Input {
-    /// A text-based input for a prompt.
-    public struct TextContent: ModelInputContent, Codable {
-        public let type: ModelInputContentType = .text
-        /// The role of the entity providing the content (e.g., user, assistant).
-        public let role: ModelInputContentRole
-        
-        /// The text content.
-        public let content: String
-        
-        enum CodingKeys: CodingKey {
-            case type
-            case role
-            case content
-        }
-
-        /// Creates a new text content item.
-        /// - Parameters:
-        ///   - role: The role of the entity providing the content.
-        ///   - content: The text content.
-        public init(role: ModelInputContentRole, content: String) {
-            self.role = role
-            self.content = content
-        }
-    }
-}
-
-extension Prompt.Input.TextContent: ExpressibleByStringLiteral {
-    public init(stringLiteral value: String) {
-        self.init(role: .user, content: value)
-    }
-}
 
 extension ModelInputContent {
     public static func text(_ content: Prompt.Input.TextContent) -> any ModelInputContent {
@@ -102,51 +67,6 @@ extension ModelInputContent {
     }
 }
 
-// MARK: File
-
-extension ModelInputContentType {
-    static let file = ModelInputContentType(rawValue: "File")
-}
-
-extension Prompt.Input {
-    /// A file-based input for a prompt.
-    public struct FileContent: ModelInputContent, Codable {
-
-        public let type: ModelInputContentType = .file
-        /// The role of the entity providing the content.
-        public let role: ModelInputContentRole
-        
-        /// An optional identifier for the file.
-        public let id: String?
-        
-        /// An optional filename for the file.
-        public let filename: String?
-
-        /// The content of the file, typically base64-encoded.
-        public let content: String
-        
-        enum CodingKeys: CodingKey {
-            case type
-            case role
-            case id
-            case filename
-            case content
-        }
-
-        /// Creates a new file content item.
-        /// - Parameters:
-        ///   - role: The role of the entity providing the content.
-        ///   - id: An optional identifier for the file.
-        ///   - filename: An optional filename for the file.
-        ///   - content: The content of the file.
-        public init(role: ModelInputContentRole, id: String?, filename: String?, content: String) {
-            self.role = role
-            self.id = id
-            self.filename = filename
-            self.content = content
-        }
-    }
-}
 
 extension ModelInputContent {
     public static func file(_ content: Prompt.Input.FileContent) -> any ModelInputContent {

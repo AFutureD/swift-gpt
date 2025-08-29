@@ -224,7 +224,7 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
             let messageItem = MessageItem(id: event.id, index: 0, content: nil)
             result.append(.itemAdded(.init(event: .itemAdded, data: .message(messageItem))))
             
-            let textContent: ResponseContent = .text(TextContent(delta: nil, content: "", annotations: []))
+            let textContent: ResponseContent = .text(TextGeneratedContent(delta: nil, content: "", annotations: []))
             currentContent.withLock { $0 = textContent }
             result.append(.contentAdded(.init(event: .contentAdded, data: textContent)))
         }
@@ -232,13 +232,13 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
         if let delta = choice.delta.content {
             currentContent.withLock {
                 let previous = $0?.text?.content
-                $0 = .text(TextContent(delta: nil, content: (previous ?? "") + delta, annotations: []))
+                $0 = .text(TextGeneratedContent(delta: nil, content: (previous ?? "") + delta, annotations: []))
             }
-            result.append(.contentDelta(.init(event: .contentDelta, data: .text(TextContent(delta: delta, content: nil, annotations: [])))))
+            result.append(.contentDelta(.init(event: .contentDelta, data: .text(TextGeneratedContent(delta: delta, content: nil, annotations: [])))))
         }
 
         if let refusal = choice.delta.refusal {
-            let content: ResponseContent = .refusal(TextRefusalContent(content: refusal))
+            let content: ResponseContent = .refusal(TextRefusalGeneratedContent(content: refusal))
             currentContent.withLock { $0 = content }
             result.append(.contentDone(.init(event: .contentDone, data: content)))
         }
@@ -298,10 +298,10 @@ extension ModelResponse {
         let stop: GenerationStop? = choice?.finish_reason.map { .init(code: $0, message: nil) }
         var contents: [ResponseContent] = []
         if let content = choice?.message.content {
-            let text = TextContent(delta: nil, content: content, annotations: [])
+            let text = TextGeneratedContent(delta: nil, content: content, annotations: [])
             contents.append(.text(text))
         } else if let refusal = choice?.message.refusal {
-            let refusal = TextRefusalContent(content: refusal)
+            let refusal = TextRefusalGeneratedContent(content: refusal)
             contents.append(.refusal(refusal))
         }
         
