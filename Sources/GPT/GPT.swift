@@ -16,7 +16,7 @@ public struct GPTSession: Sendable {
     let client: ClientTransport
     let retryAdviser: RetryAdviser
     
-    let sessionID: LazyLockedValue<String?> = .init(nil)
+    let lockedConverastion: LazyLockedValue<Conversation?>
     
     let logger: Logger
     
@@ -26,8 +26,9 @@ public struct GPTSession: Sendable {
     ///   - client: The `ClientTransport` to use for network requests.
     ///   - retryAdviser: The ``RetryAdviser`` to use for handling failures. Defaults to the shared instance.
     ///   - logger: The `Logger` to use for logging. Defaults to a disabled logger.
-    public init(client: ClientTransport, retryAdviser: RetryAdviser = .shared, logger: Logger? = nil) {
+    public init(client: ClientTransport, conversationon: Conversation? = nil, retryAdviser: RetryAdviser = .shared, logger: Logger? = nil) {
         self.client = client
+        self.lockedConverastion = .init(conversationon)
         self.retryAdviser = retryAdviser
         self.logger = logger ?? Logger.disabled
     }
@@ -50,9 +51,10 @@ extension GPTSession {
     ) async throws -> AnyAsyncSequence<ModelStreamResponse> {
         assert(prompt.stream == true, "The prompt perfer do use stream.")
         
+        var history = lockedConverastion.withLock {$0 }
         let provider = model.provider.type.provider
-        
-        let stream: AnyAsyncSequence<ModelStreamResponse> = try await provider.generate(client: client, provider: model.provider, model: model.model, prompt, logger: logger)
+        let stream: AnyAsyncSequence<ModelStreamResponse> = try await provider.generate(client: client, provider: model.provider, model: model.model, prompt, history: &history, logger: logger)
+        lockedConverastion.withLock { [history] in $0 = history }
         
         return stream
     }
@@ -71,11 +73,12 @@ extension GPTSession {
         model: LLMModelReference
     ) async throws -> ModelResponse {
         assert(prompt.stream == false, "The prompt perfer do not use stream.")
-        
+
+        var history = lockedConverastion.withLock {$0 }
         let provider = model.provider.type.provider
-        
-        let response: ModelResponse = try await provider.generate(client: client, provider: model.provider, model: model.model, prompt, logger: logger)
-        
+        let response: ModelResponse = try await provider.generate(client: client, provider: model.provider, model: model.model, prompt, history: &history, logger: logger)
+        lockedConverastion.withLock { [history] in $0 = history }
+
         return response
     }
 }
