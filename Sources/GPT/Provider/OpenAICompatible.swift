@@ -31,12 +31,12 @@ struct OpenAICompatibleProvider: LLMProvider {
         }
         
         // Build Conversation
-        var Conversation = history ?? Conversation()
+        var conversation = history ?? Conversation()
         let inputs: [ConversationItem] = prompt.inputs.map { .input($0)}
-        Conversation.items.append(contentsOf: inputs)
+        conversation.items.append(contentsOf: inputs)
 
         // Build Request Body
-        let body = OpenAIChatCompletionRequest(prompt, model: model.name, stream: false)
+        let body = OpenAIChatCompletionRequest(prompt, conversation: conversation, model: model.name, stream: false)
         let bodyData = try encoder.encode(body)
         
         // Build Request
@@ -106,8 +106,13 @@ struct OpenAICompatibleProvider: LLMProvider {
                 .authorization: "Bearer \(provider.apiKey)",
             ]
         )
+
+        // Build Conversation
+        var conversation = history ?? Conversation()
+        let inputs: [ConversationItem] = prompt.inputs.map { .input($0)}
+        conversation.items.append(contentsOf: inputs)
         
-        let body = OpenAIChatCompletionRequest(prompt, model: model.name, stream: true)
+        let body = OpenAIChatCompletionRequest(prompt, conversation: conversation, model: model.name, stream: true)
         let bodyData = try encoder.encode(body)
         
         let (response, responseBody) = try await client.send(
