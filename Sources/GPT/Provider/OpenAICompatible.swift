@@ -11,6 +11,7 @@ import HTTPTypes
 import OpenAPIRuntime
 import NetworkKit
 import Logging
+import AsyncAlgorithms
 
 struct OpenAICompatibleProvider: LLMProvider {
     func generate(
@@ -18,7 +19,7 @@ struct OpenAICompatibleProvider: LLMProvider {
         provider: LLMProviderConfiguration,
         model: LLMModel,
         _ prompt: Prompt, 
-        history: inout Conversation?, 
+        conversation: Conversation, 
         logger: Logging.Logger
     ) async throws -> ModelResponse {
         assert(prompt.stream == false, "The prompt perfer to use stream.")
@@ -29,11 +30,6 @@ struct OpenAICompatibleProvider: LLMProvider {
         guard let providerURL = URL(string: provider.apiURL) else {
             throw RuntimeError.invalidApiURL(provider.apiURL)
         }
-        
-        // Build Conversation
-        var conversation = history ?? Conversation()
-        let inputs: [ConversationItem] = prompt.inputs.map { .input($0)}
-        conversation.items.append(contentsOf: inputs)
 
         // Build Request Body
         let body = OpenAIChatCompletionRequest(prompt, conversation: conversation, model: model.name, stream: false)
@@ -65,6 +61,7 @@ struct OpenAICompatibleProvider: LLMProvider {
             }
             throw RuntimeError.httpError(response.status, errorStr)
         }
+
         guard let responseBody else {
             throw RuntimeError.emptyResponseBody
         }
@@ -72,7 +69,7 @@ struct OpenAICompatibleProvider: LLMProvider {
         let data = try await Data(collecting: responseBody, upTo: .max)
         let openAIChatCompletionResponse = try decoder.decode(OpenAIChatCompletionResponse.self, from: data)
         let modelReponse = ModelResponse(openAIChatCompletionResponse)
-        
+
         return modelReponse
     }
 
@@ -81,7 +78,7 @@ struct OpenAICompatibleProvider: LLMProvider {
         provider: LLMProviderConfiguration,
         model: LLMModel,
         _ prompt: Prompt,
-        history: inout Conversation?,
+        conversation: Conversation,
         logger: Logger
     ) async throws -> AnyAsyncSequence<ModelStreamResponse> {
         assert(prompt.stream == true, "The prompt perfer do not use stream.")
@@ -89,13 +86,15 @@ struct OpenAICompatibleProvider: LLMProvider {
         let encoder = JSONEncoder()
         let decoder = JSONDecoder()
         
-        
         guard let providerURL = URL(string: provider.apiURL) else {
             throw RuntimeError.invalidApiURL(provider.apiURL)
         }
-        
-        let url = providerURL.appending(path: "/chat/completions")
-        
+
+        // Build Request Body
+        let body = OpenAIChatCompletionRequest(prompt, conversation: conversation, model: model.name, stream: true)
+        let bodyData = try encoder.encode(body)
+
+        // Build Request
         let request = HTTPRequest(
             method: .post,
             scheme: nil,
@@ -106,17 +105,10 @@ struct OpenAICompatibleProvider: LLMProvider {
                 .authorization: "Bearer \(provider.apiKey)",
             ]
         )
-
-        // Build Conversation
-        var conversation = history ?? Conversation()
-        let inputs: [ConversationItem] = prompt.inputs.map { .input($0)}
-        conversation.items.append(contentsOf: inputs)
         
-        let body = OpenAIChatCompletionRequest(prompt, conversation: conversation, model: model.name, stream: true)
-        let bodyData = try encoder.encode(body)
-        
-        let (response, responseBody) = try await client.send(
-            request, body: .init(bodyData), baseURL: url, operationID: UUID().uuidString)
+        // Send Request
+        let url = providerURL.appending(path: "/chat/completions")
+        let (response, responseBody) = try await client.send(request, body: .init(bodyData), baseURL: url, operationID: UUID().uuidString)
         
         guard response.status == .ok else {
             let errorStr: String? =
