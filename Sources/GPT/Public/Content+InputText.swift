@@ -11,7 +11,7 @@ extension ContentType {
 
 
 /// A text-based input for a prompt.
-public struct TextInputContent: ModelInputContent, Codable {
+public struct TextInputContent: Sendable, Codable {
     public let type: ModelInputContentType = .inputText
     /// The role of the entity providing the content (e.g., user, assistant).
     public let role: ModelContentRole

@@ -188,7 +188,7 @@ public enum OpenAIModelReponseContextInputStatus: String, Codable, Sendable {
     case incomplete
 }
 
-public enum OpenAIModelReponseContextInputRole: Codable, Sendable {
+public enum OpenAIModelReponseContextInputRole: String, Codable, Sendable {
     case user
     case system
     case developer

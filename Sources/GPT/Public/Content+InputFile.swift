@@ -12,7 +12,7 @@ extension ContentType {
 }
 
 /// A file-based input for a prompt.
-public struct FileInputContent: ModelInputContent, Codable {
+public struct FileInputContent: Sendable, Codable {
 
     public let type: ModelInputContentType = .inputFile
     /// The role of the entity providing the content.
