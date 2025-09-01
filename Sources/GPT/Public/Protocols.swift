@@ -46,31 +46,3 @@ extension ModelContentRole {
     /// The developer role, for developer-specific instructions.
     public static let developer = ModelContentRole(rawValue: "developer")
 }
-
-// /// A type that represents the content type of an input to an LLM.
-// public struct ModelInputContentType: RawRepresentable, Codable, Hashable, Sendable {
-//     public let rawValue: String
-    
-//     public init(rawValue: String) {
-//         self.rawValue = rawValue
-//     }
-// }
-
-// extension ModelInputContentType: CustomStringConvertible {
-//     public var description: String {
-//         rawValue
-//     }
-// }
-
-/// A protocol for content provided as input to an LLM.
-public protocol ModelInputContent: Sendable {
-    associatedtype Content: Encodable
-
-    /// The type of the input content.
-    var type: ModelInputContentType { get }
-    /// The role of the entity providing the content.
-    var role: ModelContentRole { get }
-
-    /// The content itself.
-    var content: Content { get }
-}

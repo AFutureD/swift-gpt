@@ -47,32 +47,58 @@ extension Prompt.Input: Codable {
     }
 }
 
-
 extension Prompt.Input {
-    /// The underlying content of the input.
-    public var content: any ModelInputContent {
+    public var role: ModelContentRole {
         switch self {
-        case .text(let content):
-            return content
-        case .file(let content):
-            return content
+        case .text(let text):
+            return text.role
+        case .file(let file):
+            return file.role
         }
     }
 }
 
 
-extension ModelInputContent {
-    public static func text(_ content: Prompt.Input.TextContent) -> any ModelInputContent {
-        content
+extension Prompt.Input {
+
+
+    public var text: TextContent? {
+        guard case .text(let text) = self else { return nil }
+        return text
+    }
+
+    public var file: FileContent? {
+        guard case .file(let file) = self else { return nil }
+        return file
     }
 }
 
 
-extension ModelInputContent {
-    public static func file(_ content: Prompt.Input.FileContent) -> any ModelInputContent {
-        content
-    }
-}
+// extension Prompt.Input {
+//     /// The underlying content of the input.
+//     public var content: any ModelInputContent {
+//         switch self {
+//         case .text(let content):
+//             return content
+//         case .file(let content):
+//             return content
+//         }
+//     }
+// }
+
+
+// extension ModelInputContent {
+//     public static func text(_ content: Prompt.Input.TextContent) -> any ModelInputContent {
+//         content
+//     }
+// }
+
+
+// extension ModelInputContent {
+//     public static func file(_ content: Prompt.Input.FileContent) -> any ModelInputContent {
+//         content
+//     }
+// }
 
 // MARK: Prompt
 
