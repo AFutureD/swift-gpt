@@ -137,3 +137,93 @@ func testExmaple4() async throws {
     let logger = Logger()
     logger.info("\(String(describing: response))")
 }
+
+
+@Test("testConversationBlock")
+func testConversationBlock() async throws {
+    try Dotenv.make()
+    let client = AsyncHTTPClientTransport()
+    let openai = LLMProviderConfiguration(type: .OpenAICompatible, name: "OpenAI", apiKey: Dotenv["OPENAI_API_KEY"]!.stringValue, apiURL: "https://api.openai.com/v1")
+    let model = LLMModelReference(model: .init(name: "gpt-4o"), provider: openai)
+    
+    let session = GPTSession(client: client, conversationon: nil)
+
+    do {
+
+        let prompt = Prompt(
+            inputs: [
+                .text("Hi, I'm John.")
+            ],
+            stream: false
+        )
+
+        let _: ModelResponse = try await session.generate(prompt, model: model)
+        #expect(session.conversation != nil)
+        #expect(session.conversation?.items.count == 2)
+    }
+
+    do {
+
+        let prompt = Prompt(
+            inputs: [
+                .text("What's my name?")
+            ],
+            stream: false
+        )
+
+        let response: ModelResponse = try await session.generate(prompt, model: model)
+        #expect(session.conversation != nil)
+        #expect(session.conversation?.items.count == 4)
+        #expect(response.message?.text?.contains("John") == true)
+        print("response: \(String(describing: response))")
+    }
+}
+
+@Test("testConversationStream")
+func testConversationStream() async throws {
+    try Dotenv.make()
+    let client = AsyncHTTPClientTransport()
+    let openai = LLMProviderConfiguration(
+        type: .OpenAICompatible,
+        name: "OpenAI",
+        apiKey: Dotenv["OPENAI_API_KEY"]!.stringValue,
+        apiURL: "https://api.openai.com/v1"
+    )
+    let gpt4o = LLMModelReference(model: .init(name: "gpt-4o"), provider: openai)
+    
+    let session = GPTSession(client: client, conversationon: nil)
+
+    do {
+
+        let prompt = Prompt(
+            inputs: [
+                .text("Hi, I'm John.")
+            ]
+        )
+
+        let stream = try await session.stream(prompt, model: gpt4o)
+        for try await event in stream {
+            print("event: \(String(describing: event))")
+        }
+        #expect(session.conversation != nil)
+        #expect(session.conversation?.items.count == 2)
+    }
+
+    do {
+
+        let prompt = Prompt(
+            inputs: [
+                .text("What's my name?")
+            ]
+        )
+
+        let stream = try await session.stream(prompt, model: gpt4o)
+        // #expect(response.message?.text?.contains("John") == true)
+        for try await event in stream {
+            print("event: \(String(describing: event))")
+        }
+        
+        #expect(session.conversation != nil)
+        #expect(session.conversation?.items.count == 4)
+    }
+}

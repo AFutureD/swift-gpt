@@ -25,7 +25,7 @@ public struct Conversation: Sendable, Codable {
     
     public var items: [ConversationItem]
 
-    init(id: String? = nil, items: [ConversationItem] = []) {
+    public init(id: String? = nil, items: [ConversationItem] = []) {
         self.id = id
         self.items = items
     }

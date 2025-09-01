@@ -155,7 +155,7 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
             result.append(.create(.init(event: .create, data: nil)))
         }
         
-        if event.choices.first == nil || (event.usage != nil && event.usage?.total_tokens != 0) || event.choices.first?.finish_reason != nil{
+        if event.choices.first == nil || (event.usage != nil && event.usage?.total_tokens != 0) {
             let usage = TokenUsage(
                 input: event.usage?.prompt_tokens,
                 output: event.usage?.completion_tokens,
@@ -234,7 +234,9 @@ public struct OpenAIChatCompletionStreamResponseAsyncAggregater<Base: AsyncSeque
     public init(base: Base) {
         self.base = base
     }
-
+    
+    // TODO: rewrite the stream with custom iterator,
+    //       manually send created and finished event.
     public func makeAsyncIterator() -> AnyAsyncSequence<ModelStreamResponse>.AsyncIterator {
         let aggregater = OpenAIChatCompletionStreamResponseAggregater()
 

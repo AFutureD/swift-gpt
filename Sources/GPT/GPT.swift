@@ -35,6 +35,17 @@ public struct GPTSession: Sendable {
 }
 
 extension GPTSession {
+    /// The current conversation history.
+    ///
+    /// This property provides access to the conversation history maintained by the session.
+    /// It is thread-safe and can be accessed concurrently.
+    public var conversation: Conversation? {
+        lockedConverastion.withLock { $0 }
+    }
+}
+
+
+extension GPTSession {
     
     /// Streams partial results from the LLM as they become available.
     ///
@@ -50,13 +61,25 @@ extension GPTSession {
         model: LLMModelReference
     ) async throws -> AnyAsyncSequence<ModelStreamResponse> {
         assert(prompt.stream == true, "The prompt perfer do use stream.")
-        
-        var history = lockedConverastion.withLock {$0 }
+
+        // Build Conversation
+        var history = conversation ?? Conversation()
+
+        let inputs: [ConversationItem] = prompt.inputs.map { .input($0)}
+        history.items.append(contentsOf: inputs)
+
         let provider = model.provider.type.provider
-        let stream: AnyAsyncSequence<ModelStreamResponse> = try await provider.generate(client: client, provider: model.provider, model: model.model, prompt, history: &history, logger: logger)
-        lockedConverastion.withLock { [history] in $0 = history }
+        let stream: AnyAsyncSequence<ModelStreamResponse> = try await provider.generate(client: client, provider: model.provider, model: model.model, prompt, conversation: history, logger: logger)
         
-        return stream
+        return stream.map { [history] response in 
+            if case .completed(let event) = response {
+                lockedConverastion.withLock { 
+                    $0 = history
+                    $0?.items.append(contentsOf: event.data.items.map { .generated($0) })
+                }
+            }
+            return response
+        }.eraseToAnyAsyncSequence()
     }
     
     /// Generates a complete, non-streaming response from the LLM.
@@ -74,11 +97,17 @@ extension GPTSession {
     ) async throws -> ModelResponse {
         assert(prompt.stream == false, "The prompt perfer do not use stream.")
 
-        var history = lockedConverastion.withLock {$0 }
-        let provider = model.provider.type.provider
-        let response: ModelResponse = try await provider.generate(client: client, provider: model.provider, model: model.model, prompt, history: &history, logger: logger)
-        lockedConverastion.withLock { [history] in $0 = history }
+        var history = conversation ?? Conversation()
 
+        let inputs: [ConversationItem] = prompt.inputs.map { .input($0)}
+        history.items.append(contentsOf: inputs)
+
+        let provider = model.provider.type.provider
+        let response: ModelResponse = try await provider.generate(client: client, provider: model.provider, model: model.model, prompt, conversation: history, logger: logger)
+        
+        history.items.append(contentsOf: response.items.map { .generated($0) })
+        
+        lockedConverastion.withLock { [history] in $0 = history }
         return response
     }
 }

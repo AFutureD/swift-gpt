@@ -25,7 +25,7 @@ protocol LLMProvider: Sendable {
         provider: LLMProviderConfiguration,
         model: LLMModel,
         _ prompt: Prompt,
-        history: inout Conversation?,
+        conversation: Conversation,
         logger: Logger
     ) async throws -> AnyAsyncSequence<ModelStreamResponse>
     
@@ -34,7 +34,7 @@ protocol LLMProvider: Sendable {
         provider: LLMProviderConfiguration,
         model: LLMModel,
         _ prompt: Prompt,
-        history: inout Conversation?,
+        conversation: Conversation,
         logger: Logger
     ) async throws -> ModelResponse
 }
