@@ -292,7 +292,7 @@ public struct OpenAIModelReponseContextOutputContentTextOutput: Codable, Sendabl
     }
 }
 
-// The refusal explanationfrom the model.
+// The refusal explanation from the model.
 public struct OpenAIModelReponseContextOutputContentRefusal: Codable, Sendable {
     let refusal: String
     let type: OpenAIModelReponseContextOutputContentType = .refusal

@@ -147,7 +147,7 @@ func testConversationBlock() async throws {
     let openai = LLMProviderConfiguration(type: .OpenAICompatible, name: "OpenAI", apiKey: Dotenv["OPENAI_API_KEY"]!.stringValue, apiURL: "https://api.openai.com/v1")
     let model = LLMModelReference(model: .init(name: "gpt-4o"), provider: openai)
     
-    let session = GPTSession(client: client, conversationon: nil)
+    let session = GPTSession(client: client, conversation: nil)
 
     do {
 
@@ -192,7 +192,7 @@ func testConversationStream() async throws {
     )
     let gpt4o = LLMModelReference(model: .init(name: "gpt-4o"), provider: openai)
     
-    let session = GPTSession(client: client, conversationon: nil)
+    let session = GPTSession(client: client, conversation: nil)
 
     do {
 
@@ -248,7 +248,7 @@ func testConversationSerialization() async throws {
             stream: false
         )
 
-        let session = GPTSession(client: client, conversationon: nil)
+        let session = GPTSession(client: client, conversation: nil)
         let _: ModelResponse = try await session.generate(prompt, model: model)
         #expect(session.conversation != nil)
         #expect(session.conversation?.items.count == 2)
@@ -266,7 +266,7 @@ func testConversationSerialization() async throws {
         )
 
         let conversation = try! JSONDecoder().decode(Conversation.self, from: data)
-        let session = GPTSession(client: client, conversationon: conversation)
+        let session = GPTSession(client: client, conversation: conversation)
         let response: ModelResponse = try await session.generate(prompt, model: model)
         #expect(session.conversation != nil)
         #expect(session.conversation?.items.count == 4)

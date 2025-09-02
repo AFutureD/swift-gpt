@@ -16,7 +16,7 @@ public struct GPTSession: Sendable {
     let client: ClientTransport
     let retryAdviser: RetryAdviser
     
-    let lockedConverastion: LazyLockedValue<Conversation?>
+    let lockedConversation: LazyLockedValue<Conversation?>
     
     let logger: Logger
     
@@ -26,9 +26,9 @@ public struct GPTSession: Sendable {
     ///   - client: The `ClientTransport` to use for network requests.
     ///   - retryAdviser: The ``RetryAdviser`` to use for handling failures. Defaults to the shared instance.
     ///   - logger: The `Logger` to use for logging. Defaults to a disabled logger.
-    public init(client: ClientTransport, conversationon: Conversation? = nil, retryAdviser: RetryAdviser = .shared, logger: Logger? = nil) {
+    public init(client: ClientTransport, conversation: Conversation? = nil, retryAdviser: RetryAdviser = .shared, logger: Logger? = nil) {
         self.client = client
-        self.lockedConverastion = .init(conversationon)
+        self.lockedConversation = .init(conversation)
         self.retryAdviser = retryAdviser
         self.logger = logger ?? Logger.disabled
     }
@@ -40,7 +40,7 @@ extension GPTSession {
     /// This property provides access to the conversation history maintained by the session.
     /// It is thread-safe and can be accessed concurrently.
     public var conversation: Conversation? {
-        lockedConverastion.withLock { $0 }
+        lockedConversation.withLock { $0 }
     }
 }
 
@@ -63,14 +63,14 @@ extension GPTSession {
         assert(prompt.stream == true, "The prompt perfer do use stream.")
 
         // Build Conversation
-        var history = conversation ?? Conversation()
+        let history = conversation ?? Conversation()
 
         let provider = model.provider.type.provider
         let stream: AnyAsyncSequence<ModelStreamResponse> = try await provider.generate(client: client, provider: model.provider, model: model.model, prompt, conversation: history, logger: logger)
         
         return stream.map { [history] response in 
             if case .completed(let event) = response {
-                lockedConverastion.withLock { 
+                lockedConversation.withLock { 
                     $0 = history
                     $0?.items.append(contentsOf: prompt.inputs.map { .input($0)})
                     $0?.items.append(contentsOf: event.data.items.map { .generated($0) })
@@ -96,7 +96,6 @@ extension GPTSession {
         assert(prompt.stream == false, "The prompt perfer do not use stream.")
 
         var history = conversation ?? Conversation()
-        defer { lockedConverastion.withLock { [history] in $0 = history } }
         
         let provider = model.provider.type.provider
         let response: ModelResponse = try await provider.generate(client: client, provider: model.provider, model: model.model, prompt, conversation: history, logger: logger)
@@ -104,6 +103,7 @@ extension GPTSession {
         history.items.append(contentsOf: prompt.inputs.map { .input($0)})
         history.items.append(contentsOf: response.items.map { .generated($0) })
         
+        lockedConversation.withLock { [history] in $0 = history }
         return response
     }
 }
