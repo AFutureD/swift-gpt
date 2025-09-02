@@ -40,6 +40,7 @@ extension OpenAIModelReponseContext {
                     }
                 }
                 self = .output(.init(id: String(describing: message.id), content: content))
+                return
             }
             return nil
         }
