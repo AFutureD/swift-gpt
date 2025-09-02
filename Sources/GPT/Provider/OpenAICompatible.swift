@@ -32,7 +32,7 @@ struct OpenAICompatibleProvider: LLMProvider {
         }
 
         // Build Request Body
-        let body = OpenAIChatCompletionRequest(prompt, conversation: conversation, model: model.name, stream: false)
+        let body = OpenAIChatCompletionRequest(prompt, history: conversation, model: model.name, stream: false)
         let bodyData = try encoder.encode(body)
         
         // Build Request
@@ -91,7 +91,7 @@ struct OpenAICompatibleProvider: LLMProvider {
         }
 
         // Build Request Body
-        let body = OpenAIChatCompletionRequest(prompt, conversation: conversation, model: model.name, stream: true)
+        let body = OpenAIChatCompletionRequest(prompt, history: conversation, model: model.name, stream: true)
         let bodyData = try encoder.encode(body)
 
         // Build Request

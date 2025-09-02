@@ -65,9 +65,6 @@ extension GPTSession {
         // Build Conversation
         var history = conversation ?? Conversation()
 
-        let inputs: [ConversationItem] = prompt.inputs.map { .input($0)}
-        history.items.append(contentsOf: inputs)
-
         let provider = model.provider.type.provider
         let stream: AnyAsyncSequence<ModelStreamResponse> = try await provider.generate(client: client, provider: model.provider, model: model.model, prompt, conversation: history, logger: logger)
         
@@ -75,6 +72,7 @@ extension GPTSession {
             if case .completed(let event) = response {
                 lockedConverastion.withLock { 
                     $0 = history
+                    $0?.items.append(contentsOf: prompt.inputs.map { .input($0)})
                     $0?.items.append(contentsOf: event.data.items.map { .generated($0) })
                 }
             }
@@ -98,16 +96,14 @@ extension GPTSession {
         assert(prompt.stream == false, "The prompt perfer do not use stream.")
 
         var history = conversation ?? Conversation()
-
-        let inputs: [ConversationItem] = prompt.inputs.map { .input($0)}
-        history.items.append(contentsOf: inputs)
-
+        defer { lockedConverastion.withLock { [history] in $0 = history } }
+        
         let provider = model.provider.type.provider
         let response: ModelResponse = try await provider.generate(client: client, provider: model.provider, model: model.model, prompt, conversation: history, logger: logger)
         
+        history.items.append(contentsOf: prompt.inputs.map { .input($0)})
         history.items.append(contentsOf: response.items.map { .generated($0) })
         
-        lockedConverastion.withLock { [history] in $0 = history }
         return response
     }
 }

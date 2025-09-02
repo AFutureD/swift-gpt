@@ -43,8 +43,8 @@ struct OpenAIProvider: LLMProvider {
                 .authorization: "Bearer \(provider.apiKey)",
             ]
         )
-        
-        let body = OpenAIModelReponseRequest(prompt, model: model.name, stream: false)
+
+        let body = OpenAIModelReponseRequest(prompt, history: conversation, model: model.name, stream: false)
         let bodyData = try encoder.encode(body)
         
         // Send Request
@@ -107,8 +107,8 @@ struct OpenAIProvider: LLMProvider {
                 .authorization: "Bearer \(provider.apiKey)",
             ]
         )
-        
-        let body = OpenAIModelReponseRequest(prompt, model: model.name, stream: true)
+
+        let body = OpenAIModelReponseRequest(prompt, history: conversation, model: model.name, stream: true)
         let bodyData = try encoder.encode(body)
         
         // Send Request
