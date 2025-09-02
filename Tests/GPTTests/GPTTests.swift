@@ -4,6 +4,7 @@ import OpenAPIAsyncHTTPClient
 import os.log
 import TestKit
 import SwiftDotenv
+import Foundation
 
 @Test("testExmaple")
 func testExmaple() async throws {
@@ -225,5 +226,52 @@ func testConversationStream() async throws {
         
         #expect(session.conversation != nil)
         #expect(session.conversation?.items.count == 4)
+    }
+}
+
+@Test("testConversationSerialization")
+func testConversationSerialization() async throws {
+    try Dotenv.make()
+    let client = AsyncHTTPClientTransport()
+    let openai = LLMProviderConfiguration(type: .OpenAICompatible, name: "OpenAI", apiKey: Dotenv["OPENAI_API_KEY"]!.stringValue, apiURL: "https://api.openai.com/v1")
+    let model = LLMModelReference(model: .init(name: "gpt-4o"), provider: openai)
+
+    
+
+    let data: Data
+    do {
+
+        let prompt = Prompt(
+            inputs: [
+                .text("Hi, I'm John.")
+            ],
+            stream: false
+        )
+
+        let session = GPTSession(client: client, conversationon: nil)
+        let _: ModelResponse = try await session.generate(prompt, model: model)
+        #expect(session.conversation != nil)
+        #expect(session.conversation?.items.count == 2)
+
+        data = try JSONEncoder().encode(session.conversation)
+    }
+
+    do {
+
+        let prompt = Prompt(
+            inputs: [
+                .text("What's my name?")
+            ],
+            stream: false
+        )
+
+        let conversation = try! JSONDecoder().decode(Conversation.self, from: data)
+        let session = GPTSession(client: client, conversationon: conversation)
+        let response: ModelResponse = try await session.generate(prompt, model: model)
+        #expect(session.conversation != nil)
+        #expect(session.conversation?.items.count == 4)
+        #expect(response.message?.text?.contains("John") == true)
+        
+        print("response: \(String(describing: response))")
     }
 }
