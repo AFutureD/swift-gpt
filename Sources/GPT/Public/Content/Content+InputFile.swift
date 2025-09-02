@@ -8,13 +8,13 @@
 // MARK: File
 
 extension ContentType {
-    static let inputFile = ModelInputContentType(rawValue: "File")
+    static let inputFile = ContentType(rawValue: "File")
 }
 
 /// A file-based input for a prompt.
 public struct FileInputContent: Sendable, Codable {
 
-    public let type: ModelInputContentType = .inputFile
+    public let type: ContentType = .inputFile
     /// The role of the entity providing the content.
     public let role: ModelContentRole
 
