@@ -12,11 +12,27 @@ extension ConversationItem: Codable {
     }   
 
     public init(from decoder: Decoder) throws {
-        todo("ConversationItem Need to implement decode")
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try container.decode(GeneratedContentType.self, forKey: .type)
+        
+        switch type {
+        case .inputText, .inputFile:
+            self = try .input(.init(from: decoder))
+        case .generatedMessage:
+            self = try .generated(.init(from: decoder))
+        default:
+            throw DecodingError.dataCorruptedError(forKey: .type, in: container, debugDescription: "Unknown ConversationItem type")
+        }
     }
 
     public func encode(to encoder: any Encoder) throws {
-        todo("ConversationItem Need to implement encode")
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .input(let inputItem):
+            try container.encode(inputItem)
+        case .generated(let generatedItem):
+            try container.encode(generatedItem)
+        }
     }
 }
 
