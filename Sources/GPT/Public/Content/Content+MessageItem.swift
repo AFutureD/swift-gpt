@@ -38,7 +38,7 @@ extension MessageContent: Codable {
     
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let type = try container.decode(GeneratedContentType.self, forKey: .type)
+        let type = try container.decode(ContentType.self, forKey: .type)
         switch type {
         case .generatedText:
             self = try .text(.init(from: decoder))
@@ -61,15 +61,15 @@ extension MessageContent: Codable {
 }
 
 
-extension GeneratedContentType {
+extension ContentType {
     /// The content type for a message item.
-    public static let generatedMessage = GeneratedContentType(rawValue: "response.message")
+    public static let generatedMessage = ContentType(rawValue: "response.message")
 }
 
 /// A single message item in a response, which can contain multiple content blocks.
 public struct MessageItem: Identifiable, Sendable, Codable {
     public let id: String
-    public let type: GeneratedContentType = .generatedMessage
+    public let type: ContentType = .generatedMessage
     public let index: Int?
     
     /// The content of the message, which can be text or a refusal.

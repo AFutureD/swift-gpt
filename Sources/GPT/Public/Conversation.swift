@@ -1,6 +1,6 @@
 import LazyKit
 
-
+/// The item that represents a turn in the conversation, which can be either user input or a generated response.
 public enum ConversationItem: Sendable {
     case input(Prompt.Input)
     case generated(GeneratedItem)
@@ -13,7 +13,7 @@ extension ConversationItem: Codable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let type = try container.decode(GeneratedContentType.self, forKey: .type)
+        let type = try container.decode(ContentType.self, forKey: .type)
         
         switch type {
         case .inputText, .inputFile:
@@ -36,6 +36,8 @@ extension ConversationItem: Codable {
     }
 }
 
+
+/// The Conversation struct represents a user conversation, consisting of multiple turns.
 public struct Conversation: Sendable, Codable {
     public var id: String?
     

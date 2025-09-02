@@ -5,6 +5,8 @@
 //  Created by AFuture on 2025/7/12.
 //
 
+// MARK: Prompt + Input
+
 extension Prompt {
     /// Represents a single input item in a prompt, which can be either text or a file.
     public enum Input: Sendable {
@@ -25,7 +27,7 @@ extension Prompt.Input: Codable {
     
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let type = try container.decode(ModelInputContentType.self, forKey: .type)
+        let type = try container.decode(ContentType.self, forKey: .type)
         switch type {
         case .inputText:
             self = try .text(.init(from: decoder))
@@ -72,33 +74,6 @@ extension Prompt.Input {
         return file
     }
 }
-
-
-// extension Prompt.Input {
-//     /// The underlying content of the input.
-//     public var content: any ModelInputContent {
-//         switch self {
-//         case .text(let content):
-//             return content
-//         case .file(let content):
-//             return content
-//         }
-//     }
-// }
-
-
-// extension ModelInputContent {
-//     public static func text(_ content: Prompt.Input.TextContent) -> any ModelInputContent {
-//         content
-//     }
-// }
-
-
-// extension ModelInputContent {
-//     public static func file(_ content: Prompt.Input.FileContent) -> any ModelInputContent {
-//         content
-//     }
-// }
 
 // MARK: Prompt
 

@@ -39,6 +39,8 @@ extension GPTSession {
     ///
     /// This property provides access to the conversation history maintained by the session.
     /// It is thread-safe and can be accessed concurrently.
+    ///
+    /// The Conversation will be updated after the whole request is complete.
     public var conversation: Conversation? {
         lockedConversation.withLock { $0 }
     }
