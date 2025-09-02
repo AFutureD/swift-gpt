@@ -14,6 +14,21 @@ import Logging
 import AsyncAlgorithms
 
 struct OpenAICompatibleProvider: LLMProvider {
+    /// Generates a non-streaming chat completion from the provider using the given prompt and conversation history.
+    /// 
+    /// Builds an OpenAI-compatible chat completion request (stream = false), sends it to the provider's `/chat/completions` endpoint, decodes the provider response into a `ModelResponse`, and returns it.
+    /// - Note: This function asserts that `prompt.stream == false` and expects a non-streaming prompt.
+    /// - Parameters:
+    ///   - provider: Configuration for the LLM provider (used for API URL and API key).
+    ///   - model: The model to use; `model.name` is sent to the provider.
+    ///   - prompt: The prompt describing the request. Must be non-streaming.
+    ///   - conversation: Conversation history to include in the request body.
+    /// - Returns: A `ModelResponse` constructed from the provider's completion response.
+    /// - Throws:
+    ///   - `RuntimeError.invalidApiURL` when `provider.apiURL` is not a valid URL.
+    ///   - `RuntimeError.httpError` when the HTTP status is not OK (includes server error message when available).
+    ///   - `RuntimeError.emptyResponseBody` when the response has no body.
+    ///   - Any decoding or transport errors propagated from encoding/decoding or the HTTP client.
     func generate(
         client: any OpenAPIRuntime.ClientTransport,
         provider: LLMProviderConfiguration,
@@ -73,6 +88,19 @@ struct OpenAICompatibleProvider: LLMProvider {
         return modelReponse
     }
 
+    /// Generates a streaming chat completion from an OpenAI-compatible provider as an async sequence of ModelStreamResponse.
+    ///
+    /// Sends a POST request to the provider's `/chat/completions` endpoint with the given prompt and conversation history and returns an `AnyAsyncSequence` that yields aggregated `ModelStreamResponse` values for each SSE chunk until the provider emits the final `[DONE]` event.
+    /// - Parameters:
+    ///   - model: The LLM model to use (its `.name` is sent to the provider).
+    ///   - prompt: The prompt describing the request. Must have `prompt.stream == true`.
+    ///   - conversation: Conversation history to include as the request's chat history.
+    /// - Returns: An `AnyAsyncSequence<ModelStreamResponse>` that produces aggregated stream responses for the ongoing completion.
+    /// - Throws:
+    ///   - `RuntimeError.invalidApiURL` if `provider.apiURL` is not a valid URL.
+    ///   - `RuntimeError.httpError` when the provider responds with a non-OK HTTP status (the provider response body, if any, is included in the error).
+    ///   - `RuntimeError.reveiveUnsupportedContentTypeInResponse` if the response Content-Type is not a Server-Sent Events (SSE) MIME type.
+    ///   - `RuntimeError.emptyResponseBody` if the response contains no body to stream.
     func generate(
         client: ClientTransport,
         provider: LLMProviderConfiguration,

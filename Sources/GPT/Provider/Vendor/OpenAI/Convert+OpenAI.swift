@@ -111,6 +111,11 @@ extension OpenAIModelReponseRequest {
 }
 
 extension OpenAIModelReponseContext {
+    /// Converts this context into a `GeneratedItem` for the given sequence index.
+    /// 
+    /// If the context is an `.output`, its content items are converted to `MessageContent` and packaged into a `GeneratedItem.message` with the provided `idx`. If the output has no `id`, a new UUID string is generated and used as the message id. For non-`.output` contexts this returns `nil`.
+    /// - Parameter idx: The sequence index to assign to the resulting `MessageItem`.
+    /// - Returns: A `GeneratedItem.message` constructed from the context's output, or `nil` if the context is not an output.
     func convert(idx: Int) -> GeneratedItem? {
         switch self {
         case .output(let output):
@@ -125,6 +130,10 @@ extension OpenAIModelReponseContext {
 }
 
 extension Collection where Element == OpenAIModelReponseContext {
+    /// Converts a sequence of `OpenAIModelReponseContext` values into an array of `GeneratedItem`s by calling `convert(idx:)` on each element.
+    /// 
+    /// The collection is enumerated and each context is converted with its original index; any contexts that fail to convert (return `nil`) are omitted.
+    /// - Returns: An array of `GeneratedItem` in the same relative order as the successful conversions.
     func convert() -> [GeneratedItem] {
         return self.enumerated().compactMap { index, context in
             context.convert(idx: index)
@@ -208,6 +217,10 @@ extension ModelStreamResponse {
 }
 
 extension OpenAIModelReponseContextOutputContent {
+    /// Converts this output content into a `MessageContent` value used by the generated-item pipeline.
+    /// - Returns: A `MessageContent` representing the same semantic content:
+    ///   - `.text` for `text` content (produces a `TextGeneratedContent` with the text and empty annotations).
+    ///   - `.refusal` for `refusal` content (produces a `TextRefusalGeneratedContent`).
     func convertToGenratedItem() -> MessageContent {
         switch self {
         case .text(let text):

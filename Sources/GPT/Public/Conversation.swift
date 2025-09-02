@@ -25,6 +25,8 @@ extension ConversationItem: Codable {
         }
     }
 
+    /// Encodes the conversation item by writing its associated value into a single-value container.
+    /// - Throws: Any encoding error produced while encoding the associated `Prompt.Input` or `GeneratedItem`.
     public func encode(to encoder: any Encoder) throws {
         var container = encoder.singleValueContainer()
         switch self {

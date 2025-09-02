@@ -36,6 +36,10 @@ extension Prompt.Input: Codable {
         }
     }
     
+    /// Encodes this `Prompt.Input` as a single-value container by delegating to the underlying content.
+    /// - For `.text` the associated `TextContent` is encoded.
+    /// - For `.file` the associated `FileContent` is encoded.
+    /// - Parameter encoder: The encoder to write this value into.
     public func encode(to encoder: any Encoder) throws {
         var container = encoder.singleValueContainer()
         switch self {

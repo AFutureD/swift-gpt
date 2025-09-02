@@ -1,4 +1,3 @@
-
 import Algorithms
 import AsyncAlgorithms
 import LazyKit
@@ -146,6 +145,25 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
     private let currentContent: LazyLockedValue<MessageContent?> = .init(nil)
     private let stopReason: LazyLockedValue<GenerationStop?> = .init(nil)
 
+    /// Aggregates a single OpenAI streaming response event into zero or more ModelStreamResponse events.
+    ///
+    — Processes the incoming `OpenAIChatCompletionStreamResponse` and returns the sequence of internal stream events that should be emitted as a result.
+    ///
+    /// The method emits (in order) at most:
+    /// - a single `.create` event the first time the aggregator is used,
+    /// - a `.completed` event when the payload represents a final/aggregate response or contains usage totals,
+    /// - an `.itemAdded` and initial `.contentAdded` when a new choice role appears,
+    /// - one or more `.contentDelta` events as incremental text deltas arrive,
+    /// - a `.contentDone` if the choice contains a refusal,
+    /// - an `.itemDone` when the choice finish reason is `"stop"`.
+    ///
+    /// Side effects:
+    /// - Records that the create and item-created events have been sent (via internal locks),
+    /// - updates the in-progress `currentContent` with incremental text or refusal content,
+    /// - updates `stopReason` when a non-`"stop"` finish reason is received.
+    ///
+    /// - Parameter event: The streaming response event from the OpenAI-compatible provider.
+    /// - Returns: An array of ModelStreamResponse events that were produced from this input event.
     func handle(_ event: OpenAIChatCompletionStreamResponse) -> [ModelStreamResponse] {
         var result: [ModelStreamResponse] = []
 
@@ -226,6 +244,9 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
         return result
     }
 
+    /// Builds a GeneratedItem message using the aggregator's current content and the provided id.
+    /// - Parameter id: The identifier to assign to the created MessageItem.
+    /// - Returns: A `GeneratedItem.message` containing a `MessageItem` with the given `id`, index 0, and the aggregator's current `MessageContent` (empty if none).
     func currentItem(id: String) -> GeneratedItem {
         let content = currentContent.withLock { $0 }
         let contents: [MessageContent] = content.flatMap { [$0] } ?? []
@@ -243,7 +264,10 @@ public struct OpenAIChatCompletionStreamResponseAsyncAggregater<Base: AsyncSeque
     }
     
     // TODO: rewrite the stream with custom iterator,
-    //       manually send created and finished event.
+    /// Creates an asynchronous iterator that converts the wrapped `base` sequence of `OpenAIChatCompletionStreamResponse`
+    /// elements into a flattened stream of `ModelStreamResponse` by feeding each incoming element to a new
+    /// `OpenAIChatCompletionStreamResponseAggregater`.
+    /// - Returns: An `AnyAsyncSequence<ModelStreamResponse>.AsyncIterator` that yields aggregated `ModelStreamResponse` events.
     public func makeAsyncIterator() -> AnyAsyncSequence<ModelStreamResponse>.AsyncIterator {
         let aggregater = OpenAIChatCompletionStreamResponseAggregater()
 

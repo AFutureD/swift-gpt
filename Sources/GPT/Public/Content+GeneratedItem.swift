@@ -1,4 +1,3 @@
-
 // MARK: ResponseItem
 
 /// An enumeration of the types of items that can be included in a response.
@@ -36,6 +35,12 @@ extension GeneratedItem: Codable {
         }
     }
     
+    /// Encodes the generated item into the given `Encoder` as a single value.
+    /// 
+    /// The associated `MessageItem` for the `.message` case is encoded directly into a single-value container; no separate type tag is emitted.
+    /// - Parameters:
+    ///   - encoder: The encoder to write the encoded representation to.
+    /// - Throws: Any error thrown while encoding the associated `MessageItem`.
     public func encode(to encoder: any Encoder) throws {
         var container = encoder.singleValueContainer()
         switch self {

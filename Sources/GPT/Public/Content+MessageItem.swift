@@ -49,6 +49,10 @@ extension MessageContent: Codable {
         }
     }
     
+    /// Encodes the message content into the given encoder.
+    /// - Discussion: Uses a single-value container and delegates encoding to the associated
+    ///   underlying value (either `TextGeneratedContent` or `TextRefusalGeneratedContent`).
+    /// - Throws: Any error thrown while encoding the underlying content.
     public func encode(to encoder: any Encoder) throws {
         var container = encoder.singleValueContainer()
         switch self {

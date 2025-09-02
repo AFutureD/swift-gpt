@@ -55,7 +55,15 @@ extension GPTSession {
     ///   - prompt: The prompt to send. The `stream` property must be `true`.
     ///   - model: The specific model and provider to use for the request.
     /// - Returns: An `AnyAsyncSequence` of ``ModelStreamResponse`` events.
-    /// - Throws: A ``RuntimeError`` or other transport-level error if the request fails.
+    /// Streams model responses for a single LLM model using the provided prompt.
+    /// 
+    /// The prompt must be configured for streaming (`prompt.stream == true`). The function seeds the provider with the current session conversation (if any) and returns an async sequence of `ModelStreamResponse` values produced by the provider. When a `.completed` response is observed, the session's conversation is updated (appended with the prompt inputs as `.input` entries and the generated items as `.generated` entries) in a thread-safe manner.
+    /// 
+    /// - Parameters:
+    ///   - prompt: The prompt to send to the model. Must have `stream == true`.
+    ///   - model: The LLM model reference to use for generation.
+    /// - Returns: An `AnyAsyncSequence<ModelStreamResponse>` emitting streaming responses from the provider.
+    /// - Throws: Any error surfaced by the provider/transport during generation.
     public func stream(
         _ prompt: Prompt,
         model: LLMModelReference
@@ -88,7 +96,16 @@ extension GPTSession {
     ///   - prompt: The prompt to send. The `stream` property must be `false`.
     ///   - model: The specific model and provider to use for the request.
     /// - Returns: A ``ModelResponse`` containing the full response from the LLM.
-    /// - Throws: A ``RuntimeError`` or other transport-level error if the request fails.
+    /// Generates a non-streaming response for the given prompt using the specified model.
+    /// 
+    /// Builds a local conversation history from the session's current conversation (or a new one),
+    /// sends the prompt to the model provider, and appends the prompt inputs and the returned
+    /// generated items to the session conversation when the call completes.
+    /// - Parameters:
+    ///   - prompt: The prompt to send; must be non-streaming (`prompt.stream == false`).
+    ///   - model: The model reference (including provider) to use for generation.
+    /// - Returns: The provider's `ModelResponse` for the prompt.
+    /// - Throws: Any error produced by the provider or transport layer during generation.
     public func generate(
         _ prompt: Prompt,
         model: LLMModelReference
