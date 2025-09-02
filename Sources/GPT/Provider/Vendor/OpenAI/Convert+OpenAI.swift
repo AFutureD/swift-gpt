@@ -48,11 +48,11 @@ extension OpenAIModelReponseContext {
 }
 
 extension OpenAIModelReponseRequest {
-    init(_ prompt: Prompt, conversation: Conversation, model: String, stream: Bool) {
+    init(_ prompt: Prompt, history: Conversation, model: String, stream: Bool) {
         let instructions = prompt.instructions ?? prompt.inputs.compactMap { $0.text }.first { $0.role == .system }?.content
         
         var items: [OpenAIModelReponseRequestInputItem] = []
-        for item in conversation.items {
+        for item in history.items {
             switch item {
             case .input(let input):
                 let contentItem: OpenAIModelReponseRequestInputItemMessageContentItem
