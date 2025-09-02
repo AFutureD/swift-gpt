@@ -68,7 +68,6 @@ extension OpenAIChatCompletionRequestMessage {
 
             self = .assistant(.init(audio: nil, content: .parts(parts), name: nil, refusal: refusal, tool_calls: nil))
         }
-        return nil
     }
 }
 

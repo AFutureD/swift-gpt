@@ -44,7 +44,7 @@ public struct TextGeneratedContent: Sendable, Codable {
 // MARK: Content - Text Annotation
 
 extension GeneratedContentType {
-    static let textAnnotation = GeneratedContentType(rawValue: "response.message.text.annotation")
+    public static let textAnnotation = GeneratedContentType(rawValue: "response.message.text.annotation")
 }
 
 extension TextGeneratedContent {
@@ -73,7 +73,7 @@ extension TextGeneratedContent {
 
 extension GeneratedContentType {
     /// The content type for a refusal to answer.
-    static let generatedTextRefusal = GeneratedContentType(rawValue: "response.message.text.refusal")
+    public static let generatedTextRefusal = GeneratedContentType(rawValue: "response.message.text.refusal")
 }
 
 /// Represents a refusal from the LLM to provide a response.
