@@ -5,137 +5,103 @@ import LazyKit
 import SynchronizationKit
 
 
-extension OpenAIChatCompletionRequestMessageContentPart {
-    init?(item: OpenAIModelReponseRequestInputItemMessageContentItem) {
-        switch item {
-        case .text(let text):
-            self = .text(.init(text: text.text))
-        case .file(let file):
-            self = .file(
-                .init(file: .init(fileId: file.fileID, filename: file.filename, fileData: file.fileData)))
-        default:
-            return nil
-        }
-    }
-}
-
 extension OpenAIChatCompletionRequestMessage {
-    init(_ item: OpenAIModelReponseRequestInputItemMessage) {
-
-        let content: OpenAIChatCompletionRequestMessageContent
-
-        switch item.content {
-        case .text(let text):
-            content = .text(text)
-        case .inputs(let contentItems):
-            let parts = contentItems.compactMap {
-                OpenAIChatCompletionRequestMessageContentPart(item: $0)
-            }
-            content = .parts(parts)
-        }
-
-        switch item.role {
-        case .assistant:
-            self = .assistant(.init(audio: nil, content: content, name: nil, refusal: nil, tool_calls: nil))
-        case .developer:
-            self = .developer(.init(content: content, name: nil))
-        case .user:
-            self = .user(.init(content: content, name: nil))
-        case .system:
-            self = .system(.init(content: content, name: nil))
-        }
-    }
-}
-
-extension OpenAIChatCompletionRequestMessage {
-    init?(_ item: OpenAIModelReponseContext) {
-        switch item {
-        case .input(let input):
-            let parts = input.content.compactMap {
-                OpenAIChatCompletionRequestMessageContentPart(item: $0)
-            }
-
-            let content: OpenAIChatCompletionRequestMessageContent = .parts(parts)
-            switch input.role {
-            case .developer:
-                self = .developer(.init(content: content, name: nil))
-            case .user:
-                self = .user(.init(content: content, name: nil))
-            case .system:
-                self = .system(.init(content: content, name: nil))
-            }
-        case .output(let output):
-            let parts: [OpenAIChatCompletionRequestMessageContentPart] = output.content.compactMap {
-                switch $0 {
-                case .text(let text):
-                    .text(.init(text: text.text))
-                default:
-                    nil
-                }
-            }
-
-            self = .assistant(.init(audio: nil, content: .parts(parts), name: nil, refusal: nil, tool_calls: nil))
-        default:
-            return nil
-        }
-    }
-}
-
-extension OpenAIChatCompletionRequestMessage {
-    init?(_ item: OpenAIModelReponseRequestInputItem) {
-        switch item {
-        case .message(let message):
-            self = OpenAIChatCompletionRequestMessage(message)
-        case .output(let output):
-            guard let message = OpenAIChatCompletionRequestMessage(output) else {
-                return nil
-            }
-            self = message
-        case .reference(_):
-            return nil
-        }
-    }
-}
-
-extension OpenAIChatCompletionRequestMessageContentPart {
     init?(_ input: Prompt.Input) {
         switch input {
-        case .text(let text):
-            self = .text(.init(text: text.content))
-        case .file(let file):
-            self = .file(.init(file: .init(fileId: file.id, filename: file.filename, fileData: file.content)))
+            case .text(let text):
+                let part: OpenAIChatCompletionRequestMessageContentPart = .text(.init(text: text.content))
+                switch text.role {
+                case .system:
+                    self = .system(.init(content: .parts([part]), name: nil))
+                case .assistant:
+                    self = .assistant(.init(audio: nil, content: .parts([part]), name: nil, refusal: nil, tool_calls: nil))
+                case .user:
+                    self = .user(.init(content: .parts([part]), name: nil))
+                case .developer:
+                    self = .developer(.init(content: .parts([part]), name: nil))
+                default:
+                    return nil
+                }
+            case .file(let file):
+                let part: OpenAIChatCompletionRequestMessageContentPart = .file(.init(file: .init(fileId: file.id, filename: file.filename, fileData: file.content)))
+                switch file.role {
+                case .system:
+                    self = .system(.init(content: .parts([part]), name: nil))
+                case .assistant:
+                    self = .assistant(.init(audio: nil, content: .parts([part]), name: nil, refusal: nil, tool_calls: nil))
+                case .user:
+                    self = .user(.init(content: .parts([part]), name: nil))
+                case .developer:
+                    self = .developer(.init(content: .parts([part]), name: nil))
+                default:
+                    return nil
+                }
         }
     }
 }
 
+extension OpenAIChatCompletionRequestMessage {
+    init?(_ item: GeneratedItem) {
+        switch item {
+        case .message(let message):
+            let refusal: String? = message.content?.map {
+                if case let .refusal(refusal) =  $0 {
+                    return refusal.content
+                }
+                return nil
+            }.first ?? nil
+
+            let parts: [OpenAIChatCompletionRequestMessageContentPart] = message.content?.compactMap { content in
+                switch content {
+                case .text(let text):
+                    if let text = text.content {
+                        return OpenAIChatCompletionRequestMessageContentPart.text(OpenAIChatCompletionRequestMessageContentTextPart.init(text: text))
+                    }
+                    return nil
+                case .refusal(let refusal):
+                    if let refusal = refusal.content {
+                        return OpenAIChatCompletionRequestMessageContentPart.refusal(OpenAIChatCompletionRequestMessageContentRefusalPart.init(refusal: refusal))
+                    }
+                    return nil
+                }
+            } ?? []
+
+            self = .assistant(.init(audio: nil, content: .parts(parts), name: nil, refusal: refusal, tool_calls: nil))
+        }
+    }
+}
+
+
 extension OpenAIChatCompletionRequest {
-    init(_ prompt: Prompt, model: String, stream: Bool) {
+    init(_ prompt: Prompt, history: Conversation, model: String, stream: Bool) {
         var messages: [OpenAIChatCompletionRequestMessage] = []
         
         if let instruction = prompt.instructions {
             messages.append(.system(.init(content: .text(instruction), name: nil)))
         }
-        
-        let inputs: [OpenAIChatCompletionRequestMessage] = prompt.inputs.chunked(
-            on: \.content.role
-        ).compactMap { role, inputs in
-            let parts = inputs.compactMap {
-                OpenAIChatCompletionRequestMessageContentPart($0)
-            }
-            switch role {
-            case .system:
-                return .system(.init(content: .parts(parts), name: nil))
-            case .assistant:
-                return .assistant(.init(audio: nil, content: .parts(parts), name: nil, refusal: nil, tool_calls: nil))
-            case .user:
-                return .user(.init(content: .parts(parts), name: nil))
-            case .developer:
-                return .developer(.init(content: .parts(parts), name: nil))
-            default:
-                return nil
+
+        let items = history.items
+        for item in items {
+            switch item {
+            case .input(let input):
+                let message = OpenAIChatCompletionRequestMessage(input)
+                if let message {
+                    messages.append(message)
+                }
+            case .generated(let generated):
+            let message = OpenAIChatCompletionRequestMessage(generated)
+                if let message {
+                    messages.append(message)
+                }
             }
         }
-        messages.append(contentsOf: inputs)
+
+        for input in prompt.inputs {
+            let message = OpenAIChatCompletionRequestMessage(input)
+            if let message {
+                messages.append(message)
+            }
+        }
 
         self.init(
             messages: messages,
@@ -176,7 +142,7 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
     private let didSendItemCreate: LazyLockedValue<Bool> = .init(false)
     
     private let hasEmittedFirstContent: LazyLockedValue<Bool> = .init(false)
-    private let currentContent: LazyLockedValue<ResponseContent?> = .init(nil)
+    private let currentContent: LazyLockedValue<MessageContent?> = .init(nil)
     private let stopReason: LazyLockedValue<GenerationStop?> = .init(nil)
 
     func handle(_ event: OpenAIChatCompletionStreamResponse) -> [ModelStreamResponse] {
@@ -195,7 +161,7 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
             result.append(.create(.init(event: .create, data: nil)))
         }
         
-        if event.choices.first == nil || (event.usage != nil && event.usage?.total_tokens != 0) || event.choices.first?.finish_reason != nil{
+        if event.choices.first == nil || (event.usage != nil && event.usage?.total_tokens != 0) {
             let usage = TokenUsage(
                 input: event.usage?.prompt_tokens,
                 output: event.usage?.completion_tokens,
@@ -224,7 +190,7 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
             let messageItem = MessageItem(id: event.id, index: 0, content: nil)
             result.append(.itemAdded(.init(event: .itemAdded, data: .message(messageItem))))
             
-            let textContent: ResponseContent = .text(TextContent(delta: nil, content: "", annotations: []))
+            let textContent: MessageContent = .text(TextGeneratedContent(delta: nil, content: "", annotations: []))
             currentContent.withLock { $0 = textContent }
             result.append(.contentAdded(.init(event: .contentAdded, data: textContent)))
         }
@@ -232,13 +198,13 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
         if let delta = choice.delta.content {
             currentContent.withLock {
                 let previous = $0?.text?.content
-                $0 = .text(TextContent(delta: nil, content: (previous ?? "") + delta, annotations: []))
+                $0 = .text(TextGeneratedContent(delta: nil, content: (previous ?? "") + delta, annotations: []))
             }
-            result.append(.contentDelta(.init(event: .contentDelta, data: .text(TextContent(delta: delta, content: nil, annotations: [])))))
+            result.append(.contentDelta(.init(event: .contentDelta, data: .text(TextGeneratedContent(delta: delta, content: nil, annotations: [])))))
         }
 
         if let refusal = choice.delta.refusal {
-            let content: ResponseContent = .refusal(TextRefusalContent(content: refusal))
+            let content: MessageContent = .refusal(TextRefusalGeneratedContent(content: refusal))
             currentContent.withLock { $0 = content }
             result.append(.contentDone(.init(event: .contentDone, data: content)))
         }
@@ -259,9 +225,9 @@ struct OpenAIChatCompletionStreamResponseAggregater: Sendable {
         return result
     }
 
-    func currentItem(id: String) -> ResponseItem {
+    func currentItem(id: String) -> GeneratedItem {
         let content = currentContent.withLock { $0 }
-        let contents: [ResponseContent] = content.flatMap { [$0] } ?? []
+        let contents: [MessageContent] = content.flatMap { [$0] } ?? []
 
         let messageItem = MessageItem(id: id, index: 0, content: contents)
         return .message(messageItem)
@@ -274,7 +240,9 @@ public struct OpenAIChatCompletionStreamResponseAsyncAggregater<Base: AsyncSeque
     public init(base: Base) {
         self.base = base
     }
-
+    
+    // TODO: rewrite the stream with custom iterator,
+    //       manually send created and finished event.
     public func makeAsyncIterator() -> AnyAsyncSequence<ModelStreamResponse>.AsyncIterator {
         let aggregater = OpenAIChatCompletionStreamResponseAggregater()
 
@@ -296,12 +264,12 @@ extension ModelResponse {
         
         let choice = response.choices.first
         let stop: GenerationStop? = choice?.finish_reason.map { .init(code: $0, message: nil) }
-        var contents: [ResponseContent] = []
+        var contents: [MessageContent] = []
         if let content = choice?.message.content {
-            let text = TextContent(delta: nil, content: content, annotations: [])
+            let text = TextGeneratedContent(delta: nil, content: content, annotations: [])
             contents.append(.text(text))
         } else if let refusal = choice?.message.refusal {
-            let refusal = TextRefusalContent(content: refusal)
+            let refusal = TextRefusalGeneratedContent(content: refusal)
             contents.append(.refusal(refusal))
         }
         

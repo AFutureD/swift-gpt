@@ -39,15 +39,8 @@ struct GPTSessionTests {
             inputs: [.text(.init(role: .user, content: "Hello"))]
         )
         
-        do {
+        await #expect(throws: RuntimeError.emptyModelList) {
             _ = try await session.stream(prompt, model: qualifiedModel)
-            Issue.record("Should have thrown error")
-        } catch let error as RuntimeError {
-            if case .emptyModelList = error {
-                #expect(true)
-            } else {
-                Issue.record("Expected emptyModelList error")
-            }
         }
     }
     

@@ -16,7 +16,7 @@ public struct GPTSession: Sendable {
     let client: ClientTransport
     let retryAdviser: RetryAdviser
     
-    let sessionID: LazyLockedValue<String?> = .init(nil)
+    let lockedConversation: LazyLockedValue<Conversation?>
     
     let logger: Logger
     
@@ -26,12 +26,26 @@ public struct GPTSession: Sendable {
     ///   - client: The `ClientTransport` to use for network requests.
     ///   - retryAdviser: The ``RetryAdviser`` to use for handling failures. Defaults to the shared instance.
     ///   - logger: The `Logger` to use for logging. Defaults to a disabled logger.
-    public init(client: ClientTransport, retryAdviser: RetryAdviser = .shared, logger: Logger? = nil) {
+    public init(client: ClientTransport, conversation: Conversation? = nil, retryAdviser: RetryAdviser = .shared, logger: Logger? = nil) {
         self.client = client
+        self.lockedConversation = .init(conversation)
         self.retryAdviser = retryAdviser
         self.logger = logger ?? Logger.disabled
     }
 }
+
+extension GPTSession {
+    /// The current conversation history.
+    ///
+    /// This property provides access to the conversation history maintained by the session.
+    /// It is thread-safe and can be accessed concurrently.
+    ///
+    /// The Conversation will be updated after the whole request is complete.
+    public var conversation: Conversation? {
+        lockedConversation.withLock { $0 }
+    }
+}
+
 
 extension GPTSession {
     
@@ -49,12 +63,23 @@ extension GPTSession {
         model: LLMModelReference
     ) async throws -> AnyAsyncSequence<ModelStreamResponse> {
         assert(prompt.stream == true, "The prompt perfer do use stream.")
-        
+
+        // Build Conversation
+        let history = conversation ?? Conversation()
+
         let provider = model.provider.type.provider
+        let stream: AnyAsyncSequence<ModelStreamResponse> = try await provider.generate(client: client, provider: model.provider, model: model.model, prompt, conversation: history, logger: logger)
         
-        let stream: AnyAsyncSequence<ModelStreamResponse> = try await provider.generate(client: client, provider: model.provider, model: model.model, prompt, logger: logger)
-        
-        return stream
+        return stream.map { [history] response in 
+            if case .completed(let event) = response {
+                lockedConversation.withLock { 
+                    $0 = history
+                    $0?.items.append(contentsOf: prompt.inputs.map { .input($0)})
+                    $0?.items.append(contentsOf: event.data.items.map { .generated($0) })
+                }
+            }
+            return response
+        }.eraseToAnyAsyncSequence()
     }
     
     /// Generates a complete, non-streaming response from the LLM.
@@ -71,11 +96,16 @@ extension GPTSession {
         model: LLMModelReference
     ) async throws -> ModelResponse {
         assert(prompt.stream == false, "The prompt perfer do not use stream.")
+
+        var history = conversation ?? Conversation()
         
         let provider = model.provider.type.provider
+        let response: ModelResponse = try await provider.generate(client: client, provider: model.provider, model: model.model, prompt, conversation: history, logger: logger)
         
-        let response: ModelResponse = try await provider.generate(client: client, provider: model.provider, model: model.model, prompt, logger: logger)
+        history.items.append(contentsOf: prompt.inputs.map { .input($0)})
+        history.items.append(contentsOf: response.items.map { .generated($0) })
         
+        lockedConversation.withLock { [history] in $0 = history }
         return response
     }
 }
