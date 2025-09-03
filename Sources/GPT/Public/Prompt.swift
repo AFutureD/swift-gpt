@@ -79,9 +79,8 @@ extension Prompt.Input {
 
 /// Represents a prompt to be sent to an LLM.
 public struct Prompt: Codable, Sendable {
-    /// An optional identifier for the previous session, used for maintaining context.
-    /// In the OpenAI API, this corresponds to the response ID.
-    public let prev_id: String?
+    /// An optional identifier for the current conversation, used for maintaining context.
+    public let conversationID: String?
     
     /// System-level instructions that guide the model's behavior for the entire conversation.
     public let instructions: String?
@@ -111,7 +110,7 @@ public struct Prompt: Codable, Sendable {
     /// Creates a new prompt.
     ///
     /// - Parameters:
-    ///   - prev_id: An optional identifier for the previous session.
+    ///   - conversationID: An optional identifier for the current conversation.
     ///   - instructions: System-level instructions for the model.
     ///   - inputs: The sequence of inputs for the prompt.
     ///   - store: An optional flag to store the prompt and response.
@@ -120,7 +119,7 @@ public struct Prompt: Codable, Sendable {
     ///   - topP: The nucleus sampling probability.
     ///   - maxTokens: The maximum number of tokens to generate.
     public init(
-        prev_id: String? = nil,
+        conversationID: String? = nil,
         instructions: String? = nil,
         inputs: [Input],
         store: Bool? = nil,
@@ -129,7 +128,7 @@ public struct Prompt: Codable, Sendable {
         topP: Double? = nil,
         maxTokens: Int? = nil
     ) {
-        self.prev_id = prev_id
+        self.conversationID = conversationID
         self.instructions = instructions
         self.inputs = inputs
         self.store = store
