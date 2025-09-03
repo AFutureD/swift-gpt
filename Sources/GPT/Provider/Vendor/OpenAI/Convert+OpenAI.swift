@@ -96,7 +96,7 @@ extension OpenAIModelReponseRequest {
             maxOutputTokens: prompt.maxTokens,
             metadata: nil,
             parallelToolCalls: false,
-            previousResponseId: prompt.prev_id,
+            previousResponseId: nil,
             reasoning: nil,  // TODO: Add reasning configuration
             store: prompt.store,
             stream: stream,
