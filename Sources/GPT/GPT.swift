@@ -128,7 +128,7 @@ extension GPTSession {
                 
                 guard let retry = retryAdviser.retry(ctx, error: error) else {
                     model = iter.next()
-                    logger.notice("[*] GPTSession retry failed when sleep. ignored.")
+                    logger.notice("[*] GPTSession retry failed when sleep. ignored. Error: \(error)")
                     continue
                 }
                 
@@ -136,7 +136,7 @@ extension GPTSession {
                 do {
                     try await Task.sleep(nanoseconds: retry)
                 } catch {
-                    logger.notice("[*] GPTSession retry failed when sleep. ignored.")
+                    logger.notice("[*] GPTSession retry failed when sleep. ignored. Error: \(error)")
                 }
             }
         } while model != nil
@@ -190,7 +190,7 @@ extension GPTSession {
                 
                 guard let retry = retryAdviser.retry(ctx, error: error) else {
                     model = iter.next()
-                    logger.notice("[*] GPTSession retry failed when sleep. ignored.")
+                    logger.notice("[*] GPTSession retry failed when sleep. ignored. Error: \(error)")
                     continue
                 }
                 
@@ -198,7 +198,7 @@ extension GPTSession {
                 do {
                     try await Task.sleep(nanoseconds: retry)
                 } catch {
-                    logger.notice("[*] GPTSession retry failed when sleep. ignored.")
+                    logger.notice("[*] GPTSession retry failed when sleep. ignored. Error: \(error)")
                 }
             }
         } while model != nil
