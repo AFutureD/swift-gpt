@@ -19,7 +19,7 @@ public enum RuntimeError: Error, Sendable {
     /// The request was skipped based on the ``RetryAdviser``'s advice.
     case skipByRetryAdvice
     /// All retry attempts failed for all available models.
-    case retryFailed([Error])
+    case retryFailed([String: Error])
 }
 
 extension RuntimeError: Equatable {
@@ -46,5 +46,30 @@ extension RuntimeError: Equatable {
         default:
             return false
         }   
+    }
+}
+
+extension RuntimeError: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .unknown:
+            "unknow"
+        case .emptyModelList:
+            "The model List is empty."
+        case .invalidApiURL(let url):
+            "The url of the provider is invalid. URL: \(url)"
+        case .reveiveUnsupportedContentTypeInResponse:
+            "Unsupport content type found from response."
+        case .httpError(let status, let string):
+            "Http error occur. Http status: \(status). Message: \(string ?? "nil")"
+        case .emptyResponseBody:
+            "Unexpected empty response body."
+        case .unsupportedModelProvider(let type):
+            "The provider \(type) is unsupported yet."
+        case .skipByRetryAdvice:
+            "The reponse has been skipped due to the retry strategery."
+        case .retryFailed(let dic):
+            "Retry failed. Retry \(dic.count) times. Errors: \(dic)"
+        }
     }
 }

@@ -23,30 +23,70 @@ extension OpenAIModelReponseContextOutputContent {
 }
 
 
-extension OpenAIModelReponseRequest {
-    init(_ prompt: Prompt, model: String, stream: Bool) {
-        let instructions =
-            prompt.instructions
-            ?? prompt.inputs.compactMap {
-                $0.content as? Prompt.Input.TextContent
-            }.first {
-                $0.role == .system
-            }?.content
+extension OpenAIModelReponseContext {
+    init?(_ generatedItem: GeneratedItem) {
+        switch generatedItem {
+        case .message(let message):
+            var content: [OpenAIModelReponseContextOutputContent] = []
+            if let refusal = message.refusalContent, let text = refusal.content {
+                content.append(.refusal(.init(refusal: text)))
+                self = .output(.init(id: String(describing: message.id), content: content))
+                return
+            }
+            if let textContents = message.textContents {
+                for textContent in textContents {
+                    if let text = textContent.content {
+                        content.append(.text(.init(annotations: [], text: text)))
+                    }
+                }
+                self = .output(.init(id: String(describing: message.id), content: content))
+                return
+            }
+            return nil
+        }
 
-        let items: [OpenAIModelReponseRequestInputItem] = prompt.inputs.chunked(on: \.content.role).compactMap { role, inputs in
-            switch role {
-            case .assistant:
-                let outputContenxt = inputs.compactMap { OpenAIModelReponseContextOutputContent($0) }
-                guard !outputContenxt.isEmpty else { return nil }
-                let output = OpenAIModelReponseContextOutput(id: nil, content: outputContenxt)
-                return .output(.output(output))
-            default:
-                let inputItems = inputs.map { OpenAIModelReponseRequestInputItemMessageContentItem($0) }
-                let message = OpenAIModelReponseRequestInputItemMessage(content: .inputs(inputItems), role: .init(rawValue: role.rawValue) ?? .user, type: nil)
-                return .message(message)
+    }
+}
+
+extension OpenAIModelReponseRequest {
+    init(_ prompt: Prompt, history: Conversation, model: String, stream: Bool) {
+        let instructions = prompt.instructions ?? prompt.inputs.compactMap { $0.text }.first { $0.role == .system }?.content
+        
+        var items: [OpenAIModelReponseRequestInputItem] = []
+        for item in history.items {
+            switch item {
+            case .input(let input):
+                let contentItem: OpenAIModelReponseRequestInputItemMessageContentItem
+                switch input {
+                    case .text(let text):
+                        contentItem = .text(.init(text: text.content))
+                    case .file(let file):
+                        contentItem = .file(.init(fileData: file.content, fileID: file.id, filename: file.filename))
+                }
+                let content: OpenAIModelReponseContextInput = .init(content: [contentItem], role: .init(rawValue: String(describing: input.role)) ?? .user, status: nil)
+                items.append(.output(.input(content)))
+
+            case .generated(let generated):
+                if let output: OpenAIModelReponseContext = .init(generated) {
+                    items.append(.output(output))
+                }
+                break
             }
         }
-        
+
+        for input in prompt.inputs {
+            switch input.role {
+            case .developer:
+                if let content: OpenAIModelReponseContextOutputContent = .init(input) {
+                    items.append(.output(.output(.init(id: nil, content: [content]))))
+                }
+            default:
+                let content = OpenAIModelReponseRequestInputItemMessageContentItem(input)
+                let message: OpenAIModelReponseRequestInputItemMessage = .init(content: .inputs([content]), role: .init(rawValue: input.role.rawValue) ?? .user, type: nil)
+                items.append(.message(message))
+            }
+        }
+
         self.init(
             input: .items(items),
             model: model,
@@ -56,7 +96,7 @@ extension OpenAIModelReponseRequest {
             maxOutputTokens: prompt.maxTokens,
             metadata: nil,
             parallelToolCalls: false,
-            previousResponseId: prompt.prev_id,
+            previousResponseId: nil,
             reasoning: nil,  // TODO: Add reasning configuration
             store: prompt.store,
             stream: stream,
@@ -72,7 +112,7 @@ extension OpenAIModelReponseRequest {
 }
 
 extension OpenAIModelReponseContext {
-    func convert(idx: Int) -> ResponseItem? {
+    func convert(idx: Int) -> GeneratedItem? {
         switch self {
         case .output(let output):
             let contents = output.content.map {
@@ -86,7 +126,7 @@ extension OpenAIModelReponseContext {
 }
 
 extension Collection where Element == OpenAIModelReponseContext {
-    func convert() -> [ResponseItem] {
+    func convert() -> [GeneratedItem] {
         return self.enumerated().compactMap { index, context in
             context.convert(idx: index)
         }
@@ -159,7 +199,7 @@ extension ModelStreamResponse {
             self = .contentDone(.init(event: .contentDone, data: content))
 
         case .response_output_text_delta(let textDelta):
-            let content = TextContent(delta: textDelta.delta, content: nil, annotations: [])
+            let content = TextGeneratedContent(delta: textDelta.delta, content: nil, annotations: [])
             self = .contentDelta(.init(event: .contentDelta, data: .text(content)))
 
         default:
@@ -169,12 +209,12 @@ extension ModelStreamResponse {
 }
 
 extension OpenAIModelReponseContextOutputContent {
-    func convertToGenratedItem() -> ResponseContent {
+    func convertToGenratedItem() -> MessageContent {
         switch self {
         case .text(let text):
-            .text(TextContent(delta: nil, content: text.text, annotations: []))  // TODO: support annotations
+            .text(TextGeneratedContent(delta: nil, content: text.text, annotations: []))  // TODO: support annotations
         case .refusal(let refusal):
-            .refusal(TextRefusalContent(content: refusal.refusal))
+            .refusal(TextRefusalGeneratedContent(content: refusal.refusal))
         }
     }
 }

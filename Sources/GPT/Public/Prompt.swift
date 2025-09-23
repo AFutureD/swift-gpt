@@ -5,9 +5,14 @@
 //  Created by AFuture on 2025/7/12.
 //
 
+// MARK: Prompt + Input
+
 extension Prompt {
     /// Represents a single input item in a prompt, which can be either text or a file.
     public enum Input: Sendable {
+        public typealias TextContent = TextInputContent
+        public typealias FileContent = FileInputContent
+
         /// A text-based input.
         case text(TextContent)
         /// A file-based input.
@@ -22,11 +27,11 @@ extension Prompt.Input: Codable {
     
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let type = try container.decode(ModelInputContentType.self, forKey: .type)
+        let type = try container.decode(ContentType.self, forKey: .type)
         switch type {
-        case .text:
+        case .inputText:
             self = try .text(.init(from: decoder))
-        case .file:
+        case .inputFile:
             self = try .file(.init(from: decoder))
         default:
             throw DecodingError.typeMismatch(MessageItem.self, .init(codingPath: [], debugDescription: "Only Support 'MessageItem'"))
@@ -44,113 +49,29 @@ extension Prompt.Input: Codable {
     }
 }
 
-
 extension Prompt.Input {
-    /// The underlying content of the input.
-    public var content: any ModelInputContent {
+    public var role: ModelContentRole {
         switch self {
-        case .text(let content):
-            return content
-        case .file(let content):
-            return content
+        case .text(let text):
+            return text.role
+        case .file(let file):
+            return file.role
         }
     }
 }
 
-// MARK: Text
-
-extension ModelInputContentType {
-    static let text = ModelInputContentType(rawValue: "text")
-}
 
 extension Prompt.Input {
-    /// A text-based input for a prompt.
-    public struct TextContent: ModelInputContent, Codable {
-        public let type: ModelInputContentType = .text
-        /// The role of the entity providing the content (e.g., user, assistant).
-        public let role: ModelInputContentRole
-        
-        /// The text content.
-        public let content: String
-        
-        enum CodingKeys: CodingKey {
-            case type
-            case role
-            case content
-        }
 
-        /// Creates a new text content item.
-        /// - Parameters:
-        ///   - role: The role of the entity providing the content.
-        ///   - content: The text content.
-        public init(role: ModelInputContentRole, content: String) {
-            self.role = role
-            self.content = content
-        }
+
+    public var text: TextContent? {
+        guard case .text(let text) = self else { return nil }
+        return text
     }
-}
 
-extension Prompt.Input.TextContent: ExpressibleByStringLiteral {
-    public init(stringLiteral value: String) {
-        self.init(role: .user, content: value)
-    }
-}
-
-extension ModelInputContent {
-    public static func text(_ content: Prompt.Input.TextContent) -> any ModelInputContent {
-        content
-    }
-}
-
-// MARK: File
-
-extension ModelInputContentType {
-    static let file = ModelInputContentType(rawValue: "File")
-}
-
-extension Prompt.Input {
-    /// A file-based input for a prompt.
-    public struct FileContent: ModelInputContent, Codable {
-
-        public let type: ModelInputContentType = .file
-        /// The role of the entity providing the content.
-        public let role: ModelInputContentRole
-        
-        /// An optional identifier for the file.
-        public let id: String?
-        
-        /// An optional filename for the file.
-        public let filename: String?
-
-        /// The content of the file, typically base64-encoded.
-        public let content: String
-        
-        enum CodingKeys: CodingKey {
-            case type
-            case role
-            case id
-            case filename
-            case content
-        }
-
-        /// Creates a new file content item.
-        /// - Parameters:
-        ///   - role: The role of the entity providing the content.
-        ///   - id: An optional identifier for the file.
-        ///   - filename: An optional filename for the file.
-        ///   - content: The content of the file.
-        public init(role: ModelInputContentRole, id: String?, filename: String?, content: String) {
-            self.role = role
-            self.id = id
-            self.filename = filename
-            self.content = content
-        }
-    }
-}
-
-extension ModelInputContent {
-    public static func file(_ content: Prompt.Input.FileContent) -> any ModelInputContent {
-        content
+    public var file: FileContent? {
+        guard case .file(let file) = self else { return nil }
+        return file
     }
 }
 
@@ -158,9 +79,8 @@ extension ModelInputContent {
 
 /// Represents a prompt to be sent to an LLM.
 public struct Prompt: Codable, Sendable {
-    /// An optional identifier for the previous session, used for maintaining context.
-    /// In the OpenAI API, this corresponds to the response ID.
-    public let prev_id: String?
+    /// An optional identifier for the current conversation, used for maintaining context.
+    public let conversationID: String?
     
     /// System-level instructions that guide the model's behavior for the entire conversation.
     public let instructions: String?
@@ -190,7 +110,7 @@ public struct Prompt: Codable, Sendable {
     /// Creates a new prompt.
     ///
     /// - Parameters:
-    ///   - prev_id: An optional identifier for the previous session.
+    ///   - conversationID: An optional identifier for the current conversation.
     ///   - instructions: System-level instructions for the model.
     ///   - inputs: The sequence of inputs for the prompt.
     ///   - store: An optional flag to store the prompt and response.
@@ -199,7 +119,7 @@ public struct Prompt: Codable, Sendable {
     ///   - topP: The nucleus sampling probability.
     ///   - maxTokens: The maximum number of tokens to generate.
     public init(
-        prev_id: String? = nil,
+        conversationID: String? = nil,
         instructions: String? = nil,
         inputs: [Input],
         store: Bool? = nil,
@@ -208,7 +128,7 @@ public struct Prompt: Codable, Sendable {
         topP: Double? = nil,
         maxTokens: Int? = nil
     ) {
-        self.prev_id = prev_id
+        self.conversationID = conversationID
         self.instructions = instructions
         self.inputs = inputs
         self.store = store

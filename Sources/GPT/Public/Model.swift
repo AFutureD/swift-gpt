@@ -9,6 +9,8 @@ import OpenAPIRuntime
 import LazyKit
 import Logging
 
+// MARK: LLMProviderType
+
 /// An enumeration of the supported LLM provider types.
 public enum LLMProviderType: String, Hashable, Codable, Sendable {
     /// For OpenAI's official API.
@@ -19,12 +21,15 @@ public enum LLMProviderType: String, Hashable, Codable, Sendable {
     case Gemini
 }
 
+// MARK: LLMProvider
+
 protocol LLMProvider: Sendable {
     func generate(
         client: ClientTransport,
         provider: LLMProviderConfiguration,
         model: LLMModel,
         _ prompt: Prompt,
+        conversation: Conversation,
         logger: Logger
     ) async throws -> AnyAsyncSequence<ModelStreamResponse>
     
@@ -33,9 +38,12 @@ protocol LLMProvider: Sendable {
         provider: LLMProviderConfiguration,
         model: LLMModel,
         _ prompt: Prompt,
+        conversation: Conversation,
         logger: Logger
     ) async throws -> ModelResponse
 }
+
+// MARK: LLMProviderConfiguration
 
 /// Configuration for an LLM provider.
 public struct LLMProviderConfiguration: Hashable, Codable, Sendable {
@@ -70,6 +78,8 @@ extension LLMProviderConfiguration: CustomStringConvertible {
     }
 }
 
+// MARK: LLMModel
+
 /// Represents a specific LLM model.
 public struct LLMModel: Hashable, Codable, Sendable  {
     /// The name of the model (e.g., "gpt-4o").
@@ -79,6 +89,8 @@ public struct LLMModel: Hashable, Codable, Sendable  {
         self.name = name
     }
 }
+
+// MARK: LLMModelReference
 
 /// A reference to a specific model from a specific provider.
 public struct LLMModelReference: Hashable, Codable, Sendable {
@@ -93,11 +105,19 @@ public struct LLMModelReference: Hashable, Codable, Sendable {
     }
 }
 
+extension LLMModelReference {
+    public var name: String {
+        "\(provider.name)/\(model.name)"
+    }
+}
+
 extension LLMModelReference: CustomStringConvertible {
     public var description: String {
         "LLMModelReference(model: '\(model)', provider: '\(provider)')"
     }
 }
+
+// MARK: LLMQualifiedModel
 
 /// A qualified model that can include multiple model references, used for fallbacks and retries.
 public struct LLMQualifiedModel: Sendable {

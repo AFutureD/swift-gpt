@@ -29,7 +29,7 @@ extension RetryAdviser {
     
     /// Determines whether to skip a model based on cached advice.
     func skip(_ context: Context) -> Bool {
-        guard let model = context.model else {
+        guard let model = context.current else {
             return true
         }
         
@@ -50,7 +50,7 @@ extension RetryAdviser {
     /// Determines the retry delay for a given context and error.
     /// - Returns: The delay in nanoseconds, or `nil` to skip to the next model.
     func retry(_ context: Context, error: any Error) -> UInt64? {
-        guard let model = context.model else { return nil }
+        guard let model = context.current else { return nil }
         let previous = self.cached.withLock { $0[model] }
         
         if case .skip = previous { return nil }

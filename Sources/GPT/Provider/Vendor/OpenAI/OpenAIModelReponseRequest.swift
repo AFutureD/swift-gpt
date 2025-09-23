@@ -188,7 +188,7 @@ public enum OpenAIModelReponseContextInputStatus: String, Codable, Sendable {
     case incomplete
 }
 
-public enum OpenAIModelReponseContextInputRole: Codable, Sendable {
+public enum OpenAIModelReponseContextInputRole: String, Codable, Sendable {
     case user
     case system
     case developer
@@ -292,7 +292,7 @@ public struct OpenAIModelReponseContextOutputContentTextOutput: Codable, Sendabl
     }
 }
 
-// The refusal explanationfrom the model.
+// The refusal explanation from the model.
 public struct OpenAIModelReponseContextOutputContentRefusal: Codable, Sendable {
     let refusal: String
     let type: OpenAIModelReponseContextOutputContentType = .refusal
