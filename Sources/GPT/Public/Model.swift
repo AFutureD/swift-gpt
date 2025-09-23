@@ -105,6 +105,12 @@ public struct LLMModelReference: Hashable, Codable, Sendable {
     }
 }
 
+extension LLMModelReference {
+    public var name: String {
+        "\(provider.name)/\(model.name)"
+    }
+}
+
 extension LLMModelReference: CustomStringConvertible {
     public var description: String {
         "LLMModelReference(model: '\(model)', provider: '\(provider)')"

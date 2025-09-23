@@ -138,10 +138,10 @@ extension GPTSession {
             guard let cur = model else { break }
             
             do {
-                ctx.model = model
+                ctx.current = model
                 
                 if retryAdviser.skip(ctx) {
-                    ctx.errors.append(RuntimeError.skipByRetryAdvice)
+                    ctx.append(RuntimeError.skipByRetryAdvice)
                     model = iter.next()
                     logger.notice("[*] GPTSession skip modal(\(cur)). Reason: skiped by RetryAdviser.")
                     continue
@@ -154,11 +154,11 @@ extension GPTSession {
                 return response
             } catch {
                 logger.error("[*] GPTSession send prompt failed. Model: `\(cur)` Prompt: `\(prompt)` Error: \(error)")
-                ctx.errors.append(error)
+                ctx.append(error)
                 
                 guard let retry = retryAdviser.retry(ctx, error: error) else {
                     model = iter.next()
-                    logger.notice("[*] GPTSession retry failed when sleep. ignored. Error: \(error)")
+                    logger.notice("[*] GPTSession retry with next model: \(model?.description ?? "nil")")
                     continue
                 }
                 
@@ -200,10 +200,10 @@ extension GPTSession {
             guard let cur = model else { break }
             
             do {
-                ctx.model = model
+                ctx.current = cur
                 
                 if retryAdviser.skip(ctx) {
-                    ctx.errors.append(RuntimeError.skipByRetryAdvice)
+                    ctx.append(RuntimeError.skipByRetryAdvice)
                     model = iter.next()
                     logger.notice("[*] GPTSession skip modal(\(cur)). Reason: skiped by RetryAdviser.")
                     continue
@@ -216,11 +216,11 @@ extension GPTSession {
                 return response
             } catch {
                 logger.error("[*] GPTSession send prompt failed. Model: `\(cur)` Prompt: `\(prompt)` Error: \(error)")
-                ctx.errors.append(error)
+                ctx.append(error)
                 
                 guard let retry = retryAdviser.retry(ctx, error: error) else {
                     model = iter.next()
-                    logger.notice("[*] GPTSession retry failed when sleep. ignored. Error: \(error)")
+                    logger.notice("[*] GPTSession retry with next model: \(model?.description ?? "nil")")
                     continue
                 }
                 

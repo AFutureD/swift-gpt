@@ -62,8 +62,14 @@ extension RetryAdviser {
 extension RetryAdviser {
     /// The context for a retry decision, including the model being used and any errors that have occurred.
     public struct Context {
-        var model: LLMModelReference?
-        var errors: [Error] = []
+        var current: LLMModelReference?
+        var errors: [String: Error] = [:]
+        
+        public mutating func append(_ err: Error) {
+            guard let current else { return }
+
+            errors[current.name] = err
+        }
     }
 }
 
