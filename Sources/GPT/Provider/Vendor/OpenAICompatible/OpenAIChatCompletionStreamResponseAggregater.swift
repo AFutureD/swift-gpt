@@ -111,11 +111,13 @@ extension OpenAIChatCompletionStreamResponseAsyncAggregater {
             iterator: Base.AsyncIterator,
             current: MessageContent?
         ) -> (State, MessageContent) {
-            usage = TokenUsage(
-                input: event.usage?.prompt_tokens,
-                output: event.usage?.completion_tokens,
-                total: event.usage?.total_tokens
-            )
+            if let usage = event.usage, usage.total_tokens > 0 {
+                self.usage = TokenUsage(
+                    input: usage.prompt_tokens,
+                    output: usage.completion_tokens,
+                    total: usage.total_tokens
+                )
+            }
 
             guard let current else {
                 let delta = event.choices.first?.delta.content
@@ -135,7 +137,7 @@ extension OpenAIChatCompletionStreamResponseAsyncAggregater {
             let delta = choice.delta.content
             
             let previous = current.text?.content
-            let new = MessageContent.text(TextGeneratedContent(delta: nil,
+            let new = MessageContent.text(TextGeneratedContent(delta: delta,
                                                                content: (previous ?? "") + (delta ?? ""),
                                                                annotations: []))
             

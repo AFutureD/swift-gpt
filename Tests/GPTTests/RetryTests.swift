@@ -52,7 +52,7 @@ struct RetryAdviserTests {
     @Test("RetryAdviser skip without model")
     func testSkipWithoutModel() {
         let adviser = RetryAdviser()
-        let context = RetryAdviser.Context(model: nil, errors: [])
+        let context = RetryAdviser.Context(current: nil, errors: [:])
         #expect(adviser.skip(context) == true)
     }
     
@@ -69,7 +69,7 @@ struct RetryAdviserTests {
             model: LLMModel(name: "test-model"),
             provider: provider
         )
-        let context = RetryAdviser.Context(model: model, errors: [])
+        let context = RetryAdviser.Context(current: model, errors: [:])
         #expect(adviser.skip(context) == false)
     }
     
@@ -89,7 +89,7 @@ struct RetryAdviserTests {
         
         adviser.cached.withLock { $0[model] = .skip }
         
-        let context = RetryAdviser.Context(model: model, errors: [])
+        let context = RetryAdviser.Context(current: model, errors: [:])
         #expect(adviser.skip(context) == true)
     }
     
@@ -112,7 +112,7 @@ struct RetryAdviserTests {
             $0[model] = .wait(base: now, count: 1, delay: 1_000_000_000)
         }
         
-        let context = RetryAdviser.Context(model: model, errors: [])
+        let context = RetryAdviser.Context(current: model, errors: [:])
         #expect(adviser.skip(context) == true)
     }
     
@@ -135,7 +135,7 @@ struct RetryAdviserTests {
             $0[model] = .wait(base: past, count: 1, delay: 1_000_000_000)
         }
         
-        let context = RetryAdviser.Context(model: model, errors: [])
+        let context = RetryAdviser.Context(current: model, errors: [:])
         #expect(adviser.skip(context) == false)
     }
     
@@ -153,7 +153,7 @@ struct RetryAdviserTests {
             model: LLMModel(name: "test-model"),
             provider: provider
         )
-        let context = RetryAdviser.Context(model: model, errors: [])
+        let context = RetryAdviser.Context(current: model, errors: [:])
         let error = RuntimeError.unknown
         
         #expect(adviser.retry(context, error: error) == nil)
@@ -163,7 +163,7 @@ struct RetryAdviserTests {
     func testRetryWithoutModel() {
         let strategy = RetryAdviser.Strategy(preferNextProvider: false)
         let adviser = RetryAdviser(strategy: strategy)
-        let context = RetryAdviser.Context(model: nil, errors: [])
+        let context = RetryAdviser.Context(current: nil, errors: [:])
         let error = RuntimeError.unknown
         
         #expect(adviser.retry(context, error: error) == nil)
@@ -186,7 +186,7 @@ struct RetryAdviserTests {
         
         adviser.cached.withLock { $0[model] = .skip }
         
-        let context = RetryAdviser.Context(model: model, errors: [])
+        let context = RetryAdviser.Context(current: model, errors: [:])
         let error = RuntimeError.unknown
         
         #expect(adviser.retry(context, error: error) == nil)
@@ -211,7 +211,7 @@ struct RetryAdviserTests {
             $0[model] = .wait(base: 0, count: 0, delay: 0)
         }
         
-        let context = RetryAdviser.Context(model: model, errors: [])
+        let context = RetryAdviser.Context(current: model, errors: [:])
         let error = RuntimeError.invalidApiURL("test")
         
         let result = adviser.retry(context, error: error)
@@ -240,7 +240,7 @@ struct RetryAdviserTests {
             $0[model] = .wait(base: 0, count: 0, delay: 0)
         }
         
-        let context = RetryAdviser.Context(model: model, errors: [])
+        let context = RetryAdviser.Context(current: model, errors: [:])
         let error = RuntimeError.httpError(.internalServerError, "Server error")
         
         let result = adviser.retry(context, error: error)
