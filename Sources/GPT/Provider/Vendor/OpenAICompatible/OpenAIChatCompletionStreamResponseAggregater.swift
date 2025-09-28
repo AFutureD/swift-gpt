@@ -91,7 +91,7 @@ extension OpenAIChatCompletionStreamResponseAsyncAggregater {
                 return .contentDone(.init(event: .contentDone, data: current))
                 
             case .itemDone(let current):
-                let item = MessageItem(id: "", index: nil, content: current.flatMap { [$0] } ?? [])
+                let item = MessageItem(id: id ?? "", index: 0, content: current.flatMap { [$0] } ?? [])
                 state = .completed(.message(item))
                 return .itemDone(.init(event: .itemDone, data: GeneratedItem.message(item)))
                 
