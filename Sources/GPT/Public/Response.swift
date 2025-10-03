@@ -26,12 +26,21 @@ public struct TokenUsage: Codable, Sendable {
     public let total: Int?
 }
 
+/// The Context information when generate this response.
+public struct GenerationConext: Codable, Sendable {
+    /// The identifier of the conversation associated with this response.
+    public let conversationID: String?
+}
+
 // MARK: ModelResponse
 
 /// Represents a complete, non-streaming response from an LLM.
 public struct ModelResponse: Codable, Sendable {
     /// A unique identifier for the response.
     public let id: String?
+    
+    /// Metadata capturing the generation context (e.g., conversation or thread info), if available.
+    public let context: GenerationConext?
     
     /// The name of the model that generated the response.
     public let model: String?
@@ -48,8 +57,9 @@ public struct ModelResponse: Codable, Sendable {
     /// Any error that occurred during generation.
     public let error: GenerationError?
 
-    public init(id: String?, model: String?, items: [GeneratedItem], usage: TokenUsage?, stop: GenerationStop?, error: GenerationError?) {
+    public init(id: String?, context: GenerationConext?, model: String?, items: [GeneratedItem], usage: TokenUsage?, stop: GenerationStop?, error: GenerationError?) {
         self.id = id
+        self.context = context
         self.model = model
         self.items = items
         self.usage = usage

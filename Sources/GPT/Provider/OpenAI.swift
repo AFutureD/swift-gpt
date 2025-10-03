@@ -72,7 +72,7 @@ struct OpenAIProvider: LLMProvider {
         
         let data = try await Data(collecting: responseBody, upTo: .max)
         let openaiModelResponse = try decoder.decode(OpenAIModelReponse.self, from: data)
-        let modelReponse = ModelResponse(openaiModelResponse)
+        let modelReponse = ModelResponse(openaiModelResponse, .init(conversationID: conversation.id))
         
         return modelReponse
     }
@@ -145,7 +145,7 @@ struct OpenAIProvider: LLMProvider {
         }.mapToServerSentEvert().map {
             try decoder.decode(OpenAIModelStreamResponse.self, from: Data($0.data.utf8))
         }.map {
-            ModelStreamResponse($0)
+            ModelStreamResponse($0, .init(conversationID: conversation.id))
         }.compacted().eraseToAnyAsyncSequence()
     }
     

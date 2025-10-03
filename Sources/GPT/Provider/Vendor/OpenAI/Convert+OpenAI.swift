@@ -134,7 +134,7 @@ extension Collection where Element == OpenAIModelReponseContext {
 }
 
 extension ModelResponse {
-    init(_ response: OpenAIModelReponse) {
+    init(_ response: OpenAIModelReponse, _ context: GenerationConext?) {
         let usage = TokenUsage(
             input: response.usage?.input_tokens,
             output: response.usage?.output_tokens,
@@ -144,6 +144,7 @@ extension ModelResponse {
 
         self.init(
             id: response.id,
+            context: context,
             model: response.model,
             items: items,
             usage: usage,
@@ -153,23 +154,24 @@ extension ModelResponse {
 }
 
 extension ModelStreamResponse {
-    init?(_ event: OpenAIModelStreamResponse) {
+    init?(_ event: OpenAIModelStreamResponse, _ context: GenerationConext?) {
         switch event {
         case .response_created(_):
             self = .create(.init(event: .create, data: nil))
 
         case .response_completed(let completed):
-            self = .completed(.init(event: .completed, data: ModelResponse(completed.response)))
+            self = .completed(.init(event: .completed, data: ModelResponse(completed.response, context)))
 
         case .response_incomplete(let incomplete):
-            self = .completed(.init(event: .completed, data: ModelResponse(incomplete.response)))
+            self = .completed(.init(event: .completed, data: ModelResponse(incomplete.response, context)))
 
         case .response_failed(let failed):
-            self = .completed(.init(event: .completed, data: ModelResponse(failed.response)))
+            self = .completed(.init(event: .completed, data: ModelResponse(failed.response, context)))
 
         case .error(let error):
             self = .completed(.init(event: .completed,
                                     data: ModelResponse(id: nil,
+                                                        context: context,
                                                         model: nil,
                                                         items: [],
                                                         usage: nil,

@@ -68,7 +68,7 @@ struct OpenAICompatibleProvider: LLMProvider {
         
         let data = try await Data(collecting: responseBody, upTo: .max)
         let openAIChatCompletionResponse = try decoder.decode(OpenAIChatCompletionResponse.self, from: data)
-        let modelReponse = ModelResponse(openAIChatCompletionResponse)
+        let modelReponse = ModelResponse(openAIChatCompletionResponse, .init(conversationID: conversation.id))
 
         return modelReponse
     }
@@ -136,6 +136,6 @@ struct OpenAICompatibleProvider: LLMProvider {
             $0.data != "[DONE]"
         }.map {
             try decoder.decode(OpenAIChatCompletionStreamResponse.self, from: Data($0.data.utf8))
-        }.aggregateToModelStremResponse().eraseToAnyAsyncSequence()
+        }.aggregateToModelStremResponse(with: .init(conversationID: conversation.id)).eraseToAnyAsyncSequence()
     }
 }

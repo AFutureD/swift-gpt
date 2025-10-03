@@ -11,8 +11,8 @@ import LazyKit
 import SynchronizationKit
 
 extension AsyncSequence where Self: Sendable, Self.Element == OpenAIChatCompletionStreamResponse {
-    func aggregateToModelStremResponse() -> OpenAIChatCompletionStreamResponseAsyncAggregater<Self> {
-        OpenAIChatCompletionStreamResponseAsyncAggregater<Self>(base: self)
+    func aggregateToModelStremResponse(with context: GenerationConext) -> OpenAIChatCompletionStreamResponseAsyncAggregater<Self> {
+        OpenAIChatCompletionStreamResponseAsyncAggregater<Self>(base: self, context: context)
     }
 }
 
@@ -22,12 +22,15 @@ public struct OpenAIChatCompletionStreamResponseAsyncAggregater<Base>: Sendable,
 {
 
     let base: Base
-    public init(base: Base) {
+    let context: GenerationConext
+
+    public init(base: Base, context: GenerationConext) {
         self.base = base
+        self.context = context
     }
     
     public func makeAsyncIterator() -> Iterator {
-        return Iterator(iterator: base.makeAsyncIterator())
+        return Iterator(iterator: base.makeAsyncIterator(), context: context)
     }
 }
 
@@ -44,8 +47,11 @@ extension OpenAIChatCompletionStreamResponseAsyncAggregater {
             case finished
         }
         
-        init(iterator: Base.AsyncIterator) {
+        let context: GenerationConext
+
+        init(iterator: Base.AsyncIterator, context: GenerationConext) {
             self.state = .create(iterator)
+            self.context = context
         }
         
         private var state: State
@@ -64,7 +70,7 @@ extension OpenAIChatCompletionStreamResponseAsyncAggregater {
                 } else {
                     state = .completed(nil)
                 }
-                return .create(.init(event: .create, data: .init(id: id, model: model, items: [], usage: nil, stop: nil, error: nil)))
+                return .create(.init(event: .create, data: .init(id: id, context: context, model: model, items: [], usage: nil, stop: nil, error: nil)))
                 
             case .itemAdded(let iterator, let event):
                 state = .contentAdded(iterator, event: event)
@@ -98,7 +104,7 @@ extension OpenAIChatCompletionStreamResponseAsyncAggregater {
             case .completed(let item):
                 state = .finished
                 let items = item.flatMap { [$0] } ?? []
-                return .completed(.init(event: .completed, data: .init(id: id, model: model, items: items, usage: usage, stop: stopReason, error: nil)))
+                return .completed(.init(event: .completed, data: .init(id: id, context: context, model: model, items: items, usage: usage, stop: stopReason, error: nil)))
 
             case .finished:
                 return nil
