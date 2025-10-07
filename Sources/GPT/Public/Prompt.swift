@@ -9,14 +9,12 @@
 
 extension Prompt {
     /// Represents a single input item in a prompt, which can be either text or a file.
-    public enum Input: Sendable {
-        public typealias TextContent = TextInputContent
-        public typealias FileContent = FileInputContent
+    public enum Input: Hashable, Sendable {
 
         /// A text-based input.
-        case text(TextContent)
+        case text(TextInputContent)
         /// A file-based input.
-        case file(FileContent)
+        case file(FileInputContent)
     }
 }
 
@@ -63,15 +61,71 @@ extension Prompt.Input {
 
 extension Prompt.Input {
 
-
-    public var text: TextContent? {
+    public var text: TextInputContent? {
         guard case .text(let text) = self else { return nil }
         return text
     }
 
-    public var file: FileContent? {
+    public var file: FileInputContent? {
         guard case .file(let file) = self else { return nil }
         return file
+    }
+}
+
+// MARK: Prompt + Instructions
+
+extension Prompt {
+    public enum Instructions: Hashable, Sendable {
+        case text(String)
+        case inputs([Input])
+    }
+}
+
+extension Prompt.Instructions: Codable {
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let value = try? container.decode(String.self) {
+            self = .text(value)
+            return
+        } else if let value = try? container.decode([Prompt.Input].self) {
+            self = .inputs(value)
+            return
+        }
+
+        throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "Prompt.Instructions is not `String` or `[Prompt.Input]`"))
+    }
+    
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.singleValueContainer()
+        
+        switch self {
+        case .text(let string):
+            try container.encode(string)
+        case .inputs(let array):
+            try container.encode(array)
+        }
+    }
+}
+
+extension Prompt.Instructions: ExpressibleByStringLiteral {
+    public init(stringLiteral value: StringLiteralType) {
+        self = .text(value)
+    }
+}
+
+extension Prompt.Instructions {
+    var text: String? {
+        if case let .text(string) = self {
+            return string
+        }
+        return nil
+    }
+    
+    var inputs: [Prompt.Input]? {
+        if case let .inputs(items) = self {
+            return items
+        }
+        return nil
     }
 }
 
@@ -83,7 +137,7 @@ public struct Prompt: Codable, Sendable {
     public let conversationID: String?
     
     /// System-level instructions that guide the model's behavior for the entire conversation.
-    public let instructions: String?
+    public let instructions: Instructions?
     
     /// The sequence of inputs that make up the prompt.
     public let inputs: [Input]
@@ -120,7 +174,7 @@ public struct Prompt: Codable, Sendable {
     ///   - maxTokens: The maximum number of tokens to generate.
     public init(
         conversationID: String? = nil,
-        instructions: String? = nil,
+        instructions: Instructions? = nil,
         inputs: [Input],
         store: Bool? = nil,
         stream: Bool = true,

@@ -1,7 +1,7 @@
 import Foundation
 
 extension OpenAIModelReponseRequestInputItemMessageContentItem {
-    init(_ input: Prompt.Input) {
+    init?(_ input: Prompt.Input) {
         switch input {
         case .text(let text):
             self = .text(.init(text: text.content))
@@ -50,21 +50,31 @@ extension OpenAIModelReponseContext {
 
 extension OpenAIModelReponseRequest {
     init(_ prompt: Prompt, history: Conversation, model: String, stream: Bool) {
-        let instructions = prompt.instructions ?? prompt.inputs.compactMap { $0.text }.first { $0.role == .system }?.content
-        
+        let instructions = prompt.instructions?.text ?? prompt.inputs.compactMap { $0.text }.first { $0.role == .system }?.content
         var items: [OpenAIModelReponseRequestInputItem] = []
+        
+        if history.items.isEmpty {
+            switch prompt.instructions {
+            case let .inputs(inputs):
+                for input in inputs {
+                    if let content = OpenAIModelReponseRequestInputItemMessageContentItem(input) {
+                        let contextInput: OpenAIModelReponseContextInput = .init(content: [content], role: .init(rawValue: String(describing: input.role)) ?? .user, status: nil)
+                        items.append(.output(.input(contextInput)))
+                    }
+                }
+                
+            default:
+                break
+            }
+        }
+        
         for item in history.items {
             switch item {
             case .input(let input):
-                let contentItem: OpenAIModelReponseRequestInputItemMessageContentItem
-                switch input {
-                    case .text(let text):
-                        contentItem = .text(.init(text: text.content))
-                    case .file(let file):
-                        contentItem = .file(.init(fileData: file.content, fileID: file.id, filename: file.filename))
+                if let content = OpenAIModelReponseRequestInputItemMessageContentItem(input) {
+                    let input: OpenAIModelReponseContextInput = .init(content: [content], role: .init(rawValue: String(describing: input.role)) ?? .user, status: nil)
+                    items.append(.output(.input(input)))
                 }
-                let content: OpenAIModelReponseContextInput = .init(content: [contentItem], role: .init(rawValue: String(describing: input.role)) ?? .user, status: nil)
-                items.append(.output(.input(content)))
 
             case .generated(let generated):
                 if let output: OpenAIModelReponseContext = .init(generated) {
@@ -81,9 +91,10 @@ extension OpenAIModelReponseRequest {
                     items.append(.output(.output(.init(id: nil, content: [content]))))
                 }
             default:
-                let content = OpenAIModelReponseRequestInputItemMessageContentItem(input)
-                let message: OpenAIModelReponseRequestInputItemMessage = .init(content: .inputs([content]), role: .init(rawValue: input.role.rawValue) ?? .user, type: nil)
-                items.append(.message(message))
+                if let content = OpenAIModelReponseRequestInputItemMessageContentItem(input) {
+                    let message: OpenAIModelReponseRequestInputItemMessage = .init(content: .inputs([content]), role: .init(rawValue: input.role.rawValue) ?? .user, type: nil)
+                    items.append(.message(message))
+                }
             }
         }
 

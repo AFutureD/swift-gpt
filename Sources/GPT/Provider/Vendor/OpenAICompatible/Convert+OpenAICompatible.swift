@@ -76,8 +76,15 @@ extension OpenAIChatCompletionRequest {
     init(_ prompt: Prompt, history: Conversation, model: String, stream: Bool) {
         var messages: [OpenAIChatCompletionRequestMessage] = []
         
-        if let instruction = prompt.instructions {
-            messages.append(.system(.init(content: .text(instruction), name: nil)))
+        if history.items.isEmpty {
+            switch prompt.instructions {
+            case let .text(text):
+                messages.append(.system(.init(content: .text(text), name: nil)))
+            case let .inputs(inputs):
+                messages.append(contentsOf: inputs.compactMap { OpenAIChatCompletionRequestMessage($0) } )
+            case nil:
+                break
+            }
         }
 
         let items = history.items
@@ -95,7 +102,7 @@ extension OpenAIChatCompletionRequest {
                 }
             }
         }
-
+        
         for input in prompt.inputs {
             let message = OpenAIChatCompletionRequestMessage(input)
             if let message {

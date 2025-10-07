@@ -12,7 +12,7 @@ extension ContentType {
 }
 
 /// A file-based input for a prompt.
-public struct FileInputContent: Sendable, Codable {
+public struct FileInputContent: Sendable, Codable, Hashable {
 
     public let type: ContentType = .inputFile
     /// The role of the entity providing the content.
@@ -46,5 +46,12 @@ public struct FileInputContent: Sendable, Codable {
         self.id = id
         self.filename = filename
         self.content = content
+    }
+    
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(type)
+        hasher.combine(role)
+        hasher.combine(id)
+        hasher.combine(filename)
     }
 }
