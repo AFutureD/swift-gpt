@@ -52,7 +52,6 @@ public struct OpenAIModelReponseUsage: Codable, Sendable {
 }
 
 public struct OpenAIModelReponse: Codable, Sendable {
-
     /// Whether to run the model response in the background.
     /// [Learn more](https://platform.openai.com/docs/guides/background).
     let background: Bool?
@@ -626,6 +625,13 @@ struct OpenAIModelStreamResponseImageGenerationCallCompleted: Codable, Sendable 
     let item_id: String
     let output_index: Int
     let sequence_number: Int
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case item_id
+        case output_index
+        case sequence_number
+    }
 }
 
 struct OpenAIModelStreamResponseImageGenerationCallGenerating: Codable, Sendable {
@@ -633,6 +639,13 @@ struct OpenAIModelStreamResponseImageGenerationCallGenerating: Codable, Sendable
     let item_id: String
     let output_index: Int
     let sequence_number: Int
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case item_id
+        case output_index
+        case sequence_number
+    }
 }
 
 struct OpenAIModelStreamResponseImageGenerationCallInProgress: Codable, Sendable {
@@ -640,6 +653,13 @@ struct OpenAIModelStreamResponseImageGenerationCallInProgress: Codable, Sendable
     let item_id: String
     let output_index: Int
     let sequence_number: Int
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case item_id
+        case output_index
+        case sequence_number
+    }
 }
 
 struct OpenAIModelStreamResponseImageGenerationCallPartialImage: Codable, Sendable {
@@ -649,6 +669,15 @@ struct OpenAIModelStreamResponseImageGenerationCallPartialImage: Codable, Sendab
     let partial_image_b64: String
     let partial_image_index: Int
     let sequence_number: Int
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case item_id
+        case output_index
+        case partial_image_b64
+        case partial_image_index
+        case sequence_number
+    }
 }
 
 struct OpenAIModelStreamResponseMCPCallArgumentDelta: Codable, Sendable {
@@ -657,6 +686,14 @@ struct OpenAIModelStreamResponseMCPCallArgumentDelta: Codable, Sendable {
     let output_index: Int
     let sequence_number: Int
     let delta: [String: String]
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case item_id
+        case output_index
+        case sequence_number
+        case delta
+    }
 }
 
 struct OpenAIModelStreamResponseMCPCallArgumentDone: Codable, Sendable {
@@ -665,16 +702,34 @@ struct OpenAIModelStreamResponseMCPCallArgumentDone: Codable, Sendable {
     let output_index: Int
     let sequence_number: Int
     let arguments: [String: String]
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case item_id
+        case output_index
+        case sequence_number
+        case arguments
+    }
 }
 
 struct OpenAIModelStreamResponseMCPCallCompleted: Codable, Sendable {
     let type: OpenAIModelStreamResponseType = .response_mcp_call_completed
     let sequence_number: Int
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case sequence_number
+    }
 }
 
 struct OpenAIModelStreamResponseMCPCallFailed: Codable, Sendable {
     let type: OpenAIModelStreamResponseType = .response_mcp_call_failed
     let sequence_number: Int
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case sequence_number
+    }
 }
 
 struct OpenAIModelStreamResponseMCPCallInProgress: Codable, Sendable {
@@ -683,21 +738,42 @@ struct OpenAIModelStreamResponseMCPCallInProgress: Codable, Sendable {
     let item_id: String
     let sequence_number: Int
 
+    enum CodingKeys: String, CodingKey {
+        case type
+        case output_index
+        case item_id
+        case sequence_number
+    }
 }
 
 struct OpenAIModelStreamResponseMCPListToolsCompleted: Codable, Sendable {
     let type: OpenAIModelStreamResponseType = .response_mcp_list_tools_completed
     let sequence_number: Int
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case sequence_number
+    }
 }
 
 struct OpenAIModelStreamResponseMCPListToolsFailed: Codable, Sendable {
     let type: OpenAIModelStreamResponseType = .response_mcp_list_tools_failed
     let sequence_number: Int
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case sequence_number
+    }
 }
 
 struct OpenAIModelStreamResponseMCPListToolsInProgress: Codable, Sendable {
     let type: OpenAIModelStreamResponseType = .response_mcp_list_tools_in_progress
     let sequence_number: Int
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case sequence_number
+    }
 }
 
 struct OpenAIModelStreamResponseOutputTextAnnotationAddedAnnotation: Codable, Sendable {
@@ -705,6 +781,13 @@ struct OpenAIModelStreamResponseOutputTextAnnotationAddedAnnotation: Codable, Se
     let text: String
     let start: Int
     let end: Int
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case text
+        case start
+        case end
+    }
 }
 
 struct OpenAIModelStreamResponseOutputTextAnnotationAdded: Codable, Sendable {
@@ -715,12 +798,28 @@ struct OpenAIModelStreamResponseOutputTextAnnotationAdded: Codable, Sendable {
     let content_index: Int
     let annotation_index: Int
     let annotation: OpenAIModelStreamResponseOutputTextAnnotationAddedAnnotation
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case sequence_number
+        case output_index
+        case item_id
+        case content_index
+        case annotation_index
+        case annotation
+    }
 }
 
 struct OpenAIModelStreamResponseQueued: Codable, Sendable {
     let type: OpenAIModelStreamResponseType = .response_queued
     let sequence_number: Int
     let response: OpenAIModelReponse
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case sequence_number
+        case response
+    }
 }
 
 struct OpenAIModelStreamResponseReasoningDeltaText: Codable, Sendable {
@@ -734,6 +833,15 @@ struct OpenAIModelStreamResponseReasoningDelta: Codable, Sendable {
     let output_index: Int
     let sequence_number: Int
     let delta: OpenAIModelStreamResponseReasoningDeltaText
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case content_index
+        case item_id
+        case output_index
+        case sequence_number
+        case delta
+    }
 }
 
 struct OpenAIModelStreamResponseReasoningDone: Codable, Sendable {
@@ -743,6 +851,15 @@ struct OpenAIModelStreamResponseReasoningDone: Codable, Sendable {
     let output_index: Int
     let sequence_number: Int
     let text: String
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case content_index
+        case item_id
+        case output_index
+        case sequence_number
+        case text
+    }
 }
 
 struct OpenAIModelStreamResponseReasoningSummaryDeltaText: Codable, Sendable {
@@ -756,6 +873,15 @@ struct OpenAIModelStreamResponseReasoningSummaryDelta: Codable, Sendable {
     let sequence_number: Int
     let summary_index: Int
     let delta: OpenAIModelStreamResponseReasoningSummaryDeltaText
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case output_index
+        case item_id
+        case sequence_number
+        case summary_index
+        case delta
+    }
 }
 
 struct OpenAIModelStreamResponseReasoningSummaryDone: Codable, Sendable {
@@ -765,6 +891,15 @@ struct OpenAIModelStreamResponseReasoningSummaryDone: Codable, Sendable {
     let sequence_number: Int
     let summary_index: Int
     let text: String
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case output_index
+        case item_id
+        case sequence_number
+        case summary_index
+        case text
+    }
 }
 
 enum OpenAIModelStreamResponse: Codable, Sendable {
@@ -818,98 +953,98 @@ enum OpenAIModelStreamResponse: Codable, Sendable {
         case type
     }
 
-    public func encode(to encoder: any Encoder) throws {
+    func encode(to encoder: any Encoder) throws {
         var container = encoder.singleValueContainer()
         switch self {
-        case .error(let error):
+        case let .error(error):
             try container.encode(error)
-        case .response_created(let response):
+        case let .response_created(response):
             try container.encode(response)
-        case .response_in_progress(let response):
+        case let .response_in_progress(response):
             try container.encode(response)
-        case .response_completed(let response):
+        case let .response_completed(response):
             try container.encode(response)
-        case .response_failed(let response):
+        case let .response_failed(response):
             try container.encode(response)
-        case .response_incomplete(let response):
+        case let .response_incomplete(response):
             try container.encode(response)
-        case .response_output_item_added(let response):
+        case let .response_output_item_added(response):
             try container.encode(response)
-        case .response_output_item_done(let response):
+        case let .response_output_item_done(response):
             try container.encode(response)
-        case .response_content_part_added(let response):
+        case let .response_content_part_added(response):
             try container.encode(response)
-        case .response_content_part_done(let response):
+        case let .response_content_part_done(response):
             try container.encode(response)
-        case .response_output_text_delta(let response):
+        case let .response_output_text_delta(response):
             try container.encode(response)
-        case .response_output_text_annotation_delta(let response):
+        case let .response_output_text_annotation_delta(response):
             try container.encode(response)
-        case .response_output_text_done(let response):
+        case let .response_output_text_done(response):
             try container.encode(response)
-        case .response_refusal_delta(let response):
+        case let .response_refusal_delta(response):
             try container.encode(response)
-        case .response_refusal_done(let response):
+        case let .response_refusal_done(response):
             try container.encode(response)
-        case .response_function_call_arguments_delta(let response):
+        case let .response_function_call_arguments_delta(response):
             try container.encode(response)
-        case .response_function_call_arguments_done(let response):
+        case let .response_function_call_arguments_done(response):
             try container.encode(response)
-        case .response_file_search_call_in_progress(let response):
+        case let .response_file_search_call_in_progress(response):
             try container.encode(response)
-        case .response_file_search_call_searching(let response):
+        case let .response_file_search_call_searching(response):
             try container.encode(response)
-        case .response_file_search_call_completed(let response):
+        case let .response_file_search_call_completed(response):
             try container.encode(response)
-        case .response_web_search_call_in_progress(let response):
+        case let .response_web_search_call_in_progress(response):
             try container.encode(response)
-        case .response_web_search_call_searching(let response):
+        case let .response_web_search_call_searching(response):
             try container.encode(response)
-        case .response_web_search_call_completed(let response):
+        case let .response_web_search_call_completed(response):
             try container.encode(response)
-        case .response_reasoning_summary_part_added(let response):
+        case let .response_reasoning_summary_part_added(response):
             try container.encode(response)
-        case .response_reasoning_summary_part_done(let response):
+        case let .response_reasoning_summary_part_done(response):
             try container.encode(response)
-        case .response_reasoning_summary_text_delta(let response):
+        case let .response_reasoning_summary_text_delta(response):
             try container.encode(response)
-        case .response_reasoning_summary_text_done(let response):
+        case let .response_reasoning_summary_text_done(response):
             try container.encode(response)
-        case .response_image_generation_call_completed(let response):
+        case let .response_image_generation_call_completed(response):
             try container.encode(response)
-        case .response_image_generation_call_generating(let response):
+        case let .response_image_generation_call_generating(response):
             try container.encode(response)
-        case .response_image_generation_call_in_progress(let response):
+        case let .response_image_generation_call_in_progress(response):
             try container.encode(response)
-        case .response_image_generation_call_partial_image(let response):
+        case let .response_image_generation_call_partial_image(response):
             try container.encode(response)
-        case .response_mcp_call_argument_delta(let response):
+        case let .response_mcp_call_argument_delta(response):
             try container.encode(response)
-        case .response_mcp_call_argument_done(let response):
+        case let .response_mcp_call_argument_done(response):
             try container.encode(response)
-        case .response_mcp_call_completed(let response):
+        case let .response_mcp_call_completed(response):
             try container.encode(response)
-        case .response_mcp_call_failed(let response):
+        case let .response_mcp_call_failed(response):
             try container.encode(response)
-        case .response_mcp_call_in_progress(let response):
+        case let .response_mcp_call_in_progress(response):
             try container.encode(response)
-        case .response_mcp_list_tools_completed(let response):
+        case let .response_mcp_list_tools_completed(response):
             try container.encode(response)
-        case .response_mcp_list_tools_failed(let response):
+        case let .response_mcp_list_tools_failed(response):
             try container.encode(response)
-        case .response_mcp_list_tools_in_progress(let response):
+        case let .response_mcp_list_tools_in_progress(response):
             try container.encode(response)
-        case .response_output_text_annotation_added(let response):
+        case let .response_output_text_annotation_added(response):
             try container.encode(response)
-        case .response_queued(let response):
+        case let .response_queued(response):
             try container.encode(response)
-        case .response_reasoning_delta(let response):
+        case let .response_reasoning_delta(response):
             try container.encode(response)
-        case .response_reasoning_done(let response):
+        case let .response_reasoning_done(response):
             try container.encode(response)
-        case .response_reasoning_summary_delta(let response):
+        case let .response_reasoning_summary_delta(response):
             try container.encode(response)
-        case .response_reasoning_summary_done(let response):
+        case let .response_reasoning_summary_done(response):
             try container.encode(response)
         }
     }
@@ -919,101 +1054,101 @@ enum OpenAIModelStreamResponse: Codable, Sendable {
         let type = try container.decode(OpenAIModelStreamResponseType.self, forKey: .type)
         switch type {
         case .error:
-            self = .error(try OpenAIModelStreamResponseError(from: decoder))
+            self = try .error(OpenAIModelStreamResponseError(from: decoder))
         case .response_created:
-            self = .response_created(try OpenAIModelStreamResponseCreated(from: decoder))
+            self = try .response_created(OpenAIModelStreamResponseCreated(from: decoder))
         case .response_in_progress:
-            self = .response_in_progress(try OpenAIModelStreamResponseInProgess(from: decoder))
+            self = try .response_in_progress(OpenAIModelStreamResponseInProgess(from: decoder))
         case .response_completed:
-            self = .response_completed(try OpenAIModelStreamResponseCompleted(from: decoder))
+            self = try .response_completed(OpenAIModelStreamResponseCompleted(from: decoder))
         case .response_failed:
-            self = .response_failed(try OpenAIModelStreamResponseFailed(from: decoder))
+            self = try .response_failed(OpenAIModelStreamResponseFailed(from: decoder))
         case .response_incomplete:
-            self = .response_incomplete(try OpenAIModelStreamResponseInCompleted(from: decoder))
+            self = try .response_incomplete(OpenAIModelStreamResponseInCompleted(from: decoder))
         case .response_output_item_added:
-            self = .response_output_item_added(try OpenAIModelStreamResponseOutputItemAdd(from: decoder))
+            self = try .response_output_item_added(OpenAIModelStreamResponseOutputItemAdd(from: decoder))
         case .response_output_item_done:
-            self = .response_output_item_done(try OpenAIModelStreamResponseOutputItemDone(from: decoder))
+            self = try .response_output_item_done(OpenAIModelStreamResponseOutputItemDone(from: decoder))
         case .response_content_part_added:
-            self = .response_content_part_added(try OpenAIModelStreamResponseContentPartAdded(from: decoder))
+            self = try .response_content_part_added(OpenAIModelStreamResponseContentPartAdded(from: decoder))
         case .response_content_part_done:
-            self = .response_content_part_done(try OpenAIModelStreamResponseContentPartDone(from: decoder))
+            self = try .response_content_part_done(OpenAIModelStreamResponseContentPartDone(from: decoder))
         case .response_output_text_delta:
-            self = .response_output_text_delta(try OpenAIModelStreamResponseOutputTextDelta(from: decoder))
+            self = try .response_output_text_delta(OpenAIModelStreamResponseOutputTextDelta(from: decoder))
         case .response_output_text_annotation_delta:
-            self = .response_output_text_annotation_delta(try OpenAIModelStreamResponseOutputTextAnnotationDelta(from: decoder))
+            self = try .response_output_text_annotation_delta(OpenAIModelStreamResponseOutputTextAnnotationDelta(from: decoder))
         case .response_output_text_done:
-            self = .response_output_text_done(try OpenAIModelStreamResponseOutputTextDone(from: decoder))
+            self = try .response_output_text_done(OpenAIModelStreamResponseOutputTextDone(from: decoder))
         case .response_refusal_delta:
-            self = .response_refusal_delta(try OpenAIModelStreamResponseRefusalDelta(from: decoder))
+            self = try .response_refusal_delta(OpenAIModelStreamResponseRefusalDelta(from: decoder))
         case .response_refusal_done:
-            self = .response_refusal_done(try OpenAIModelStreamResponseRefusalDone(from: decoder))
+            self = try .response_refusal_done(OpenAIModelStreamResponseRefusalDone(from: decoder))
         case .response_function_call_arguments_delta:
-            self = .response_function_call_arguments_delta(try OpenAIModelStreamResponseFunctionCallArgumentsDelta(from: decoder))
+            self = try .response_function_call_arguments_delta(OpenAIModelStreamResponseFunctionCallArgumentsDelta(from: decoder))
         case .response_function_call_arguments_done:
-            self = .response_function_call_arguments_done(try OpenAIModelStreamResponseFunctionCallArgumentsDone(from: decoder))
+            self = try .response_function_call_arguments_done(OpenAIModelStreamResponseFunctionCallArgumentsDone(from: decoder))
         case .response_file_search_call_in_progress:
-            self = .response_file_search_call_in_progress(try OpenAIModelStreamResponseFileSearchCallInProgress(from: decoder))
+            self = try .response_file_search_call_in_progress(OpenAIModelStreamResponseFileSearchCallInProgress(from: decoder))
         case .response_file_search_call_searching:
-            self = .response_file_search_call_searching(try OpenAIModelStreamResponseFileSearchCallSearching(from: decoder))
+            self = try .response_file_search_call_searching(OpenAIModelStreamResponseFileSearchCallSearching(from: decoder))
         case .response_file_search_call_completed:
-            self = .response_file_search_call_completed(try OpenAIModelStreamResponseFileSearchCallCompleted(from: decoder))
+            self = try .response_file_search_call_completed(OpenAIModelStreamResponseFileSearchCallCompleted(from: decoder))
         case .response_web_search_call_in_progress:
-            self = .response_web_search_call_in_progress(try OpenAIModelStreamResponseWebSearchCallInProgress(from: decoder))
+            self = try .response_web_search_call_in_progress(OpenAIModelStreamResponseWebSearchCallInProgress(from: decoder))
         case .response_web_search_call_searching:
-            self = .response_web_search_call_searching(try OpenAIModelStreamResponseWebSearchCallSearching(from: decoder))
+            self = try .response_web_search_call_searching(OpenAIModelStreamResponseWebSearchCallSearching(from: decoder))
         case .response_web_search_call_completed:
-            self = .response_web_search_call_completed(try OpenAIModelStreamResponseWebSearchCallCompleted(from: decoder))
+            self = try .response_web_search_call_completed(OpenAIModelStreamResponseWebSearchCallCompleted(from: decoder))
         case .response_reasoning_summary_part_added:
-            self = .response_reasoning_summary_part_added(try OpenAIModelStreamResponseReasoningSummaryPartAdded(from: decoder))
+            self = try .response_reasoning_summary_part_added(OpenAIModelStreamResponseReasoningSummaryPartAdded(from: decoder))
         case .response_reasoning_summary_part_done:
-            self = .response_reasoning_summary_part_done(try OpenAIModelStreamResponseReasoningSummaryPartDone(from: decoder))
+            self = try .response_reasoning_summary_part_done(OpenAIModelStreamResponseReasoningSummaryPartDone(from: decoder))
         case .response_reasoning_summary_text_delta:
-            self = .response_reasoning_summary_text_delta(try OpenAIModelStreamResponseReasoningSummaryTextDelta(from: decoder))
+            self = try .response_reasoning_summary_text_delta(OpenAIModelStreamResponseReasoningSummaryTextDelta(from: decoder))
         case .response_reasoning_summary_text_done:
-            self = .response_reasoning_summary_text_done(try OpenAIModelStreamResponseReasoningSummaryTextDone(from: decoder))
+            self = try .response_reasoning_summary_text_done(OpenAIModelStreamResponseReasoningSummaryTextDone(from: decoder))
         case .response_image_generation_call_completed:
-            self = .response_image_generation_call_completed(try OpenAIModelStreamResponseImageGenerationCallCompleted(from: decoder))
+            self = try .response_image_generation_call_completed(OpenAIModelStreamResponseImageGenerationCallCompleted(from: decoder))
         case .response_image_generation_call_generating:
-            self = .response_image_generation_call_generating(try OpenAIModelStreamResponseImageGenerationCallGenerating(from: decoder))
+            self = try .response_image_generation_call_generating(OpenAIModelStreamResponseImageGenerationCallGenerating(from: decoder))
         case .response_image_generation_call_in_progress:
-            self = .response_image_generation_call_in_progress(try OpenAIModelStreamResponseImageGenerationCallInProgress(from: decoder))
+            self = try .response_image_generation_call_in_progress(OpenAIModelStreamResponseImageGenerationCallInProgress(from: decoder))
         case .response_image_generation_call_partial_image:
-            self = .response_image_generation_call_partial_image(try OpenAIModelStreamResponseImageGenerationCallPartialImage(from: decoder))
+            self = try .response_image_generation_call_partial_image(OpenAIModelStreamResponseImageGenerationCallPartialImage(from: decoder))
         case .response_mcp_call_argument_delta:
-            self = .response_mcp_call_argument_delta(try OpenAIModelStreamResponseMCPCallArgumentDelta(from: decoder))
+            self = try .response_mcp_call_argument_delta(OpenAIModelStreamResponseMCPCallArgumentDelta(from: decoder))
         case .response_mcp_call_argument_done:
-            self = .response_mcp_call_argument_done(try OpenAIModelStreamResponseMCPCallArgumentDone(from: decoder))
+            self = try .response_mcp_call_argument_done(OpenAIModelStreamResponseMCPCallArgumentDone(from: decoder))
         case .response_mcp_call_completed:
-            self = .response_mcp_call_completed(try OpenAIModelStreamResponseMCPCallCompleted(from: decoder))
+            self = try .response_mcp_call_completed(OpenAIModelStreamResponseMCPCallCompleted(from: decoder))
         case .response_mcp_call_failed:
-            self = .response_mcp_call_failed(try OpenAIModelStreamResponseMCPCallFailed(from: decoder))
+            self = try .response_mcp_call_failed(OpenAIModelStreamResponseMCPCallFailed(from: decoder))
         case .response_mcp_call_in_progress:
-            self = .response_mcp_call_in_progress(try OpenAIModelStreamResponseMCPCallInProgress(from: decoder))
+            self = try .response_mcp_call_in_progress(OpenAIModelStreamResponseMCPCallInProgress(from: decoder))
         case .response_mcp_list_tools_completed:
-            self = .response_mcp_list_tools_completed(try OpenAIModelStreamResponseMCPListToolsCompleted(from: decoder))
+            self = try .response_mcp_list_tools_completed(OpenAIModelStreamResponseMCPListToolsCompleted(from: decoder))
         case .response_mcp_list_tools_failed:
-            self = .response_mcp_list_tools_failed(try OpenAIModelStreamResponseMCPListToolsFailed(from: decoder))
+            self = try .response_mcp_list_tools_failed(OpenAIModelStreamResponseMCPListToolsFailed(from: decoder))
         case .response_mcp_list_tools_in_progress:
-            self = .response_mcp_list_tools_in_progress(try OpenAIModelStreamResponseMCPListToolsInProgress(from: decoder))
+            self = try .response_mcp_list_tools_in_progress(OpenAIModelStreamResponseMCPListToolsInProgress(from: decoder))
         case .response_output_text_annotation_added:
-            self = .response_output_text_annotation_added(try OpenAIModelStreamResponseOutputTextAnnotationAdded(from: decoder))
+            self = try .response_output_text_annotation_added(OpenAIModelStreamResponseOutputTextAnnotationAdded(from: decoder))
         case .response_queued:
-            self = .response_queued(try OpenAIModelStreamResponseQueued(from: decoder))
+            self = try .response_queued(OpenAIModelStreamResponseQueued(from: decoder))
         case .response_reasoning_delta:
-            self = .response_reasoning_delta(try OpenAIModelStreamResponseReasoningDelta(from: decoder))
+            self = try .response_reasoning_delta(OpenAIModelStreamResponseReasoningDelta(from: decoder))
         case .response_reasoning_done:
-            self = .response_reasoning_done(try OpenAIModelStreamResponseReasoningDone(from: decoder))
+            self = try .response_reasoning_done(OpenAIModelStreamResponseReasoningDone(from: decoder))
         case .response_reasoning_summary_delta:
-            self = .response_reasoning_summary_delta(try OpenAIModelStreamResponseReasoningSummaryDelta(from: decoder))
+            self = try .response_reasoning_summary_delta(OpenAIModelStreamResponseReasoningSummaryDelta(from: decoder))
         case .response_reasoning_summary_done:
-            self = .response_reasoning_summary_done(try OpenAIModelStreamResponseReasoningSummaryDone(from: decoder))
+            self = try .response_reasoning_summary_done(OpenAIModelStreamResponseReasoningSummaryDone(from: decoder))
         }
     }
 }
 
 enum OpenAIModelStreamResponseType: String, Codable {
-    case error = "error"
+    case error
     case response_created = "response.created"
     case response_in_progress = "response.in_progress"
     case response_completed = "response.completed"

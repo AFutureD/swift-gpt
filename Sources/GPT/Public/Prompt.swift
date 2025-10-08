@@ -7,10 +7,9 @@
 
 // MARK: Prompt + Input
 
-extension Prompt {
+public extension Prompt {
     /// Represents a single input item in a prompt, which can be either text or a file.
-    public enum Input: Hashable, Sendable {
-
+    enum Input: Hashable, Sendable {
         /// A text-based input.
         case text(TextInputContent)
         /// A file-based input.
@@ -22,7 +21,7 @@ extension Prompt.Input: Codable {
     enum CodingKeys: String, CodingKey {
         case type
     }
-    
+
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let type = try container.decode(ContentType.self, forKey: .type)
@@ -35,47 +34,45 @@ extension Prompt.Input: Codable {
             throw DecodingError.typeMismatch(MessageItem.self, .init(codingPath: [], debugDescription: "Only Support 'MessageItem'"))
         }
     }
-    
+
     public func encode(to encoder: any Encoder) throws {
         var container = encoder.singleValueContainer()
         switch self {
-        case .text(let value):
+        case let .text(value):
             try container.encode(value)
-        case .file(let value):
+        case let .file(value):
             try container.encode(value)
         }
     }
 }
 
-extension Prompt.Input {
-    public var role: ModelContentRole {
+public extension Prompt.Input {
+    var role: ModelContentRole {
         switch self {
-        case .text(let text):
+        case let .text(text):
             return text.role
-        case .file(let file):
+        case let .file(file):
             return file.role
         }
     }
 }
 
-
-extension Prompt.Input {
-
-    public var text: TextInputContent? {
-        guard case .text(let text) = self else { return nil }
+public extension Prompt.Input {
+    var text: TextInputContent? {
+        guard case let .text(text) = self else { return nil }
         return text
     }
 
-    public var file: FileInputContent? {
-        guard case .file(let file) = self else { return nil }
+    var file: FileInputContent? {
+        guard case let .file(file) = self else { return nil }
         return file
     }
 }
 
 // MARK: Prompt + Instructions
 
-extension Prompt {
-    public enum Instructions: Hashable, Sendable {
+public extension Prompt {
+    enum Instructions: Hashable, Sendable {
         case text(String)
         case inputs([Input])
     }
@@ -94,14 +91,14 @@ extension Prompt.Instructions: Codable {
 
         throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "Prompt.Instructions is not `String` or `[Prompt.Input]`"))
     }
-    
+
     public func encode(to encoder: any Encoder) throws {
         var container = encoder.singleValueContainer()
-        
+
         switch self {
-        case .text(let string):
+        case let .text(string):
             try container.encode(string)
-        case .inputs(let array):
+        case let .inputs(array):
             try container.encode(array)
         }
     }
@@ -120,7 +117,7 @@ extension Prompt.Instructions {
         }
         return nil
     }
-    
+
     var inputs: [Prompt.Input]? {
         if case let .inputs(items) = self {
             return items
@@ -129,66 +126,125 @@ extension Prompt.Instructions {
     }
 }
 
-// MARK: Prompt
+// MARK: GenerationControl
 
-/// Represents a prompt to be sent to an LLM.
-public struct Prompt: Codable, Sendable {
-    /// An optional identifier for the current conversation, used for maintaining context.
-    public let conversationID: String?
-    
-    /// System-level instructions that guide the model's behavior for the entire conversation.
-    public let instructions: Instructions?
-    
-    /// The sequence of inputs that make up the prompt.
-    public let inputs: [Input]
-    
-    /// An optional flag indicating whether the prompt and its response should be stored.
-    public let store: Bool?
-    
-    /// A flag indicating whether to use streaming for the response.
-    /// This should be `true` when calling `stream(prompt:model:)` and `false` for `generate(prompt:model:)`.
-    public let stream: Bool
-    
-    // Not Implement For Now.
-    // let tools: [String: Tool]
-    
+public struct GenerationControl: Codable, Sendable {
     /// The temperature for sampling, controlling the randomness of the output. Higher values (e.g., 0.8) make the output more random, while lower values (e.g., 0.2) make it more deterministic.
     public let temperature: Double?
 
     /// The nucleus sampling probability, controlling the diversity of the output.
     public let topP: Double?
-    
+
     /// The maximum number of tokens to generate in the response.
     public let maxTokens: Int?
-    
+
+    /// An optional flag indicating whether the prompt and its response should be stored.
+    public let store: Bool?
+}
+
+// MARK: Prompt + ContextControl
+
+public extension Prompt {
+    struct ContextControl: Codable, Sendable {}
+}
+
+// MARK: Prompt
+
+/// Represents a prompt to be sent to an LLM.
+public struct Prompt: Sendable {
+    /// An optional identifier for the current conversation, used for maintaining context.
+    public let conversationID: String?
+
+    /// System-level instructions that guide the model's behavior for the entire conversation.
+    public let instructions: Instructions?
+
+    /// The sequence of inputs that make up the prompt.
+    public let inputs: [Input]
+
+    /// A flag indicating whether to use streaming for the response.
+    /// This should be `true` when calling `stream(prompt:model:)` and `false` for `generate(prompt:model:)`.
+    public let stream: Bool
+
+    // Not Implement For Now.
+    // let tools: [String: Tool]
+
+    /// Controls the generation process.
+    public let generation: GenerationControl?
+
+    /// Controls the context of the prompt.
+    public let context: ContextControl?
+
     /// Creates a new prompt.
     ///
     /// - Parameters:
     ///   - conversationID: An optional identifier for the current conversation.
     ///   - instructions: System-level instructions for the model.
     ///   - inputs: The sequence of inputs for the prompt.
-    ///   - store: An optional flag to store the prompt and response.
     ///   - stream: A flag indicating whether to use streaming.
-    ///   - temperature: The temperature for sampling.
-    ///   - topP: The nucleus sampling probability.
-    ///   - maxTokens: The maximum number of tokens to generate.
+    ///   - generation: Controls the generation process.
+    ///   - context: Controls the context of the prompt.
     public init(
         conversationID: String? = nil,
         instructions: Instructions? = nil,
         inputs: [Input],
-        store: Bool? = nil,
+        store _: Bool? = nil,
         stream: Bool = true,
-        temperature: Double? = nil,
-        topP: Double? = nil,
-        maxTokens: Int? = nil
+        generation: GenerationControl? = nil,
+        context: ContextControl? = nil
     ) {
         self.conversationID = conversationID
         self.instructions = instructions
         self.inputs = inputs
-        self.store = store
         self.stream = stream
-        self.temperature = temperature
-        self.topP = topP
-        self.maxTokens = maxTokens
+        self.generation = generation
+        self.context = context
+    }
+}
+
+extension Prompt: Codable {
+    enum CodingKeys: CodingKey {
+        case conversationID
+        case instructions
+        case inputs
+        case store
+        case stream
+        case generation
+        case context
+
+        // deprecated.
+        case temperature
+        case topP
+        case maxTokens
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        conversationID = try container.decodeIfPresent(String.self, forKey: .conversationID)
+        instructions = try container.decodeIfPresent(Prompt.Instructions.self, forKey: .instructions)
+        inputs = try container.decode([Prompt.Input].self, forKey: .inputs)
+        stream = try container.decode(Bool.self, forKey: .stream)
+        context = try container.decodeIfPresent(Prompt.ContextControl.self, forKey: .context)
+
+        if let value = try? container.decodeIfPresent(GenerationControl.self, forKey: .generation) {
+            generation = value
+        } else {
+            let store = try? container.decodeIfPresent(Bool.self, forKey: .store)
+            let temperature = try? container.decodeIfPresent(Double.self, forKey: .temperature)
+            let topP = try? container.decodeIfPresent(Double.self, forKey: .topP)
+            let maxTokens = try? container.decodeIfPresent(Int.self, forKey: .maxTokens)
+            generation = .init(temperature: temperature, topP: topP, maxTokens: maxTokens, store: store)
+        }
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encode(stream, forKey: .stream)
+        try container.encode(inputs, forKey: .inputs)
+        try container.encodeIfPresent(conversationID, forKey: .conversationID)
+        try container.encodeIfPresent(instructions, forKey: .instructions)
+        try container.encodeIfPresent(context, forKey: .context)
+        try container.encodeIfPresent(generation, forKey: .generation)
     }
 }
