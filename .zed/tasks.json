@@ -1,0 +1,14 @@
+// Project tasks configuration. See https://zed.dev/docs/tasks for documentation.
+//
+// Example:
+[
+  {
+    "label": "Swift build with tests",
+    "command": "swift",
+    "args": ["build", "--build-tests"],
+    "env": {},
+    "reveal": "no_focus",
+    "reveal_target": "dock",
+    "hide": "on_success"
+  }
+]

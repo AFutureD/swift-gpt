@@ -72,21 +72,44 @@ extension OpenAIChatCompletionRequestMessage {
 
 extension OpenAIChatCompletionRequest {
     init(_ prompt: Prompt, history: Conversation, model: String, stream: Bool) {
-        var messages: [OpenAIChatCompletionRequestMessage] = []
+        let instructions = prompt.instructions
+        let contextControl = prompt.context
+        let generationControl = prompt.generation
 
-        if history.items.isEmpty {
-            switch prompt.instructions {
-            case let .text(text):
-                messages.append(.system(.init(content: .text(text), name: nil)))
-            case let .inputs(inputs):
-                messages.append(contentsOf: inputs.compactMap { OpenAIChatCompletionRequestMessage($0) })
-            case nil:
-                break
+        var historyItems = history.items
+        historyItems.removeAll {
+            guard case let .input(input) = $0, let instructions else {
+                return false
+            }
+
+            switch instructions {
+            case let .text(value):
+                return input.role == .system && input.text?.content == value
+            case let .inputs(value):
+                return value.contains(input)
             }
         }
 
-        let items = history.items
-        for item in items {
+        var messages: [OpenAIChatCompletionRequestMessage] = []
+
+        // instructions
+        switch prompt.instructions {
+        case let .text(text):
+            messages.append(.system(.init(content: .text(text), name: nil)))
+        case let .inputs(inputs):
+            messages.append(contentsOf: inputs.compactMap { OpenAIChatCompletionRequestMessage($0) })
+        case nil:
+            break
+        }
+
+        let lastK = if let maxItemCount = contextControl?.maxItemCount {
+            maxItemCount - prompt.inputs.count
+        } else {
+            historyItems.count
+        }
+
+        // historys
+        for item in historyItems.suffix(lastK) {
             switch item {
             case let .input(input):
                 let message = OpenAIChatCompletionRequestMessage(input)
@@ -101,6 +124,7 @@ extension OpenAIChatCompletionRequest {
             }
         }
 
+        // inputs
         for input in prompt.inputs {
             let message = OpenAIChatCompletionRequestMessage(input)
             if let message {
@@ -115,7 +139,7 @@ extension OpenAIChatCompletionRequest {
             frequencyPenalty: nil,
             logitBias: nil,
             logprobs: nil,
-            maxCompletionTokens: prompt.generation?.maxTokens,
+            maxCompletionTokens: generationControl?.maxTokens,
             metadata: nil,
             modalities: nil,
             n: nil,
@@ -127,14 +151,14 @@ extension OpenAIChatCompletionRequest {
             seed: nil,
             serviceTier: nil,
             stop: nil,
-            store: prompt.generation?.store,
+            store: generationControl?.store,
             stream: stream,
             streamOptions: stream ? .init(includeUsage: true) : nil,
-            temperature: prompt.generation?.temperature,
+            temperature: generationControl?.temperature,
             toolChoice: nil,
             tools: nil,
             topLogprobs: nil,
-            topP: prompt.generation?.topP,
+            topP: generationControl?.topP,
             user: nil,
             webSearchOptions: nil
         )

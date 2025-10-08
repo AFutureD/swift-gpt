@@ -128,6 +128,7 @@ extension Prompt.Instructions {
 
 // MARK: GenerationControl
 
+/// The hyperparameters used for model generation.
 public struct GenerationControl: Codable, Sendable {
     /// The temperature for sampling, controlling the randomness of the output. Higher values (e.g., 0.8) make the output more random, while lower values (e.g., 0.2) make it more deterministic.
     public let temperature: Double?
@@ -145,7 +146,13 @@ public struct GenerationControl: Codable, Sendable {
 // MARK: Prompt + ContextControl
 
 public extension Prompt {
-    struct ContextControl: Codable, Sendable {}
+    /// Parameters that control the model’s context window.
+    struct ContextControl: Codable, Sendable {
+        /// The maximum number of items to include in the context.
+        ///
+        /// The instructions will not be included.
+        public let maxItemCount: Int?
+    }
 }
 
 // MARK: Prompt
@@ -187,7 +194,6 @@ public struct Prompt: Sendable {
         conversationID: String? = nil,
         instructions: Instructions? = nil,
         inputs: [Input],
-        store _: Bool? = nil,
         stream: Bool = true,
         generation: GenerationControl? = nil,
         context: ContextControl? = nil
@@ -202,7 +208,7 @@ public struct Prompt: Sendable {
 }
 
 extension Prompt: Codable {
-    enum CodingKeys: CodingKey {
+    public enum CodingKeys: CodingKey {
         case conversationID
         case instructions
         case inputs

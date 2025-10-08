@@ -85,16 +85,41 @@ private func convert(conversationItems: [ConversationItem]) -> [OpenAIModelRepon
 
 extension OpenAIModelReponseRequest {
     init(_ prompt: Prompt, history: Conversation, model: String, stream: Bool) {
-        let instructions = prompt.instructions?.text ?? prompt.inputs.compactMap { $0.text }.first { $0.role == .system }?.content
-        var items: [OpenAIModelReponseRequestInputItem] = []
+        let instructions = prompt.instructions
+        let contextControl = prompt.context
+        let generationControl = prompt.generation
 
-        if history.items.isEmpty {
-            if case let .inputs(inputs) = prompt.instructions {
-                items.append(contentsOf: convert(inputs: inputs))
+        var historyItems = history.items
+        historyItems.removeAll {
+            guard case let .input(input) = $0, let instructions else {
+                return false
+            }
+
+            switch instructions {
+            case let .text(value):
+                return input.role == .system && input.text?.content == value
+            case let .inputs(value):
+                return value.contains(input)
             }
         }
 
-        items.append(contentsOf: convert(conversationItems: history.items))
+        var items: [OpenAIModelReponseRequestInputItem] = []
+
+        // Instructions
+        if case let .inputs(inputs) = prompt.instructions {
+            items.append(contentsOf: convert(inputs: inputs))
+        }
+
+        // History
+        let lastK = if let maxItemCount = contextControl?.maxItemCount {
+            maxItemCount - prompt.inputs.count
+        } else {
+            historyItems.count
+        }
+
+        items.append(contentsOf: convert(conversationItems: historyItems.suffix(lastK)))
+
+        // Inputs
         items.append(contentsOf: convert(inputs: prompt.inputs))
 
         self.init(
@@ -102,19 +127,19 @@ extension OpenAIModelReponseRequest {
             model: model,
             background: nil, // TODO: suppert backgroud mode.
             include: nil,
-            instructions: instructions,
-            maxOutputTokens: prompt.generation?.maxTokens,
+            instructions: instructions?.text,
+            maxOutputTokens: generationControl?.maxTokens,
             metadata: nil,
             parallelToolCalls: false,
             previousResponseId: nil,
             reasoning: nil, // TODO: Add reasning configuration
-            store: prompt.generation?.store,
+            store: generationControl?.store,
             stream: stream,
-            temperature: prompt.generation?.temperature,
+            temperature: generationControl?.temperature,
             text: nil, // TODO: add expected ouput format support
             toolChoice: nil,
             tools: nil,
-            topP: prompt.generation?.topP,
+            topP: generationControl?.topP,
             truncation: nil,
             user: nil // TODO: provide session ID or user ID
         )
