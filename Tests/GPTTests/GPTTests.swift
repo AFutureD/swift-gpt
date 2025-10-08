@@ -23,11 +23,13 @@ func testExmaple() async throws {
             2. send "ding", back "dang"
             """,
         inputs: [
-            .text(.init(role: .user, content: "Ping"))
+            .text(.init(role: .developer, content: "Trim Spaces.")),
+            .text(.init(role: .assistant, content: "Ok")),
+            .text(.init(role: .user, content: "Ping")),
         ]
     )
     let openai = LLMProviderConfiguration(type: .OpenAI, name: "OpenAI", apiKey: Dotenv["OPENAI_API_KEY"]!.stringValue, apiURL: "https://api.openai.com/v1")
-    let model = LLMModelReference(model: .init(name: "gpt-4o"), provider: openai)
+    let model = LLMModelReference(model: .init(name: "gpt-4o-mini"), provider: openai)
     let response = try await session.stream(prompt, model: model)
    
     let logger = Logger()

@@ -48,55 +48,57 @@ extension OpenAIModelReponseContext {
     }
 }
 
+private func convert(inputs: [Prompt.Input]) -> [OpenAIModelReponseRequestInputItem] {
+    var items: [OpenAIModelReponseRequestInputItem] = []
+    for input in inputs {
+        switch input.role {
+        case .assistant:
+            if let content: OpenAIModelReponseContextOutputContent = .init(input) {
+                items.append(.output(.output(.init(id: nil, content: [content]))))
+            }
+        default:
+            if let content = OpenAIModelReponseRequestInputItemMessageContentItem(input) {
+                let message: OpenAIModelReponseRequestInputItemMessage = .init(content: .inputs([content]), role: .init(rawValue: input.role.rawValue) ?? .user, type: nil)
+                items.append(.message(message))
+            }
+        }
+    }
+    return items
+}
+
+private func convert(conversationItems: [ConversationItem]) -> [OpenAIModelReponseRequestInputItem] {
+    var items: [OpenAIModelReponseRequestInputItem] = []
+    for item in conversationItems {
+        switch item {
+        case .input(let input):
+            if let content = OpenAIModelReponseRequestInputItemMessageContentItem(input) {
+                let input: OpenAIModelReponseContextInput = .init(content: [content], role: .init(rawValue: String(describing: input.role)) ?? .user, status: nil)
+                items.append(.output(.input(input)))
+            }
+
+        case .generated(let generated):
+            if let output: OpenAIModelReponseContext = .init(generated) {
+                items.append(.output(output))
+            }
+            break
+        }
+    }
+    return items
+}
+
 extension OpenAIModelReponseRequest {
     init(_ prompt: Prompt, history: Conversation, model: String, stream: Bool) {
         let instructions = prompt.instructions?.text ?? prompt.inputs.compactMap { $0.text }.first { $0.role == .system }?.content
         var items: [OpenAIModelReponseRequestInputItem] = []
         
         if history.items.isEmpty {
-            switch prompt.instructions {
-            case let .inputs(inputs):
-                for input in inputs {
-                    if let content = OpenAIModelReponseRequestInputItemMessageContentItem(input) {
-                        let contextInput: OpenAIModelReponseContextInput = .init(content: [content], role: .init(rawValue: String(describing: input.role)) ?? .user, status: nil)
-                        items.append(.output(.input(contextInput)))
-                    }
-                }
-                
-            default:
-                break
+            if case let .inputs(inputs) = prompt.instructions {
+                items.append(contentsOf: convert(inputs: inputs))
             }
         }
         
-        for item in history.items {
-            switch item {
-            case .input(let input):
-                if let content = OpenAIModelReponseRequestInputItemMessageContentItem(input) {
-                    let input: OpenAIModelReponseContextInput = .init(content: [content], role: .init(rawValue: String(describing: input.role)) ?? .user, status: nil)
-                    items.append(.output(.input(input)))
-                }
-
-            case .generated(let generated):
-                if let output: OpenAIModelReponseContext = .init(generated) {
-                    items.append(.output(output))
-                }
-                break
-            }
-        }
-
-        for input in prompt.inputs {
-            switch input.role {
-            case .developer:
-                if let content: OpenAIModelReponseContextOutputContent = .init(input) {
-                    items.append(.output(.output(.init(id: nil, content: [content]))))
-                }
-            default:
-                if let content = OpenAIModelReponseRequestInputItemMessageContentItem(input) {
-                    let message: OpenAIModelReponseRequestInputItemMessage = .init(content: .inputs([content]), role: .init(rawValue: input.role.rawValue) ?? .user, type: nil)
-                    items.append(.message(message))
-                }
-            }
-        }
+        items.append(contentsOf: convert(conversationItems: history.items))
+        items.append(contentsOf: convert(inputs: prompt.inputs))
 
         self.init(
             input: .items(items),
