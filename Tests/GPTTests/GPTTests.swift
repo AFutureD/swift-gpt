@@ -277,3 +277,49 @@ func testConversationSerialization() async throws {
         print("response: \(String(describing: response))")
     }
 }
+
+@Test("textConversationMaxItems")
+func textConversationMaxItems() async throws {
+    try Dotenv.make()
+    let client = AsyncHTTPClientTransport()
+    let openai = LLMProviderConfiguration(type: .OpenAICompatible, name: "OpenAI", apiKey: Dotenv["OPENAI_API_KEY"]!.stringValue, apiURL: "https://api.openai.com/v1")
+    let model = LLMModelReference(model: .init(name: "gpt-4o"), provider: openai)
+    
+    
+    var conversation = Conversation()
+    conversation.items = [
+        .input(.text("Hi, I am John.")),
+        .input(.text("I am 18 years old.")),
+        .input(.text("I like Progammming."))
+    ]
+    
+    let session = GPTSession(client: client, conversation: conversation)
+
+    do {
+
+        let prompt = Prompt(
+            inputs: [
+                .text("How old am I.")
+            ],
+            stream: false,
+            context: .init(maxItemCount: 3)
+        )
+
+        let response: ModelResponse = try await session.generate(prompt, model: model)
+        #expect(response.message?.text?.contains("18") ?? false)
+    }
+    
+    do {
+
+        let prompt = Prompt(
+            inputs: [
+                .text("What is my name?")
+            ],
+            stream: false,
+            context: .init(maxItemCount: 3)
+        )
+
+        let response: ModelResponse = try await session.generate(prompt, model: model)
+        #expect(!(response.message?.text?.contains("John") ?? true))
+    }
+}
