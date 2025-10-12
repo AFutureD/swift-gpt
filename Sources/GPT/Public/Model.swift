@@ -8,6 +8,7 @@
 import OpenAPIRuntime
 import LazyKit
 import Logging
+import ServiceContextModule
 
 // MARK: LLMProviderType
 
@@ -30,7 +31,8 @@ protocol LLMProvider: Sendable {
         model: LLMModel,
         _ prompt: Prompt,
         conversation: Conversation,
-        logger: Logger
+        logger: Logger,
+        serviceContext: ServiceContext
     ) async throws -> AnyAsyncSequence<ModelStreamResponse>
     
     func generate(
@@ -39,7 +41,8 @@ protocol LLMProvider: Sendable {
         model: LLMModel,
         _ prompt: Prompt,
         conversation: Conversation,
-        logger: Logger
+        logger: Logger,
+        serviceContext: ServiceContext
     ) async throws -> ModelResponse
 }
 

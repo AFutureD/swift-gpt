@@ -10,7 +10,8 @@ let package = Package(
         // Products define the executables and libraries a package produces, making them visible to other packages.
         .library(
             name: "GPT",
-            targets: ["GPT"]),
+            targets: ["GPT"]
+        ),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0"),
@@ -21,7 +22,8 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-algorithms", from: "1.2.1"),
         .package(url: "https://github.com/AFutureD/swift-synchronization", from: "0.1.0"),
         .package(url: "https://github.com/apple/swift-log", from: "1.6.0"),
-        
+        .package(url: "https://github.com/apple/swift-distributed-tracing", from: "1.3.1"),
+
         // Test
         .package(url: "https://github.com/swift-server/swift-openapi-async-http-client", from: "1.0.0"),
     ],
@@ -37,7 +39,8 @@ let package = Package(
                 .product(name: "NetworkKit", package: "swift-lazy"),
                 .product(name: "DynamicJSON", package: "swift-dynamicjson"),
                 .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
-                .product(name: "Algorithms", package: "swift-algorithms")
+                .product(name: "Algorithms", package: "swift-algorithms"),
+                .product(name: "Tracing", package: "swift-distributed-tracing"),
             ]
         ),
         .testTarget(

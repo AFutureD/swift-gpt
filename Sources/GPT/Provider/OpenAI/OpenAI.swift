@@ -6,23 +6,31 @@
 //
 
 import Foundation
-import LazyKit
 import HTTPTypes
-import OpenAPIRuntime
-import NetworkKit
+import LazyKit
 import Logging
+import NetworkKit
+import OpenAPIRuntime
+import ServiceContextModule
+import Tracing
 
 struct OpenAIProvider: LLMProvider {
-    
     func generate(
         client: ClientTransport,
         provider: LLMProviderConfiguration,
         model: LLMModel,
         _ prompt: Prompt,
         conversation: Conversation,
-        logger: Logger
+        logger: Logger,
+        serviceContext: ServiceContext = .current ?? .topLevel
     ) async throws -> ModelResponse {
         assert(prompt.stream == false, "The prompt perfer to use stream.")
+        let span = startSpan("OpenAIProvider Generating", context: serviceContext)
+        defer { span.end() }
+        
+        span.attributes.set("stream", value: .bool(false))
+        span.attributes.set("model", value: .string(model.name))
+        span.attributes.set("provoder", value: .string(provider.description))
         
         let encoder = JSONEncoder()
         let decoder = JSONDecoder()
@@ -31,8 +39,11 @@ struct OpenAIProvider: LLMProvider {
             throw RuntimeError.invalidApiURL(provider.apiURL)
         }
         
-        let url = providerURL.appending(path: "responses")
-        
+        // Build Request Body
+        let body = OpenAIModelReponseRequest(prompt, history: conversation, model: model.name, stream: false)
+        let bodyData = try encoder.encode(body)
+         
+        // Build Request
         let request = HTTPRequest(
             method: .post,
             scheme: nil,
@@ -43,11 +54,9 @@ struct OpenAIProvider: LLMProvider {
                 .authorization: "Bearer \(provider.apiKey)",
             ]
         )
-
-        let body = OpenAIModelReponseRequest(prompt, history: conversation, model: model.name, stream: false)
-        let bodyData = try encoder.encode(body)
         
         // Send Request
+        let url = providerURL.appending(path: "responses")
         let (response, responseBody) = try await client.send(
             request,
             body: .init(bodyData),
@@ -55,98 +64,133 @@ struct OpenAIProvider: LLMProvider {
             operationID: UUID().uuidString
         )
         
+        span.attributes.set("response.status.code", value: .init(integerLiteral: response.status.code))
+        span.attributes.set("response.status.message", value: .string(response.status.description))
         
+        // Handle Response
         guard response.status == .ok else {
             let errorStr: String? = if let responseBody {
                 try await String(collecting: responseBody, upTo: .max)
             } else {
                 nil
             }
-            
             throw RuntimeError.httpError(response.status, errorStr)
         }
-        
+            
         guard let responseBody else {
             throw RuntimeError.emptyResponseBody
         }
-        
+            
         let data = try await Data(collecting: responseBody, upTo: .max)
-        let openaiModelResponse = try decoder.decode(OpenAIModelReponse.self, from: data)
-        let modelReponse = ModelResponse(openaiModelResponse, .init(conversationID: conversation.id))
         
-        return modelReponse
+        do {
+            let openaiModelResponse = try decoder.decode(OpenAIModelReponse.self, from: data)
+            let modelReponse = ModelResponse(openaiModelResponse, .init(conversationID: conversation.id))
+            return modelReponse
+        } catch {
+            span.recordError(error, attributes: .init(["response.body": .string(String(data: data, encoding: .utf8) ?? "nil")]))
+            throw error
+        }
     }
 
-    
     func generate(
         client: ClientTransport,
         provider: LLMProviderConfiguration,
         model: LLMModel,
         _ prompt: Prompt,
         conversation: Conversation,
-        logger: Logger
+        logger: Logger,
+        serviceContext: ServiceContext = .current ?? .topLevel
     ) async throws -> AnyAsyncSequence<ModelStreamResponse> {
         assert(prompt.stream == true, "The prompt perfer do not use stream.")
+        let span = startSpan("OpenAIProvider Generating", context: serviceContext)
+        
+        span.attributes.set("stream", value: .bool(true))
+        span.attributes.set("model", value: .string(model.name))
+        span.attributes.set("provoder", value: .string(provider.description))
         
         let encoder = JSONEncoder()
         let decoder = JSONDecoder()
         
-        guard let providerURL = URL(string: provider.apiURL) else {
-            throw RuntimeError.invalidApiURL(provider.apiURL)
-        }
-        
-        let url = providerURL.appending(path: "responses")
-        
-        let request = HTTPRequest(
-            method: .post,
-            scheme: nil,
-            authority: nil,
-            path: nil,
-            headerFields: [
-                .contentType: "application/json",
-                .authorization: "Bearer \(provider.apiKey)",
-            ]
-        )
-
-        let body = OpenAIModelReponseRequest(prompt, history: conversation, model: model.name, stream: true)
-        let bodyData = try encoder.encode(body)
-        
-        // Send Request
-        let (response, responseBody) = try await client.send(
-            request,
-            body: .init(bodyData),
-            baseURL: url,
-            operationID: UUID().uuidString
-        )
-        
-        guard response.status == .ok else {
-            let errorStr: String? = if let responseBody {
-                try await String(collecting: responseBody, upTo: .max)
-            } else {
-                nil
+        do {
+            guard let providerURL = URL(string: provider.apiURL) else {
+                throw RuntimeError.invalidApiURL(provider.apiURL)
             }
             
-            throw RuntimeError.httpError(response.status, errorStr)
+            // Build Request Body
+            let body = OpenAIModelReponseRequest(prompt, history: conversation, model: model.name, stream: true)
+            let bodyData = try encoder.encode(body)
+            
+            // Build Request
+            let request = HTTPRequest(
+                method: .post,
+                scheme: nil,
+                authority: nil,
+                path: nil,
+                headerFields: [
+                    .contentType: "application/json",
+                    .authorization: "Bearer \(provider.apiKey)",
+                ]
+            )
+            
+            // Send Request
+            let url = providerURL.appending(path: "responses")
+            let (response, responseBody) = try await withSpan("Waiting Response", context: span.context) { _ in
+                try await client.send(
+                    request,
+                    body: .init(bodyData),
+                    baseURL: url,
+                    operationID: UUID().uuidString
+                )
+            }
+            
+            span.attributes.set("response.status.code", value: .init(integerLiteral: response.status.code))
+            span.attributes.set("response.status.message", value: .string(response.status.description))
+            
+            guard response.status == .ok else {
+                let errorStr: String? = if let responseBody {
+                    try await String(collecting: responseBody, upTo: .max)
+                } else {
+                    nil
+                }
+                throw RuntimeError.httpError(response.status, errorStr)
+            }
+            
+            guard
+                let contentType = response.headerFields.contentType,
+                contentType.starts(with: ServerSentEvent.MIME_String)
+            else {
+                throw RuntimeError.reveiveUnsupportedContentTypeInResponse
+            }
+            
+            guard let responseBody else {
+                throw RuntimeError.emptyResponseBody
+            }
+            
+            let events = responseBody.map { buffer in
+                Data(buffer)
+            }.mapToServerSentEvert().map { event in
+                try decoder.decode(OpenAIModelStreamResponse.self, from: Data(event.data.utf8))
+            }.map {
+                ModelStreamResponse($0, .init(conversationID: conversation.id))
+            }.compacted()
+            
+            var iter = events.makeAsyncIterator()
+            return AsyncThrowingStream(unfolding: {
+                let inner = startSpan("Receive Model Generation", context: span.context)
+                defer { inner.end() }
+                
+                if let elem = try await iter.next() {
+                    return elem
+                } else {
+                    span.end() // IMPORTANT
+                    return nil
+                }
+            }).eraseToAnyAsyncSequence()
+        } catch {
+            span.recordError(error)
+            span.end() // IMPORTANT
+            throw error
         }
-        
-        guard
-            let contentType = response.headerFields.contentType,
-            contentType.starts(with: ServerSentEvent.MIME_String)
-        else {
-            throw RuntimeError.reveiveUnsupportedContentTypeInResponse
-        }
-        
-        guard let responseBody else {
-            throw RuntimeError.emptyResponseBody
-        }
-        
-        return responseBody.map {
-            Data($0)
-        }.mapToServerSentEvert().map {
-            try decoder.decode(OpenAIModelStreamResponse.self, from: Data($0.data.utf8))
-        }.map {
-            ModelStreamResponse($0, .init(conversationID: conversation.id))
-        }.compacted().eraseToAnyAsyncSequence()
     }
-    
 }
