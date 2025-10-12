@@ -112,7 +112,7 @@ extension OpenAIModelReponseRequest {
 
         // History
         let lastK = if let maxItemCount = contextControl?.maxItemCount {
-            maxItemCount - prompt.inputs.count
+            max(0, maxItemCount - prompt.inputs.count)
         } else {
             historyItems.count
         }
