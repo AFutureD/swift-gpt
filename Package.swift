@@ -16,7 +16,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0"),
 
-        .package(url: "https://github.com/Myoland/swift-lazy", from: "0.1.0"),
+        .package(url: "https://github.com/Myoland/swift-lazy", from: "0.2.0"),
         .package(url: "https://github.com/objecthub/swift-dynamicjson", from: "1.0.2"),
         .package(url: "https://github.com/apple/swift-openapi-runtime", from: "1.8.2"),
         .package(url: "https://github.com/apple/swift-algorithms", from: "1.2.1"),
@@ -36,6 +36,7 @@ let package = Package(
                 .product(name: "Logging", package: "swift-log"),
                 .product(name: "SynchronizationKit", package: "swift-synchronization"),
                 .product(name: "LazyKit", package: "swift-lazy"),
+                .product(name: "TraceKit", package: "swift-lazy"),
                 .product(name: "NetworkKit", package: "swift-lazy"),
                 .product(name: "DynamicJSON", package: "swift-dynamicjson"),
                 .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
