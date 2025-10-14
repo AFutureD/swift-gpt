@@ -188,8 +188,8 @@ public extension GPTSession {
                         return $0
                     }.eraseToAnyAsyncSequence()
                 } catch {
+                    span.recordError(error)
                     logger.error("[*] GPTSession send prompt failed. Model: `\(cur)` Prompt: `\(prompt)` Error: \(error)")
-                    span.addEvent(.init(name: "Generate Failed", attributes: .init(["error": .string(String(describing: error))])))
                     ctx.append(error)
                     
                     guard let retry = retryAdviser.retry(ctx, error: error) else {
@@ -210,6 +210,7 @@ public extension GPTSession {
             
             throw RuntimeError.retryFailed(ctx.errors)
         } catch {
+            span.setStatus(.init(code: .error))
             span.recordError(error)
             span.end() // IMPORTANT
             throw error
@@ -262,8 +263,8 @@ public extension GPTSession {
                     
                     return response
                 } catch {
+                    span.recordError(error)
                     logger.error("[*] GPTSession send prompt failed. Model: `\(cur)` Prompt: `\(prompt)` Error: \(error)")
-                    span.addEvent(.init(name: "Generate Failed", attributes: .init(["error": .string(String(describing: error))])))
                     ctx.append(error)
                     
                     guard let retry = retryAdviser.retry(ctx, error: error) else {
@@ -282,6 +283,7 @@ public extension GPTSession {
                 }
             } while model != nil
             
+            span.setStatus(.init(code: .error))
             throw RuntimeError.retryFailed(ctx.errors)
         }
     }

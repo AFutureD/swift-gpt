@@ -84,6 +84,7 @@ struct OpenAICompatibleProvider: LLMProvider {
                 let modelReponse = ModelResponse(openAIChatCompletionResponse, .init(conversationID: conversation.id))
                 return modelReponse
             } catch {
+                span.setStatus(.init(code: .error))
                 span.recordError(error, attributes: .init(["response.body": .string(String(data: data, encoding: .utf8) ?? "nil")]))
                 throw error
             }

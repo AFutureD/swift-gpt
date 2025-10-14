@@ -16,7 +16,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0"),
 
-        .package(url: "https://github.com/Myoland/swift-lazy", from: "0.2.0"),
+        .package(url: "https://github.com/Myoland/swift-lazy", from: "0.2.1"),
         .package(url: "https://github.com/objecthub/swift-dynamicjson", from: "1.0.2"),
         .package(url: "https://github.com/apple/swift-openapi-runtime", from: "1.8.2"),
         .package(url: "https://github.com/apple/swift-algorithms", from: "1.2.1"),
