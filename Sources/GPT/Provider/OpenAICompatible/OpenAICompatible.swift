@@ -172,7 +172,7 @@ struct OpenAICompatibleProvider: LLMProvider {
                 try decoder.decode(OpenAIChatCompletionStreamResponse.self, from: Data($0.data.utf8))
             }.aggregateToModelStremResponse(
                 with: .init(conversationID: conversation.id)
-            ).withSpan("Receive Response", childName: "Generating", context: span.context).eraseToAnyAsyncSequence()
+            ).withSpan("Receive Response", context: span.context).eraseToAnyAsyncSequence()
         }
     }
 }
