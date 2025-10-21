@@ -7,7 +7,7 @@ import SynchronizationKit
 extension OpenAIChatCompletionRequestMessage {
     init?(_ input: Prompt.Input) {
         switch input {
-        case let .text(text):
+        case .text(let text):
             let part: OpenAIChatCompletionRequestMessageContentPart = .text(.init(text: text.content))
             switch text.role {
             case .system:
@@ -21,7 +21,7 @@ extension OpenAIChatCompletionRequestMessage {
             default:
                 return nil
             }
-        case let .file(file):
+        case .file(let file):
             let part: OpenAIChatCompletionRequestMessageContentPart = .file(.init(file: .init(fileId: file.id, filename: file.filename, fileData: file.content)))
             switch file.role {
             case .system:
@@ -42,9 +42,9 @@ extension OpenAIChatCompletionRequestMessage {
 extension OpenAIChatCompletionRequestMessage {
     init?(_ item: GeneratedItem) {
         switch item {
-        case let .message(message):
+        case .message(let message):
             let refusal: String? = message.content?.map {
-                if case let .refusal(refusal) = $0 {
+                if case .refusal(let refusal) = $0 {
                     return refusal.content
                 }
                 return nil
@@ -52,12 +52,12 @@ extension OpenAIChatCompletionRequestMessage {
 
             let parts: [OpenAIChatCompletionRequestMessageContentPart] = message.content?.compactMap { content in
                 switch content {
-                case let .text(text):
+                case .text(let text):
                     if let text = text.content {
                         return OpenAIChatCompletionRequestMessageContentPart.text(OpenAIChatCompletionRequestMessageContentTextPart(text: text))
                     }
                     return nil
-                case let .refusal(refusal):
+                case .refusal(let refusal):
                     if let refusal = refusal.content {
                         return OpenAIChatCompletionRequestMessageContentPart.refusal(OpenAIChatCompletionRequestMessageContentRefusalPart(refusal: refusal))
                     }
@@ -78,14 +78,14 @@ extension OpenAIChatCompletionRequest {
 
         var historyItems = history.items
         historyItems.removeAll {
-            guard case let .input(input) = $0, let instructions else {
+            guard case .input(let input) = $0, let instructions else {
                 return false
             }
 
             switch instructions {
-            case let .text(value):
+            case .text(let value):
                 return input.role == .system && input.text?.content == value
-            case let .inputs(value):
+            case .inputs(let value):
                 return value.contains(input)
             }
         }
@@ -94,9 +94,9 @@ extension OpenAIChatCompletionRequest {
 
         // instructions
         switch prompt.instructions {
-        case let .text(text):
+        case .text(let text):
             messages.append(.system(.init(content: .text(text), name: nil)))
-        case let .inputs(inputs):
+        case .inputs(let inputs):
             messages.append(contentsOf: inputs.compactMap { OpenAIChatCompletionRequestMessage($0) })
         case nil:
             break
@@ -111,12 +111,12 @@ extension OpenAIChatCompletionRequest {
         // historys
         for item in historyItems.suffix(lastK) {
             switch item {
-            case let .input(input):
+            case .input(let input):
                 let message = OpenAIChatCompletionRequestMessage(input)
                 if let message {
                     messages.append(message)
                 }
-            case let .generated(generated):
+            case .generated(let generated):
                 let message = OpenAIChatCompletionRequestMessage(generated)
                 if let message {
                     messages.append(message)

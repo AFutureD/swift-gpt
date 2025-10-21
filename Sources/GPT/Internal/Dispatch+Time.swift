@@ -11,6 +11,6 @@ import Dispatch
 ///
 /// A better method may refer to `NIODeadline.timeNow()`, but in our situation we do not need such accuracy.
 /// - Returns: The current uptime in nanoseconds.
-internal func uptimeInNanoseconds() -> UInt64 {
+func uptimeInNanoseconds() -> UInt64 {
     return DispatchTime.now().uptimeNanoseconds
 }

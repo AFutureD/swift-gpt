@@ -16,11 +16,11 @@ import Tracing
 /// It handles the underlying network requests, streaming, and retry logic.
 public struct GPTSession: Sendable {
     let client: ClientTransport
-    
+
     let retryAdviser: RetryAdviser
-    
+
     let lockedConversation: LazyLockedValue<Conversation?>
-    
+
     let logger: Logger
 
     /// Creates a new `GPTSession`.
@@ -84,7 +84,7 @@ public extension GPTSession {
             logger: logger,
             serviceContext: serviceContext
         )
-        
+
         return stream.map { [history] response in
             if case .completed(let event) = response {
                 lockedConversation.withLock {
@@ -96,7 +96,7 @@ public extension GPTSession {
             return response
         }.eraseToAnyAsyncSequence()
     }
-    
+
     /// Generates a complete, non-streaming response from the LLM.
     ///
     /// This method waits for the full response from the LLM before returning.
@@ -114,7 +114,7 @@ public extension GPTSession {
         assert(prompt.stream == false, "The prompt perfer do not use stream.")
 
         var history = conversation ?? Conversation()
-        
+
         let provider = model.provider.type.provider
         let response: ModelResponse = try await provider.generate(
             client: client,
@@ -125,10 +125,10 @@ public extension GPTSession {
             logger: logger,
             serviceContext: serviceContext
         )
-        
+
         history.items.append(contentsOf: prompt.inputs.map { .input($0) })
         history.items.append(contentsOf: response.items.map { .generated($0) })
-        
+
         lockedConversation.withLock { [history] in $0 = history }
         return response
     }
@@ -156,18 +156,18 @@ public extension GPTSession {
                 span.addEvent(.init(name: "Generate Failed", attributes: .init(["error": .string("emptyModelList")])))
                 throw RuntimeError.emptyModelList
             }
-            
+
             var iter = model.models.makeIterator()
             var model = iter.next()
-            
+
             var ctx = RetryAdviser.Context()
-            
+
             repeat {
                 guard let cur = model else { break }
-                
+
                 do {
                     ctx.current = model
-                    
+
                     if retryAdviser.skip(ctx) {
                         let error = RuntimeError.skipByRetryAdvice
                         ctx.append(error)
@@ -176,11 +176,11 @@ public extension GPTSession {
                         span.addEvent(.init(name: "SKip Provider", attributes: .init(["error": .string(error.description)])))
                         continue
                     }
-                    
+
                     let response: AnyAsyncSequence<ModelStreamResponse> = try await stream(prompt, model: cur, serviceContext: span.context)
-                    
+
                     retryAdviser.cleanCache(model: cur)
-                    
+
                     return response.map {
                         if case .completed = $0 {
                             span.end() // IMPORTANT
@@ -191,14 +191,14 @@ public extension GPTSession {
                     span.recordError(error)
                     logger.error("[*] GPTSession send prompt failed. Model: `\(cur)` Prompt: `\(prompt)` Error: \(error)")
                     ctx.append(error)
-                    
+
                     guard let retry = retryAdviser.retry(ctx, error: error) else {
                         model = iter.next()
                         logger.notice("[*] GPTSession retry with next model: \(model?.description ?? "nil")")
                         span.addEvent("Next Provider")
                         continue
                     }
-                    
+
                     logger.notice("[*] GPTSession retry with same model(\(model?.description ?? "nil"))")
                     do {
                         try await Task.sleep(nanoseconds: retry)
@@ -207,7 +207,7 @@ public extension GPTSession {
                     }
                 }
             } while model != nil
-            
+
             throw RuntimeError.retryFailed(ctx.errors)
         } catch {
             span.setStatus(.init(code: .error))
@@ -216,7 +216,7 @@ public extension GPTSession {
             throw error
         }
     }
-    
+
     /// Generates a complete, non-streaming response from a qualified model, with automatic retries and fallbacks.
     ///
     /// This method iterates through the models in the ``LLMQualifiedModel``, attempting the request according to the ``RetryAdviser``'s strategy.
@@ -236,18 +236,18 @@ public extension GPTSession {
                 span.addEvent(.init(name: "Generate Failed", attributes: .init(["error": .string("emptyModelList")])))
                 throw RuntimeError.emptyModelList
             }
-            
+
             var iter = model.models.makeIterator()
             var model = iter.next()
-            
+
             var ctx = RetryAdviser.Context()
-            
+
             repeat {
                 guard let cur = model else { break }
-                
+
                 do {
                     ctx.current = cur
-                    
+
                     if retryAdviser.skip(ctx) {
                         let error = RuntimeError.skipByRetryAdvice
                         ctx.append(error)
@@ -256,24 +256,24 @@ public extension GPTSession {
                         span.addEvent(.init(name: "SKip Provider", attributes: .init(["error": .string(error.description)])))
                         continue
                     }
-                    
+
                     let response: ModelResponse = try await generate(prompt, model: cur, serviceContext: span.context)
-                    
+
                     retryAdviser.cleanCache(model: cur)
-                    
+
                     return response
                 } catch {
                     span.recordError(error)
                     logger.error("[*] GPTSession send prompt failed. Model: `\(cur)` Prompt: `\(prompt)` Error: \(error)")
                     ctx.append(error)
-                    
+
                     guard let retry = retryAdviser.retry(ctx, error: error) else {
                         model = iter.next()
                         logger.notice("[*] GPTSession retry with next model: \(model?.description ?? "nil")")
                         span.addEvent("Next Provider")
                         continue
                     }
-                    
+
                     logger.notice("[*] GPTSession retry with same model(\(model?.description ?? "nil"))")
                     do {
                         try await Task.sleep(nanoseconds: retry)
@@ -282,7 +282,7 @@ public extension GPTSession {
                     }
                 }
             } while model != nil
-            
+
             span.setStatus(.init(code: .error))
             throw RuntimeError.retryFailed(ctx.errors)
         }

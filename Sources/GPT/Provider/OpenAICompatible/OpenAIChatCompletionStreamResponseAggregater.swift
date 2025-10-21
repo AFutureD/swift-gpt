@@ -16,11 +16,9 @@ extension AsyncSequence where Self: Sendable, Self.Element == OpenAIChatCompleti
     }
 }
 
-
 public struct OpenAIChatCompletionStreamResponseAsyncAggregater<Base>: Sendable, AsyncSequence
     where Base: AsyncSequence & Sendable, Base.Element == OpenAIChatCompletionStreamResponse
 {
-
     let base: Base
     let context: GenerationConext
 
@@ -28,14 +26,14 @@ public struct OpenAIChatCompletionStreamResponseAsyncAggregater<Base>: Sendable,
         self.base = base
         self.context = context
     }
-    
+
     public func makeAsyncIterator() -> Iterator {
         return Iterator(iterator: base.makeAsyncIterator(), context: context)
     }
 }
 
-extension OpenAIChatCompletionStreamResponseAsyncAggregater {
-    public struct Iterator: AsyncIteratorProtocol {
+public extension OpenAIChatCompletionStreamResponseAsyncAggregater {
+    struct Iterator: AsyncIteratorProtocol {
         enum State {
             case create(Base.AsyncIterator)
             case itemAdded(Base.AsyncIterator, event: Base.Element)
@@ -46,14 +44,14 @@ extension OpenAIChatCompletionStreamResponseAsyncAggregater {
             case completed(GeneratedItem?)
             case finished
         }
-        
+
         let context: GenerationConext
 
         init(iterator: Base.AsyncIterator, context: GenerationConext) {
             self.state = .create(iterator)
             self.context = context
         }
-        
+
         private var state: State
         private var stopReason: GenerationStop?
         private var usage: TokenUsage?
@@ -71,17 +69,17 @@ extension OpenAIChatCompletionStreamResponseAsyncAggregater {
                     state = .completed(nil)
                 }
                 return .create(.init(event: .create, data: .init(id: id, context: context, model: model, items: [], usage: nil, stop: nil, error: nil)))
-                
+
             case .itemAdded(let iterator, let event):
                 state = .contentAdded(iterator, event: event)
                 let messageItem = MessageItem(id: event.id, index: 0, content: nil)
                 return .itemAdded(.init(event: .itemAdded, data: .message(messageItem)))
-                
+
             case .contentAdded(let iterator, event: let event):
                 let (state, content) = generate(event, iterator: iterator, current: nil)
                 self.state = state
                 return .contentAdded(.init(event: .contentAdded, data: content))
-                
+
             case .contentDelta(var iterator, current: let current):
                 if let event = try await iterator.next() {
                     let (state, content) = generate(event, iterator: iterator, current: current)
@@ -91,16 +89,16 @@ extension OpenAIChatCompletionStreamResponseAsyncAggregater {
                     state = .contentDone(current)
                     return .contentDelta(.init(event: .contentDelta, data: current))
                 }
-                
+
             case .contentDone(let current):
                 state = .itemDone(current)
                 return .contentDone(.init(event: .contentDone, data: current))
-                
+
             case .itemDone(let current):
                 let item = MessageItem(id: id ?? "", index: 0, content: current.flatMap { [$0] } ?? [])
                 state = .completed(.message(item))
                 return .itemDone(.init(event: .itemDone, data: GeneratedItem.message(item)))
-                
+
             case .completed(let item):
                 state = .finished
                 let items = item.flatMap { [$0] } ?? []
@@ -108,10 +106,9 @@ extension OpenAIChatCompletionStreamResponseAsyncAggregater {
 
             case .finished:
                 return nil
-                
             }
         }
-        
+
         mutating func generate(
             _ event: OpenAIChatCompletionStreamResponse,
             iterator: Base.AsyncIterator,
@@ -130,29 +127,28 @@ extension OpenAIChatCompletionStreamResponseAsyncAggregater {
                 let content = TextGeneratedContent(delta: delta, content: delta, annotations: [])
                 return (.contentDelta(iterator, current: .text(content)), .text(content))
             }
-            
+
             guard let choice = event.choices.first else {
-                return (.contentDone(current) , current)
+                return (.contentDone(current), current)
             }
 
             if let refusal = choice.delta.refusal {
                 let content: MessageContent = .refusal(TextRefusalGeneratedContent(content: refusal))
-                return (.contentDone(content) , content)
+                return (.contentDone(content), content)
             }
-            
+
             let delta = choice.delta.content
-            
+
             let previous = current.text?.content
             let new = MessageContent.text(TextGeneratedContent(delta: delta,
                                                                content: (previous ?? "") + (delta ?? ""),
                                                                annotations: []))
-            
+
             if let finish = choice.finish_reason {
                 stopReason = .init(code: finish, message: nil)
             }
-            
+
             return (.contentDelta(iterator, current: new), new)
         }
-        
     }
 }

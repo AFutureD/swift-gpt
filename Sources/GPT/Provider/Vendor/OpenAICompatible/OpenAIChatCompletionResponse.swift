@@ -5,24 +5,23 @@
 //  Created by AFuture on 2025/5/20.
 //
 
-
 struct OpenAIChatCompletionResponse: Codable, Sendable {
     let choices: [OpenAIChatCompletionResponseChoice]
-    
+
     let created: Int
-    
+
     let id: String
-    
+
     let model: String
-    
+
     let object: String = "chat.completion.chunk"
-    
+
     let service_tier: OpenAIChatCompletionServiceTier?
-    
+
     let system_fingerprint: String?
-    
+
     let usage: OpenAIChatCompletionResponseUsage?
-    
+
     enum CodingKeys: CodingKey {
         case choices
         case created
@@ -60,7 +59,7 @@ struct OpenAIChatCompletionResponseChoiceMessage: Codable, Sendable {
 struct OpenAIChatCompletionResponseChoiceMessageAnnotation: Codable, Sendable {
     let type: String = "url_citation"
     let url_citation: OpenAIChatCompletionResponseChoiceMessageAnnotationURLCitation
-    
+
     enum CodingKeys: CodingKey {
         case type
         case url_citation
@@ -81,24 +80,23 @@ struct OpenAIChatCompletionResponseChoiceMessageAudio: Codable, Sendable {
     let trancript: String
 }
 
-
 public struct OpenAIChatCompletionStreamResponse: Codable, Sendable {
     public let choices: [OpenAIChatCompletionStreamResponseChoice]
-    
+
     public let created: Int
-    
+
     public let id: String
-    
+
     public let model: String
-    
+
     public let object: String = "chat.completion.chunk"
-    
+
     public let service_tier: OpenAIChatCompletionServiceTier?
-    
+
     public let system_fingerprint: String?
-    
+
     public let usage: OpenAIChatCompletionResponseUsage?
-    
+
     public enum CodingKeys: CodingKey {
         case choices
         case created
@@ -112,7 +110,7 @@ public struct OpenAIChatCompletionStreamResponse: Codable, Sendable {
 }
 
 public struct OpenAIChatCompletionResponseUsage: Codable, Sendable {
-    public  let completion_tokens: Int
+    public let completion_tokens: Int
     public let prompt_tokens: Int
     public let total_tokens: Int
     public let completion_tokens_details: OpenAIChatCompletionResponseUsageCompletionDetails?
@@ -168,7 +166,7 @@ public struct OpenAIChatCompletionResponseChoiceDeltaToolCall: Codable, Sendable
     public let function: OpenAIChatCompletionResponseChoiceDeltaToolCallFunction
     public let id: String
     public let type: String = "function"
-    
+
     public enum CodingKeys: CodingKey {
         case index
         case function

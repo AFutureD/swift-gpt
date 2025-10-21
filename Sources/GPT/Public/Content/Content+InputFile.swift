@@ -1,5 +1,5 @@
 //
-//  Content+FileInput.swift
+//  Content+InputFile.swift
 //  swift-gpt
 //
 //  Created by Huanan on 2025/8/29.
@@ -13,7 +13,6 @@ extension ContentType {
 
 /// A file-based input for a prompt.
 public struct FileInputContent: Sendable, Codable, Hashable {
-
     public let type: ContentType = .inputFile
     /// The role of the entity providing the content.
     public let role: ModelContentRole
@@ -47,7 +46,7 @@ public struct FileInputContent: Sendable, Codable, Hashable {
         self.filename = filename
         self.content = content
     }
-    
+
     public func hash(into hasher: inout Hasher) {
         hasher.combine(type)
         hasher.combine(role)

@@ -9,12 +9,12 @@ public enum ConversationItem: Sendable {
 extension ConversationItem: Codable {
     enum CodingKeys: String, CodingKey {
         case type
-    }   
+    }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let type = try container.decode(ContentType.self, forKey: .type)
-        
+
         switch type {
         case .inputText, .inputFile:
             self = try .input(.init(from: decoder))
@@ -36,11 +36,10 @@ extension ConversationItem: Codable {
     }
 }
 
-
 /// The Conversation struct represents a user conversation, consisting of multiple turns.
 public struct Conversation: Sendable, Codable {
     public var id: String?
-    
+
     public var items: [ConversationItem]
 
     public init(id: String? = nil, items: [ConversationItem] = []) {

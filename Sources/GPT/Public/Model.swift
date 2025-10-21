@@ -5,9 +5,9 @@
 //  Created by AFuture on 2025/7/12.
 //
 
-import OpenAPIRuntime
 import LazyKit
 import Logging
+import OpenAPIRuntime
 import ServiceContextModule
 
 // MARK: LLMProviderType
@@ -34,7 +34,7 @@ protocol LLMProvider: Sendable {
         logger: Logger,
         serviceContext: ServiceContext
     ) async throws -> AnyAsyncSequence<ModelStreamResponse>
-    
+
     func generate(
         client: ClientTransport,
         provider: LLMProviderConfiguration,
@@ -52,14 +52,14 @@ protocol LLMProvider: Sendable {
 public struct LLMProviderConfiguration: Hashable, Codable, Sendable {
     /// The type of the provider.
     public let type: LLMProviderType
-    
+
     /// A user-defined name for the provider configuration.
     public let name: String
     /// The API key for the provider.
     public let apiKey: String
     /// The base URL for the provider's API.
     public let apiURL: String
-    
+
     /// Creates a new provider configuration.
     ///
     /// - Parameters:
@@ -84,10 +84,10 @@ extension LLMProviderConfiguration: CustomStringConvertible {
 // MARK: LLMModel
 
 /// Represents a specific LLM model.
-public struct LLMModel: Hashable, Codable, Sendable  {
+public struct LLMModel: Hashable, Codable, Sendable {
     /// The name of the model (e.g., "gpt-4o").
     public let name: String
-    
+
     public init(name: String) {
         self.name = name
     }
@@ -101,15 +101,15 @@ public struct LLMModelReference: Hashable, Codable, Sendable {
     public let model: LLMModel
     /// The provider of the model.
     public let provider: LLMProviderConfiguration
-    
+
     public init(model: LLMModel, provider: LLMProviderConfiguration) {
         self.model = model
         self.provider = provider
     }
 }
 
-extension LLMModelReference {
-    public var name: String {
+public extension LLMModelReference {
+    var name: String {
         "\(provider.name)/\(model.name)"
     }
 }
@@ -126,10 +126,10 @@ extension LLMModelReference: CustomStringConvertible {
 public struct LLMQualifiedModel: Sendable {
     /// A user-defined name for the qualified model.
     public let name: String
-    
+
     /// A list of model references to be tried in sequence.
     public let models: [LLMModelReference]
-    
+
     /// Creates a new qualified model.
     ///
     /// - Parameters:

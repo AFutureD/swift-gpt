@@ -1,5 +1,5 @@
 //
-//  Content+TextInput.swift
+//  Content+InputText.swift
 //  swift-gpt
 //
 //  Created by Huanan on 2025/8/29.
@@ -8,7 +8,6 @@
 extension ContentType {
     static let inputText = ContentType(rawValue: "text")
 }
-
 
 /// A text-based input for a prompt.
 public struct TextInputContent: Sendable, Codable, Hashable {

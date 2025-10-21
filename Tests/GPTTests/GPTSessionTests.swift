@@ -1,49 +1,48 @@
-import Testing
-import OpenAPIAsyncHTTPClient
-import OpenAPIRuntime
+import Foundation
 @testable import GPT
 import HTTPTypes
-import Logging
-import Foundation
 import LazyKit
+import Logging
+import OpenAPIAsyncHTTPClient
+import OpenAPIRuntime
+import Testing
 
 @Suite("GPTSession Tests")
 struct GPTSessionTests {
-    
     var provider = LLMProviderConfiguration(
         type: .OpenAI,
         name: "Provider1",
         apiKey: "key1",
         apiURL: "https://invalid1.test.com"
     )
-    
+
     func buildFakeModel(_ name: String) -> LLMModelReference {
         LLMModelReference(
             model: LLMModel(name: name),
             provider: provider
         )
     }
-    
+
     @Test("GPTSession send with LLMQualifiedModel - empty models list")
     func testSendWithEmptyModelsList() async throws {
         let client = AsyncHTTPClientTransport()
         let session = GPTSession(client: client)
-        
+
         let qualifiedModel = LLMQualifiedModel(
             name: "EmptyModel",
             models: []
         )
-        
+
         let prompt = Prompt(
             instructions: "Test",
             inputs: [.text(.init(role: .user, content: "Hello"))]
         )
-        
+
         await #expect(throws: RuntimeError.emptyModelList) {
             _ = try await session.stream(prompt, model: qualifiedModel)
         }
     }
-    
+
     @Test("GPTSession send with LLMQualifiedModel - single model")
     func testSendWithSingleModel() async throws {
         let client = AsyncHTTPClientTransport()
@@ -53,12 +52,12 @@ struct GPTSessionTests {
             name: "TestModel",
             models: [buildFakeModel("foo")]
         )
-        
+
         let prompt = Prompt(
             instructions: "Test",
             inputs: [.text(.init(role: .user, content: "Hello"))]
         )
-        
+
         do {
             _ = try await session.stream(prompt, model: qualifiedModel)
             Issue.record("Should have thrown error due to invalid configuration")
@@ -66,7 +65,7 @@ struct GPTSessionTests {
             #expect(error is RuntimeError)
         }
     }
-    
+
     @Test("GPTSession with retry adviser preferNextProvider")
     func testRetryAdviserPreferNextProvider() async throws {
         let strategy = RetryAdviser.Strategy(
@@ -81,12 +80,12 @@ struct GPTSessionTests {
             name: "TestModel",
             models: [buildFakeModel("foo"), buildFakeModel("bar")]
         )
-        
+
         let prompt = Prompt(
             instructions: "Test",
             inputs: [.text(.init(role: .user, content: "Hello"))]
         )
-        
+
         do {
             _ = try await session.stream(prompt, model: qualifiedModel)
             Issue.record("Should have thrown error")

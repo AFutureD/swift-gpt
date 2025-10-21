@@ -38,9 +38,9 @@ extension Prompt.Input: Codable {
     public func encode(to encoder: any Encoder) throws {
         var container = encoder.singleValueContainer()
         switch self {
-        case let .text(value):
+        case .text(let value):
             try container.encode(value)
-        case let .file(value):
+        case .file(let value):
             try container.encode(value)
         }
     }
@@ -49,9 +49,9 @@ extension Prompt.Input: Codable {
 public extension Prompt.Input {
     var role: ModelContentRole {
         switch self {
-        case let .text(text):
+        case .text(let text):
             return text.role
-        case let .file(file):
+        case .file(let file):
             return file.role
         }
     }
@@ -59,12 +59,12 @@ public extension Prompt.Input {
 
 public extension Prompt.Input {
     var text: TextInputContent? {
-        guard case let .text(text) = self else { return nil }
+        guard case .text(let text) = self else { return nil }
         return text
     }
 
     var file: FileInputContent? {
-        guard case let .file(file) = self else { return nil }
+        guard case .file(let file) = self else { return nil }
         return file
     }
 }
@@ -96,9 +96,9 @@ extension Prompt.Instructions: Codable {
         var container = encoder.singleValueContainer()
 
         switch self {
-        case let .text(string):
+        case .text(let string):
             try container.encode(string)
-        case let .inputs(array):
+        case .inputs(let array):
             try container.encode(array)
         }
     }
@@ -112,14 +112,14 @@ extension Prompt.Instructions: ExpressibleByStringLiteral {
 
 extension Prompt.Instructions {
     var text: String? {
-        if case let .text(string) = self {
+        if case .text(let string) = self {
             return string
         }
         return nil
     }
 
     var inputs: [Prompt.Input]? {
-        if case let .inputs(items) = self {
+        if case .inputs(let items) = self {
             return items
         }
         return nil
@@ -226,20 +226,20 @@ extension Prompt: Codable {
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
-        conversationID = try container.decodeIfPresent(String.self, forKey: .conversationID)
-        instructions = try container.decodeIfPresent(Prompt.Instructions.self, forKey: .instructions)
-        inputs = try container.decode([Prompt.Input].self, forKey: .inputs)
-        stream = try container.decode(Bool.self, forKey: .stream)
-        context = try container.decodeIfPresent(Prompt.ContextControl.self, forKey: .context)
+        self.conversationID = try container.decodeIfPresent(String.self, forKey: .conversationID)
+        self.instructions = try container.decodeIfPresent(Prompt.Instructions.self, forKey: .instructions)
+        self.inputs = try container.decode([Prompt.Input].self, forKey: .inputs)
+        self.stream = try container.decode(Bool.self, forKey: .stream)
+        self.context = try container.decodeIfPresent(Prompt.ContextControl.self, forKey: .context)
 
         if let value = try? container.decodeIfPresent(GenerationControl.self, forKey: .generation) {
-            generation = value
+            self.generation = value
         } else {
             let store = try? container.decodeIfPresent(Bool.self, forKey: .store)
             let temperature = try? container.decodeIfPresent(Double.self, forKey: .temperature)
             let topP = try? container.decodeIfPresent(Double.self, forKey: .topP)
             let maxTokens = try? container.decodeIfPresent(Int.self, forKey: .maxTokens)
-            generation = .init(temperature: temperature, topP: topP, maxTokens: maxTokens, store: store)
+            self.generation = .init(temperature: temperature, topP: topP, maxTokens: maxTokens, store: store)
         }
     }
 

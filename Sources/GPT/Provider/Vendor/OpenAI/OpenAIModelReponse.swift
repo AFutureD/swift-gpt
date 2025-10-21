@@ -1,5 +1,5 @@
 //
-//  LLMNode+OpenAI+Response.swift
+//  OpenAIModelReponse.swift
 //  swift-workflow
 //
 //  Created by AFuture on 2025/5/6.
@@ -956,95 +956,95 @@ enum OpenAIModelStreamResponse: Codable, Sendable {
     func encode(to encoder: any Encoder) throws {
         var container = encoder.singleValueContainer()
         switch self {
-        case let .error(error):
+        case .error(let error):
             try container.encode(error)
-        case let .response_created(response):
+        case .response_created(let response):
             try container.encode(response)
-        case let .response_in_progress(response):
+        case .response_in_progress(let response):
             try container.encode(response)
-        case let .response_completed(response):
+        case .response_completed(let response):
             try container.encode(response)
-        case let .response_failed(response):
+        case .response_failed(let response):
             try container.encode(response)
-        case let .response_incomplete(response):
+        case .response_incomplete(let response):
             try container.encode(response)
-        case let .response_output_item_added(response):
+        case .response_output_item_added(let response):
             try container.encode(response)
-        case let .response_output_item_done(response):
+        case .response_output_item_done(let response):
             try container.encode(response)
-        case let .response_content_part_added(response):
+        case .response_content_part_added(let response):
             try container.encode(response)
-        case let .response_content_part_done(response):
+        case .response_content_part_done(let response):
             try container.encode(response)
-        case let .response_output_text_delta(response):
+        case .response_output_text_delta(let response):
             try container.encode(response)
-        case let .response_output_text_annotation_delta(response):
+        case .response_output_text_annotation_delta(let response):
             try container.encode(response)
-        case let .response_output_text_done(response):
+        case .response_output_text_done(let response):
             try container.encode(response)
-        case let .response_refusal_delta(response):
+        case .response_refusal_delta(let response):
             try container.encode(response)
-        case let .response_refusal_done(response):
+        case .response_refusal_done(let response):
             try container.encode(response)
-        case let .response_function_call_arguments_delta(response):
+        case .response_function_call_arguments_delta(let response):
             try container.encode(response)
-        case let .response_function_call_arguments_done(response):
+        case .response_function_call_arguments_done(let response):
             try container.encode(response)
-        case let .response_file_search_call_in_progress(response):
+        case .response_file_search_call_in_progress(let response):
             try container.encode(response)
-        case let .response_file_search_call_searching(response):
+        case .response_file_search_call_searching(let response):
             try container.encode(response)
-        case let .response_file_search_call_completed(response):
+        case .response_file_search_call_completed(let response):
             try container.encode(response)
-        case let .response_web_search_call_in_progress(response):
+        case .response_web_search_call_in_progress(let response):
             try container.encode(response)
-        case let .response_web_search_call_searching(response):
+        case .response_web_search_call_searching(let response):
             try container.encode(response)
-        case let .response_web_search_call_completed(response):
+        case .response_web_search_call_completed(let response):
             try container.encode(response)
-        case let .response_reasoning_summary_part_added(response):
+        case .response_reasoning_summary_part_added(let response):
             try container.encode(response)
-        case let .response_reasoning_summary_part_done(response):
+        case .response_reasoning_summary_part_done(let response):
             try container.encode(response)
-        case let .response_reasoning_summary_text_delta(response):
+        case .response_reasoning_summary_text_delta(let response):
             try container.encode(response)
-        case let .response_reasoning_summary_text_done(response):
+        case .response_reasoning_summary_text_done(let response):
             try container.encode(response)
-        case let .response_image_generation_call_completed(response):
+        case .response_image_generation_call_completed(let response):
             try container.encode(response)
-        case let .response_image_generation_call_generating(response):
+        case .response_image_generation_call_generating(let response):
             try container.encode(response)
-        case let .response_image_generation_call_in_progress(response):
+        case .response_image_generation_call_in_progress(let response):
             try container.encode(response)
-        case let .response_image_generation_call_partial_image(response):
+        case .response_image_generation_call_partial_image(let response):
             try container.encode(response)
-        case let .response_mcp_call_argument_delta(response):
+        case .response_mcp_call_argument_delta(let response):
             try container.encode(response)
-        case let .response_mcp_call_argument_done(response):
+        case .response_mcp_call_argument_done(let response):
             try container.encode(response)
-        case let .response_mcp_call_completed(response):
+        case .response_mcp_call_completed(let response):
             try container.encode(response)
-        case let .response_mcp_call_failed(response):
+        case .response_mcp_call_failed(let response):
             try container.encode(response)
-        case let .response_mcp_call_in_progress(response):
+        case .response_mcp_call_in_progress(let response):
             try container.encode(response)
-        case let .response_mcp_list_tools_completed(response):
+        case .response_mcp_list_tools_completed(let response):
             try container.encode(response)
-        case let .response_mcp_list_tools_failed(response):
+        case .response_mcp_list_tools_failed(let response):
             try container.encode(response)
-        case let .response_mcp_list_tools_in_progress(response):
+        case .response_mcp_list_tools_in_progress(let response):
             try container.encode(response)
-        case let .response_output_text_annotation_added(response):
+        case .response_output_text_annotation_added(let response):
             try container.encode(response)
-        case let .response_queued(response):
+        case .response_queued(let response):
             try container.encode(response)
-        case let .response_reasoning_delta(response):
+        case .response_reasoning_delta(let response):
             try container.encode(response)
-        case let .response_reasoning_done(response):
+        case .response_reasoning_done(let response):
             try container.encode(response)
-        case let .response_reasoning_summary_delta(response):
+        case .response_reasoning_summary_delta(let response):
             try container.encode(response)
-        case let .response_reasoning_summary_done(response):
+        case .response_reasoning_summary_done(let response):
             try container.encode(response)
         }
     }

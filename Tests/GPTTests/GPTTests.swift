@@ -1,27 +1,27 @@
-import Testing
-import OpenAPIAsyncHTTPClient
-@testable import GPT
-import os.log
-import TestKit
-import SwiftDotenv
 import Foundation
+@testable import GPT
+import OpenAPIAsyncHTTPClient
+import os.log
+import SwiftDotenv
+import Testing
+import TestKit
 
 @Test("testExmaple")
 func testExmaple() async throws {
     try Dotenv.make()
-    
+
     let client = AsyncHTTPClientTransport()
     let session = GPTSession(client: client)
-    
+
     let prompt = Prompt(
         instructions: """
-            be an echo server.
-            what I send to you, you send back.
+        be an echo server.
+        what I send to you, you send back.
 
-            the exceptions:
-            1. send "ping", back "pong"
-            2. send "ding", back "dang"
-            """,
+        the exceptions:
+        1. send "ping", back "pong"
+        2. send "ding", back "dang"
+        """,
         inputs: [
             .text(.init(role: .developer, content: "Trim Spaces.")),
             .text(.init(role: .assistant, content: "Ok")),
@@ -31,38 +31,37 @@ func testExmaple() async throws {
     let openai = LLMProviderConfiguration(type: .OpenAI, name: "OpenAI", apiKey: Dotenv["OPENAI_API_KEY"]!.stringValue, apiURL: "https://api.openai.com/v1")
     let model = LLMModelReference(model: .init(name: "gpt-4o-mini"), provider: openai)
     let response = try await session.stream(prompt, model: model)
-   
+
     let logger = Logger()
     for try await event in response {
         logger.info("\(String(describing: event))")
     }
 }
 
-
 @Test("testExmaple2")
 func testExmaple2() async throws {
     try Dotenv.make()
-    
+
     let client = AsyncHTTPClientTransport()
     let session = GPTSession(client: client)
-    
+
     let prompt = Prompt(
         instructions: """
-            be an echo server.
-            what I send to you, you send back.
-            
-            the exceptions:
-            1. send "ping", back "pong"
-            2. send "ding", back "dang"
-            """,
+        be an echo server.
+        what I send to you, you send back.
+
+        the exceptions:
+        1. send "ping", back "pong"
+        2. send "ding", back "dang"
+        """,
         inputs: [
-            .text(.init(role: .user, content: "Ping"))
+            .text(.init(role: .user, content: "Ping")),
         ]
     )
     let openai = LLMProviderConfiguration(type: .OpenAICompatible, name: "OpenAI", apiKey: Dotenv["OPENAI_API_KEY"]!.stringValue, apiURL: "https://api.openai.com/v1")
     let model = LLMModelReference(model: .init(name: "gpt-4o"), provider: openai)
     let response = try await session.stream(prompt, model: model)
-    
+
     let logger = Logger()
     for try await event in response {
         logger.info("\(String(describing: event))")
@@ -72,35 +71,35 @@ func testExmaple2() async throws {
 @Test("testExmaple3")
 func testExmaple3() async throws {
     try Dotenv.make()
-    
-    let client = AsyncHTTPClientTransport(configuration: .init(timeout: .milliseconds(5_000)))
+
+    let client = AsyncHTTPClientTransport(configuration: .init(timeout: .milliseconds(5000)))
     let session = GPTSession(client: client, retryAdviser: .init(strategy: .init(backOff: .simple(delay: 10_000_000_000))))
-    
+
     let prompt = Prompt(
         instructions: """
-            be an echo server.
-            what I send to you, you send back.
-            
-            the exceptions:
-            1. send "ping", back "pong"
-            2. send "ding", back "dang"
-            """,
+        be an echo server.
+        what I send to you, you send back.
+
+        the exceptions:
+        1. send "ping", back "pong"
+        2. send "ding", back "dang"
+        """,
         inputs: [
-            .text(.init(role: .user, content: "Ping"))
+            .text(.init(role: .user, content: "Ping")),
         ]
     )
-    
+
     let openai1 = LLMProviderConfiguration(type: .OpenAICompatible, name: "OpenAI", apiKey: Dotenv["OPENAI_API_KEY"]!.stringValue, apiURL: "https://api.openai.com/v1")
     let openai2 = LLMProviderConfiguration(type: .OpenAI, name: "OpenAI", apiKey: Dotenv["OPENAI_API_KEY"]!.stringValue, apiURL: "https://api.openai.com")
     let gpt_4o_1 = LLMModelReference(model: .init(name: "gpt-4o"), provider: openai1)
     let gpt_4o_2 = LLMModelReference(model: .init(name: "gpt-4o"), provider: openai2)
     let response = try await session.stream(prompt, model: .init(name: "gpt-4o", models: [gpt_4o_2, gpt_4o_1]))
-    
+
     let logger = Logger()
     for try await event in response {
         logger.info("\(String(describing: event))")
     }
-    
+
     let response2 = try await session.stream(prompt, model: .init(name: "gpt-4o", models: [gpt_4o_2, gpt_4o_1]))
     for try await event in response2 {
         logger.info("\(String(describing: event))")
@@ -110,21 +109,21 @@ func testExmaple3() async throws {
 @Test("testExmaple4")
 func testExmaple4() async throws {
     try Dotenv.make()
-    
+
     let client = AsyncHTTPClientTransport()
     let session = GPTSession(client: client)
-    
+
     let prompt = Prompt(
         instructions: """
-            be an echo server.
-            what I send to you, you send back.
-            
-            the exceptions:
-            1. send "ping", back "pong"
-            2. send "ding", back "dang"
-            """,
+        be an echo server.
+        what I send to you, you send back.
+
+        the exceptions:
+        1. send "ping", back "pong"
+        2. send "ding", back "dang"
+        """,
         inputs: [
-            .text(.init(role: .user, content: "Ping"))
+            .text(.init(role: .user, content: "Ping")),
         ],
         stream: false
     )
@@ -136,11 +135,10 @@ func testExmaple4() async throws {
     )
     let model = LLMModelReference(model: .init(name: "gpt-4o"), provider: openai)
     let response = try await session.generate(prompt, model: model)
-    
+
     let logger = Logger()
     logger.info("\(String(describing: response))")
 }
-
 
 @Test("testConversationBlock")
 func testConversationBlock() async throws {
@@ -148,14 +146,13 @@ func testConversationBlock() async throws {
     let client = AsyncHTTPClientTransport()
     let openai = LLMProviderConfiguration(type: .OpenAICompatible, name: "OpenAI", apiKey: Dotenv["OPENAI_API_KEY"]!.stringValue, apiURL: "https://api.openai.com/v1")
     let model = LLMModelReference(model: .init(name: "gpt-4o"), provider: openai)
-    
+
     let session = GPTSession(client: client, conversation: nil)
 
     do {
-
         let prompt = Prompt(
             inputs: [
-                .text("Hi, I'm John.")
+                .text("Hi, I'm John."),
             ],
             stream: false
         )
@@ -166,10 +163,9 @@ func testConversationBlock() async throws {
     }
 
     do {
-
         let prompt = Prompt(
             inputs: [
-                .text("What's my name?")
+                .text("What's my name?"),
             ],
             stream: false
         )
@@ -193,14 +189,13 @@ func testConversationStream() async throws {
         apiURL: "https://api.openai.com/v1"
     )
     let gpt4o = LLMModelReference(model: .init(name: "gpt-4o"), provider: openai)
-    
+
     let session = GPTSession(client: client, conversation: nil)
 
     do {
-
         let prompt = Prompt(
             inputs: [
-                .text("Hi, I'm John.")
+                .text("Hi, I'm John."),
             ]
         )
 
@@ -213,10 +208,9 @@ func testConversationStream() async throws {
     }
 
     do {
-
         let prompt = Prompt(
             inputs: [
-                .text("What's my name?")
+                .text("What's my name?"),
             ]
         )
 
@@ -225,7 +219,7 @@ func testConversationStream() async throws {
         for try await event in stream {
             print("event: \(String(describing: event))")
         }
-        
+
         #expect(session.conversation != nil)
         #expect(session.conversation?.items.count == 4)
     }
@@ -238,14 +232,11 @@ func testConversationSerialization() async throws {
     let openai = LLMProviderConfiguration(type: .OpenAICompatible, name: "OpenAI", apiKey: Dotenv["OPENAI_API_KEY"]!.stringValue, apiURL: "https://api.openai.com/v1")
     let model = LLMModelReference(model: .init(name: "gpt-4o"), provider: openai)
 
-    
-
     let data: Data
     do {
-
         let prompt = Prompt(
             inputs: [
-                .text("Hi, I'm John.")
+                .text("Hi, I'm John."),
             ],
             stream: false
         )
@@ -259,10 +250,9 @@ func testConversationSerialization() async throws {
     }
 
     do {
-
         let prompt = Prompt(
             inputs: [
-                .text("What's my name?")
+                .text("What's my name?"),
             ],
             stream: false
         )
@@ -273,7 +263,7 @@ func testConversationSerialization() async throws {
         #expect(session.conversation != nil)
         #expect(session.conversation?.items.count == 4)
         #expect(response.message?.text?.contains("John") == true)
-        
+
         print("response: \(String(describing: response))")
     }
 }
@@ -284,22 +274,20 @@ func textConversationMaxItems() async throws {
     let client = AsyncHTTPClientTransport()
     let openai = LLMProviderConfiguration(type: .OpenAICompatible, name: "OpenAI", apiKey: Dotenv["OPENAI_API_KEY"]!.stringValue, apiURL: "https://api.openai.com/v1")
     let model = LLMModelReference(model: .init(name: "gpt-4o"), provider: openai)
-    
-    
+
     var conversation = Conversation()
     conversation.items = [
         .input(.text("Hi, I am John.")),
         .input(.text("I am 18 years old.")),
-        .input(.text("I like Progammming."))
+        .input(.text("I like Progammming.")),
     ]
-    
+
     let session = GPTSession(client: client, conversation: conversation)
 
     do {
-
         let prompt = Prompt(
             inputs: [
-                .text("How old am I.")
+                .text("How old am I."),
             ],
             stream: false,
             context: .init(maxItemCount: 3)
@@ -308,12 +296,11 @@ func textConversationMaxItems() async throws {
         let response: ModelResponse = try await session.generate(prompt, model: model)
         #expect(response.message?.text?.contains("18") ?? false)
     }
-    
-    do {
 
+    do {
         let prompt = Prompt(
             inputs: [
-                .text("What is my name?")
+                .text("What is my name?"),
             ],
             stream: false,
             context: .init(maxItemCount: 3)

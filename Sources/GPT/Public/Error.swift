@@ -29,7 +29,7 @@ extension RuntimeError: Equatable {
             return true
         case (.emptyModelList, .emptyModelList):
             return true
-        case (.invalidApiURL(let lhsURL), .invalidApiURL(let rhsURL))   :
+        case (.invalidApiURL(let lhsURL), .invalidApiURL(let rhsURL)):
             return lhsURL == rhsURL
         case (.reveiveUnsupportedContentTypeInResponse, .reveiveUnsupportedContentTypeInResponse):
             return true
@@ -45,7 +45,7 @@ extension RuntimeError: Equatable {
             return true
         default:
             return false
-        }   
+        }
     }
 }
 

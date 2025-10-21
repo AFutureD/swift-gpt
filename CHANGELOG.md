@@ -1,24 +1,32 @@
 # Changelog
 
+## [WIP] 0.5.1
+
+- Introduce [SwiftFormat](https://github.com/nicklockwood/SwiftFormat)
+
 ## 0.5.0 (2025-10-18)
 
 Feature enhancements:
+
 - Added tracing support via `swift-distributed-tracing`.
 
 ## 0.4.0 (2025-10-12)
 
 Feature enhancements:
+
 - Added `ContextControl` and `GenerationControl` to simplify `Prompt`.
 - Introduced `ConversationID` support via `GenerationContext`.
 
 ## 0.3.0 (2025-09-28)
 
 Feature enhancements:
+
 - Rewrote `OpenAIChatCompletionStreamResponseAsyncAggregater`.
 
 ## 0.2.0 (2025-09-23)
 
 Feature enhancements:
+
 - Rewrote types.
 - Added convenience methods.
 - Added conversation support.

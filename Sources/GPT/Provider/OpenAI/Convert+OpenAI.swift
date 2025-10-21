@@ -3,9 +3,9 @@ import Foundation
 extension OpenAIModelReponseRequestInputItemMessageContentItem {
     init?(_ input: Prompt.Input) {
         switch input {
-        case let .text(text):
+        case .text(let text):
             self = .text(.init(text: text.content))
-        case let .file(file):
+        case .file(let file):
             self = .file(.init(fileData: file.content, fileID: file.id, filename: file.filename))
         }
     }
@@ -14,7 +14,7 @@ extension OpenAIModelReponseRequestInputItemMessageContentItem {
 extension OpenAIModelReponseContextOutputContent {
     init?(_ input: Prompt.Input) {
         switch input {
-        case let .text(text):
+        case .text(let text):
             self = .text(.init(annotations: [], text: text.content))
         default:
             return nil
@@ -25,7 +25,7 @@ extension OpenAIModelReponseContextOutputContent {
 extension OpenAIModelReponseContext {
     init?(_ generatedItem: GeneratedItem) {
         switch generatedItem {
-        case let .message(message):
+        case .message(let message):
             var content: [OpenAIModelReponseContextOutputContent] = []
             if let refusal = message.refusalContent, let text = refusal.content {
                 content.append(.refusal(.init(refusal: text)))
@@ -68,13 +68,13 @@ private func convert(conversationItems: [ConversationItem]) -> [OpenAIModelRepon
     var items: [OpenAIModelReponseRequestInputItem] = []
     for item in conversationItems {
         switch item {
-        case let .input(input):
+        case .input(let input):
             if let content = OpenAIModelReponseRequestInputItemMessageContentItem(input) {
                 let input: OpenAIModelReponseContextInput = .init(content: [content], role: .init(rawValue: String(describing: input.role)) ?? .user, status: nil)
                 items.append(.output(.input(input)))
             }
 
-        case let .generated(generated):
+        case .generated(let generated):
             if let output: OpenAIModelReponseContext = .init(generated) {
                 items.append(.output(output))
             }
@@ -91,14 +91,14 @@ extension OpenAIModelReponseRequest {
 
         var historyItems = history.items
         historyItems.removeAll {
-            guard case let .input(input) = $0, let instructions else {
+            guard case .input(let input) = $0, let instructions else {
                 return false
             }
 
             switch instructions {
-            case let .text(value):
+            case .text(let value):
                 return input.role == .system && input.text?.content == value
-            case let .inputs(value):
+            case .inputs(let value):
                 return value.contains(input)
             }
         }
@@ -106,7 +106,7 @@ extension OpenAIModelReponseRequest {
         var items: [OpenAIModelReponseRequestInputItem] = []
 
         // Instructions
-        if case let .inputs(inputs) = prompt.instructions {
+        if case .inputs(let inputs) = prompt.instructions {
             items.append(contentsOf: convert(inputs: inputs))
         }
 
@@ -149,7 +149,7 @@ extension OpenAIModelReponseRequest {
 extension OpenAIModelReponseContext {
     func convert(idx: Int) -> GeneratedItem? {
         switch self {
-        case let .output(output):
+        case .output(let output):
             let contents = output.content.map {
                 $0.convertToGenratedItem()
             }
@@ -195,16 +195,16 @@ extension ModelStreamResponse {
         case .response_created:
             self = .create(.init(event: .create, data: nil))
 
-        case let .response_completed(completed):
+        case .response_completed(let completed):
             self = .completed(.init(event: .completed, data: ModelResponse(completed.response, context)))
 
-        case let .response_incomplete(incomplete):
+        case .response_incomplete(let incomplete):
             self = .completed(.init(event: .completed, data: ModelResponse(incomplete.response, context)))
 
-        case let .response_failed(failed):
+        case .response_failed(let failed):
             self = .completed(.init(event: .completed, data: ModelResponse(failed.response, context)))
 
-        case let .error(error):
+        case .error(let error):
             self = .completed(.init(event: .completed,
                                     data: ModelResponse(id: nil,
                                                         context: context,
@@ -214,29 +214,29 @@ extension ModelStreamResponse {
                                                         stop: nil,
                                                         error: .init(code: error.code, message: error.message))))
 
-        case let .response_output_item_added(itemAdded):
+        case .response_output_item_added(let itemAdded):
             if let item = itemAdded.item.convert(idx: itemAdded.output_index) {
                 self = .itemAdded(.init(event: .itemAdded, data: item))
             } else {
                 return nil
             }
 
-        case let .response_output_item_done(itemDone):
+        case .response_output_item_done(let itemDone):
             if let item = itemDone.item.convert(idx: itemDone.output_index) {
                 self = .itemDone(.init(event: .itemDone, data: item))
             } else {
                 return nil
             }
 
-        case let .response_content_part_added(partAdded):
+        case .response_content_part_added(let partAdded):
             let content = partAdded.part.convertToGenratedItem()
             self = .contentAdded(.init(event: .contentAdded, data: content))
 
-        case let .response_content_part_done(partDone):
+        case .response_content_part_done(let partDone):
             let content = partDone.part.convertToGenratedItem()
             self = .contentDone(.init(event: .contentDone, data: content))
 
-        case let .response_output_text_delta(textDelta):
+        case .response_output_text_delta(let textDelta):
             let content = TextGeneratedContent(delta: textDelta.delta, content: nil, annotations: [])
             self = .contentDelta(.init(event: .contentDelta, data: .text(content)))
 
@@ -249,9 +249,9 @@ extension ModelStreamResponse {
 extension OpenAIModelReponseContextOutputContent {
     func convertToGenratedItem() -> MessageContent {
         switch self {
-        case let .text(text):
+        case .text(let text):
             .text(TextGeneratedContent(delta: nil, content: text.text, annotations: [])) // TODO: support annotations
-        case let .refusal(refusal):
+        case .refusal(let refusal):
             .refusal(TextRefusalGeneratedContent(content: refusal.refusal))
         }
     }
