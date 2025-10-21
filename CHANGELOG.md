@@ -2,7 +2,10 @@
 
 ## [WIP] 0.5.1
 
+Feature enhancements:
+
 - Introduce [SwiftFormat](https://github.com/nicklockwood/SwiftFormat)
+- Add attributes in tracing when collection response body failed.
 
 ## 0.5.0 (2025-10-18)
 
