@@ -77,7 +77,14 @@ struct OpenAICompatibleProvider: LLMProvider {
                 throw RuntimeError.emptyResponseBody
             }
 
-            let data = try await Data(collecting: responseBody, upTo: .max)
+            let data: Data
+            do {
+                data = try await Data(collecting: responseBody, upTo: .max)
+            } catch {
+                span.attributes.set("response.headers", value: .string(response.headerFields.debugDescription))
+                span.attributes.set("response.body.length", value: .string(String(describing: responseBody.length)))
+                throw error
+            }
 
             do {
                 let openAIChatCompletionResponse = try decoder.decode(OpenAIChatCompletionResponse.self, from: data)
