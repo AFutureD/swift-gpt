@@ -1987,65 +1987,65 @@ public enum OpenAIModelReponseRequestTruncation: String, Codable, Sendable {
 
 public struct OpenAIModelReponseRequest: Codable, Sendable {
     /// Text, image, or file inputs to the model, used to generate a response.
-    let input: OpenAIModelReponseRequestInput
+    public let input: OpenAIModelReponseRequestInput
 
     /// Model ID used to generate the response, like gpt-4o or o1.
     /// OpenAI offers a wide range of models with different capabilities, performance characteristics, and price points.
     /// Refer to the [model](https://platform.openai.com/docs/models) guide to browse and compare available models.
-    let model: String
+    public let model: String
 
     /// Whether to run the model response in the background.
     /// [Learn more](https://platform.openai.com/docs/guides/background).
     ///
     /// Defaults to false
-    let background: Bool?
+    public let background: Bool?
 
     /// Specify additional output data to include in the model response.
-    let include: [ModelReponseRequestAdditionalData]?
+    public let include: [ModelReponseRequestAdditionalData]?
 
     /// Inserts a system (or developer) message as the first item in the model's context.
     ///
     /// When using along with `previous_response_id`,
     /// the instructions from a previous response will not be carried over to the next response.
     /// This makes it simple to swap out system (or developer) messages in new responses.
-    let instructions: String?
+    public let instructions: String?
 
     /// An upper bound for the number of tokens that can be generated for a response,
     /// including visible output tokens and [reasoning tokens](https://platform.openai.com/docs/guides/reasoning).
-    let maxOutputTokens: Int?
+    public let maxOutputTokens: Int?
 
     /// Set of 16 key-value pairs that can be attached to an object.
     /// This can be useful for storing additional information about the object in a structured format,
     /// and querying for objects via API or the dashboard.
     ///
     /// Keys are strings with a maximum length of 64 characters. Values are strings with a maximum length of 512 characters.
-    let metadata: [String: String]?
+    public let metadata: [String: String]?
 
     /// Whether to allow the model to run tool calls in parallel.
     /// Defaults to true.
-    let parallelToolCalls: Bool?
+    public let parallelToolCalls: Bool?
 
     /// The unique ID of the previous response to the model.
     /// Use this to create multi-turn conversations.
     /// Learn more about [conversation state](https://platform.openai.com/docs/guides/conversation-state).
-    let previousResponseId: String?
+    public let previousResponseId: String?
 
     /// Configuration options for [reasoning models](https://platform.openai.com/docs/guides/reasoning).
     ///
     /// o-series models only
-    let reasoning: OpenAIModelReponseRequestResoning?
+    public let reasoning: OpenAIModelReponseRequestResoning?
 
     /// Whether to store the generated model response for later retrieval via API.
     ///
     /// Defaults to true
-    let store: Bool?
+    public let store: Bool?
 
     /// If set to true, the model response data will be streamed
     /// to the client as it is generated using [server-sent events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events#Event_stream_format).
     /// See the [Streaming section](https://platform.openai.com/docs/api-reference/responses-streaming) below for more information.
     ///
     /// Defaults to false
-    let stream: Bool?
+    public let stream: Bool?
 
     /// What sampling temperature to use, between 0 and 2.
     /// Higher values like 0.8 will make the output more random,
@@ -2053,7 +2053,7 @@ public struct OpenAIModelReponseRequest: Codable, Sendable {
     /// We generally recommend altering this or `top_p` but not both.
     ///
     /// Defaults to 1
-    let temperature: Double?
+    public let temperature: Double?
 
     /// Configuration options for a text response from the model.
     /// Can be plain text or structured JSON data.
@@ -2061,11 +2061,11 @@ public struct OpenAIModelReponseRequest: Codable, Sendable {
     /// Learn more:
     /// [Text inputs and outputs](https://platform.openai.com/docs/guides/text)
     /// [Structured Outputs](https://platform.openai.com/docs/guides/structured-outputs)
-    let text: openAIModelReponseRequestTextConfiguration?
+    public let text: openAIModelReponseRequestTextConfiguration?
 
     /// How the model should select which tool (or tools) to use when generating a response.
     /// See the tools parameter to see how to specify which tools the model can call.
-    let toolChoice: OpenAIModelReponseRequestToolChoice?
+    public let toolChoice: OpenAIModelReponseRequestToolChoice?
 
     /// An array of tools the model may call while generating a response.
     /// You can specify which tool to use by setting the `tool_choice` parameter.
@@ -2077,41 +2077,156 @@ public struct OpenAIModelReponseRequest: Codable, Sendable {
     ///   - Function calls (custom tools): Functions that are defined by you,
     ///     enabling the model to call your own code.
     ///     Learn more about [function calling](https://platform.openai.com/docs/guides/function-calling).
-    let tools: [OpenAIModelReponseRequestTool]?
+    public let tools: [OpenAIModelReponseRequestTool]?
 
     /// An alternative to sampling with temperature, called nucleus sampling,
     /// where the model considers the results of the tokens with `top_p` probability mass.
     /// So 0.1 means only the tokens comprising the top 10% probability mass are considered.
     /// We generally recommend altering this or `temperature` but not both.
-    let topP: Double?
+    public let topP: Double?
 
     /// The truncation strategy to use for the model response.
     /// Defaults to disabled
-    let truncation: OpenAIModelReponseRequestTruncation?
+    public let truncation: OpenAIModelReponseRequestTruncation?
 
     /// A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse.
     /// [Learn more](https://platform.openai.com/docs/guides/safety-best-practices#end-user-ids).
-    let user: String?
+    public let user: String?
 
-    enum CodingKeys: String, CodingKey {
-        case input
-        case model
-        case background
-        case include
-        case instructions
-        case maxOutputTokens = "max_output_tokens"
-        case metadata
-        case parallelToolCalls = "parallel_tool_calls"
-        case previousResponseId = "previous_response_id"
-        case reasoning
-        case store
-        case stream
-        case temperature
-        case text
-        case toolChoice
-        case tools
-        case topP = "top_p"
-        case truncation
-        case user
+    public let extraBody: [String: DynamicJSON.JSON]
+    
+    public init(input: OpenAIModelReponseRequestInput, model: String, background: Bool?, include: [ModelReponseRequestAdditionalData]?, instructions: String?, maxOutputTokens: Int?, metadata: [String : String]?, parallelToolCalls: Bool?, previousResponseId: String?, reasoning: OpenAIModelReponseRequestResoning?, store: Bool?, stream: Bool?, temperature: Double?, text: openAIModelReponseRequestTextConfiguration?, toolChoice: OpenAIModelReponseRequestToolChoice?, tools: [OpenAIModelReponseRequestTool]?, topP: Double?, truncation: OpenAIModelReponseRequestTruncation?, user: String?, extraBody: [String : DynamicJSON.JSON] = [:]) {
+        self.input = input
+        self.model = model
+        self.background = background
+        self.include = include
+        self.instructions = instructions
+        self.maxOutputTokens = maxOutputTokens
+        self.metadata = metadata
+        self.parallelToolCalls = parallelToolCalls
+        self.previousResponseId = previousResponseId
+        self.reasoning = reasoning
+        self.store = store
+        self.stream = stream
+        self.temperature = temperature
+        self.text = text
+        self.toolChoice = toolChoice
+        self.tools = tools
+        self.topP = topP
+        self.truncation = truncation
+        self.user = user
+        self.extraBody = extraBody
     }
+    
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        self.input = try container.decode(OpenAIModelReponseRequestInput.self, forKey: .input)
+        self.model = try container.decode(String.self, forKey: .model)
+        self.background = try container.decodeIfPresent(Bool.self, forKey: .background)
+        self.include = try container.decodeIfPresent([ModelReponseRequestAdditionalData].self, forKey: .include)
+        self.instructions = try container.decodeIfPresent(String.self, forKey: .instructions)
+        self.maxOutputTokens = try container.decodeIfPresent(Int.self, forKey: .maxOutputTokens)
+        self.metadata = try container.decodeIfPresent([String: String].self, forKey: .metadata)
+        self.parallelToolCalls = try container.decodeIfPresent(Bool.self, forKey: .parallelToolCalls)
+        self.previousResponseId = try container.decodeIfPresent(String.self, forKey: .previousResponseId)
+        self.reasoning = try container.decodeIfPresent(OpenAIModelReponseRequestResoning.self, forKey: .reasoning)
+        self.store = try container.decodeIfPresent(Bool.self, forKey: .store)
+        self.stream = try container.decodeIfPresent(Bool.self, forKey: .stream)
+        self.temperature = try container.decodeIfPresent(Double.self, forKey: .temperature)
+        self.text = try container.decodeIfPresent(openAIModelReponseRequestTextConfiguration.self, forKey: .text)
+        self.toolChoice = try container.decodeIfPresent(OpenAIModelReponseRequestToolChoice.self, forKey: .toolChoice)
+        self.tools = try container.decodeIfPresent([OpenAIModelReponseRequestTool].self, forKey: .tools)
+        self.topP = try container.decodeIfPresent(Double.self, forKey: .topP)
+        self.truncation = try container.decodeIfPresent(OpenAIModelReponseRequestTruncation.self, forKey: .truncation)
+        self.user = try container.decodeIfPresent(String.self, forKey: .user)
+        
+        let extraKeys = Set(container.allKeys).subtracting(CodingKeys.allKeys)
+        var extraBody: [String: JSON] = [:]
+        
+        for key in extraKeys {
+            if let value = try? container.decodeIfPresent(JSON.self, forKey: key),
+               let key = value.stringValue
+            {
+                extraBody[key] = value
+            }
+        }
+        
+        self.extraBody = extraBody
+    }
+    
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encode(self.input, forKey: .input)
+        try container.encode(self.model, forKey: .model)
+        try container.encodeIfPresent(self.background, forKey: .background)
+        try container.encodeIfPresent(self.include, forKey: .include)
+        try container.encodeIfPresent(self.instructions, forKey: .instructions)
+        try container.encodeIfPresent(self.maxOutputTokens, forKey: .maxOutputTokens)
+        try container.encodeIfPresent(self.metadata, forKey: .metadata)
+        try container.encodeIfPresent(self.parallelToolCalls, forKey: .parallelToolCalls)
+        try container.encodeIfPresent(self.previousResponseId, forKey: .previousResponseId)
+        try container.encodeIfPresent(self.reasoning, forKey: .reasoning)
+        try container.encodeIfPresent(self.store, forKey: .store)
+        try container.encodeIfPresent(self.stream, forKey: .stream)
+        try container.encodeIfPresent(self.temperature, forKey: .temperature)
+        try container.encodeIfPresent(self.text, forKey: .text)
+        try container.encodeIfPresent(self.toolChoice, forKey: .toolChoice)
+        try container.encodeIfPresent(self.tools, forKey: .tools)
+        try container.encodeIfPresent(self.topP, forKey: .topP)
+        try container.encodeIfPresent(self.truncation, forKey: .truncation)
+        try container.encodeIfPresent(self.user, forKey: .user)
+        
+        for (key, body) in extraBody {
+            guard let codingKey = CodingKeys(stringValue: key) else {
+                continue
+            }
+            try container.encodeIfPresent(body, forKey: codingKey)
+        }
+    }
+}
+
+
+extension OpenAIModelReponseRequest {
+    struct CodingKeys: CodingKey, Hashable {
+        var stringValue: String
+        
+        var intValue: Int?
+        
+        init?(intValue: Int) {
+            return nil
+        }
+        
+        init?(stringValue: String) {
+            self.stringValue = stringValue
+            intValue = nil
+        }
+    }
+}
+
+extension OpenAIModelReponseRequest.CodingKeys {
+    static let allKeys: [Self] = [
+        .input, .model, .background, .include, .instructions, .maxOutputTokens, .metadata, .parallelToolCalls, .previousResponseId, .reasoning, .store, .stream, .temperature, .text, .toolChoice, .tools, .topP, .user
+    ]
+    
+    static let input = Self(stringValue: "input")!
+    static let model = Self(stringValue: "model")!
+    static let background = Self(stringValue: "background")!
+    static let include = Self(stringValue: "include")!
+    static let instructions = Self(stringValue: "instructions")!
+    static let maxOutputTokens = Self(stringValue: "max_output_tokens")!
+    static let metadata = Self(stringValue: "metadata")!
+    static let parallelToolCalls = Self(stringValue: "parallel_tool_calls")!
+    static let previousResponseId = Self(stringValue: "previous_response_id")!
+    static let reasoning = Self(stringValue: "reasoning")!
+    static let store = Self(stringValue: "store")!
+    static let stream = Self(stringValue: "stream")!
+    static let temperature = Self(stringValue: "temperature")!
+    static let text = Self(stringValue: "text")!
+    static let toolChoice = Self(stringValue: "toolChoice")!
+    static let tools = Self(stringValue: "tools")!
+    static let topP = Self(stringValue: "top_p")!
+    static let truncation = Self(stringValue: "truncation")!
+    static let user = Self(stringValue: "user")!
 }

@@ -93,39 +93,185 @@ public struct OpenAIChatCompletionRequest: Codable, Sendable {
 
     /// Options for the web search tool.
     public let webSearchOptions: WebSearchOptions?
-
-    // Maps Swift camelCase properties to JSON snake_case keys
-    enum CodingKeys: String, CodingKey {
-        case messages
-        case model
-        case audio
-        case frequencyPenalty = "frequency_penalty"
-        case logitBias = "logit_bias"
-        case logprobs
-        case maxCompletionTokens = "max_completion_tokens"
-        case metadata
-        case modalities
-        case n
-        case parallelToolCalls = "parallel_tool_calls"
-        case prediction
-        case presencePenalty = "presence_penalty"
-        case reasoningEffort = "reasoning_effort"
-        case responseFormat = "response_format"
-        case seed
-        case serviceTier = "service_tier"
-        case stop
-        case store
-        case stream
-        case streamOptions = "stream_options"
-        case temperature
-        case toolChoice = "tool_choice"
-        case tools
-        case topLogprobs = "top_logprobs"
-        case topP = "top_p"
-        case user
-        case webSearchOptions = "web_search_options"
+    
+    public let extraBody: [String: DynamicJSON.JSON]
+    
+    public init(messages: [OpenAIChatCompletionRequestMessage], model: String, audio: OpenAIChatCompletionRequestAudioOutput?, frequencyPenalty: Double?, logitBias: [String : Int]?, logprobs: Bool?, maxCompletionTokens: Int?, metadata: [String : String]?, modalities: [String]?, n: Int?, parallelToolCalls: Bool?, prediction: OpenAIChatCompletionRequestPrediction?, presencePenalty: Double?, reasoningEffort: OpenAIChatCompletionRequestReasoningEffort?, responseFormat: OpenAIChatCompletionRequestResponseFormat?, seed: Int?, serviceTier: OpenAIChatCompletionServiceTier?, stop: String?, store: Bool?, stream: Bool?, streamOptions: OpenAIChatCompletionRequestStreamOptions?, temperature: Double?, toolChoice: OpenAIChatCompletionRequestToolChoice?, tools: [OpenAIChatCompletionRequestTool]?, topLogprobs: Int?, topP: Double?, user: String?, webSearchOptions: WebSearchOptions?, extraBody: [String : DynamicJSON.JSON] = [:]) {
+        self.messages = messages
+        self.model = model
+        self.audio = audio
+        self.frequencyPenalty = frequencyPenalty
+        self.logitBias = logitBias
+        self.logprobs = logprobs
+        self.maxCompletionTokens = maxCompletionTokens
+        self.metadata = metadata
+        self.modalities = modalities
+        self.n = n
+        self.parallelToolCalls = parallelToolCalls
+        self.prediction = prediction
+        self.presencePenalty = presencePenalty
+        self.reasoningEffort = reasoningEffort
+        self.responseFormat = responseFormat
+        self.seed = seed
+        self.serviceTier = serviceTier
+        self.stop = stop
+        self.store = store
+        self.stream = stream
+        self.streamOptions = streamOptions
+        self.temperature = temperature
+        self.toolChoice = toolChoice
+        self.tools = tools
+        self.topLogprobs = topLogprobs
+        self.topP = topP
+        self.user = user
+        self.webSearchOptions = webSearchOptions
+        self.extraBody = extraBody
     }
 }
+
+extension OpenAIChatCompletionRequest {
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        self.messages = try container.decode([OpenAIChatCompletionRequestMessage].self, forKey: .messages)
+        self.model = try container.decode(String.self, forKey: .model)
+        self.audio = try container.decodeIfPresent(OpenAIChatCompletionRequestAudioOutput.self, forKey: .audio)
+        self.frequencyPenalty = try container.decodeIfPresent(Double.self, forKey: .frequencyPenalty)
+        self.logitBias = try container.decodeIfPresent([String: Int].self, forKey: .logitBias)
+        self.logprobs = try container.decodeIfPresent(Bool.self, forKey: .logprobs)
+        self.maxCompletionTokens = try container.decodeIfPresent(Int.self, forKey: .maxCompletionTokens)
+        self.metadata = try container.decodeIfPresent([String: String].self, forKey: .metadata)
+        self.modalities = try container.decodeIfPresent([String].self, forKey: .modalities)
+        self.n = try container.decodeIfPresent(Int.self, forKey: .n)
+        self.parallelToolCalls = try container.decodeIfPresent(Bool.self, forKey: .parallelToolCalls)
+        self.prediction = try container.decodeIfPresent(OpenAIChatCompletionRequestPrediction.self, forKey: .prediction)
+        self.presencePenalty = try container.decodeIfPresent(Double.self, forKey: .presencePenalty)
+        self.reasoningEffort = try container.decodeIfPresent(OpenAIChatCompletionRequestReasoningEffort.self, forKey: .reasoningEffort)
+        self.responseFormat = try container.decodeIfPresent(OpenAIChatCompletionRequestResponseFormat.self, forKey: .responseFormat)
+        self.seed = try container.decodeIfPresent(Int.self, forKey: .seed)
+        self.serviceTier = try container.decodeIfPresent(OpenAIChatCompletionServiceTier.self, forKey: .serviceTier)
+        self.stop = try container.decodeIfPresent(String.self, forKey: .stop)
+        self.store = try container.decodeIfPresent(Bool.self, forKey: .store)
+        self.stream = try container.decodeIfPresent(Bool.self, forKey: .stream)
+        self.streamOptions = try container.decodeIfPresent(OpenAIChatCompletionRequestStreamOptions.self, forKey: .streamOptions)
+        self.temperature = try container.decodeIfPresent(Double.self, forKey: .temperature)
+        self.toolChoice = try container.decodeIfPresent(OpenAIChatCompletionRequestToolChoice.self, forKey: .toolChoice)
+        self.tools = try container.decodeIfPresent([OpenAIChatCompletionRequestTool].self, forKey: .tools)
+        self.topLogprobs = try container.decodeIfPresent(Int.self, forKey: .topLogprobs)
+        self.topP = try container.decodeIfPresent(Double.self, forKey: .topP)
+        self.user = try container.decodeIfPresent(String.self, forKey: .user)
+        self.webSearchOptions = try container.decodeIfPresent(WebSearchOptions.self, forKey: .webSearchOptions)
+        
+        let extraKeys = Set(container.allKeys).subtracting(CodingKeys.allKeys)
+        var extraBody: [String: JSON] = [:]
+        
+        for key in extraKeys {
+            if let value = try? container.decodeIfPresent(JSON.self, forKey: key),
+               let key = value.stringValue
+            {
+                extraBody[key] = value
+            }
+        }
+        
+        self.extraBody = extraBody
+    }
+    
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encode(self.messages, forKey: .messages)
+        try container.encode(self.model, forKey: .model)
+        try container.encodeIfPresent(self.audio, forKey: .audio)
+        try container.encodeIfPresent(self.frequencyPenalty, forKey: .frequencyPenalty)
+        try container.encodeIfPresent(self.logitBias, forKey: .logitBias)
+        try container.encodeIfPresent(self.logprobs, forKey: .logprobs)
+        try container.encodeIfPresent(self.maxCompletionTokens, forKey: .maxCompletionTokens)
+        try container.encodeIfPresent(self.metadata, forKey: .metadata)
+        try container.encodeIfPresent(self.modalities, forKey: .modalities)
+        try container.encodeIfPresent(self.n, forKey: .n)
+        try container.encodeIfPresent(self.parallelToolCalls, forKey: .parallelToolCalls)
+        try container.encodeIfPresent(self.prediction, forKey: .prediction)
+        try container.encodeIfPresent(self.presencePenalty, forKey: .presencePenalty)
+        try container.encodeIfPresent(self.reasoningEffort, forKey: .reasoningEffort)
+        try container.encodeIfPresent(self.responseFormat, forKey: .responseFormat)
+        try container.encodeIfPresent(self.seed, forKey: .seed)
+        try container.encodeIfPresent(self.serviceTier, forKey: .serviceTier)
+        try container.encodeIfPresent(self.stop, forKey: .stop)
+        try container.encodeIfPresent(self.store, forKey: .store)
+        try container.encodeIfPresent(self.stream, forKey: .stream)
+        try container.encodeIfPresent(self.streamOptions, forKey: .streamOptions)
+        try container.encodeIfPresent(self.temperature, forKey: .temperature)
+        try container.encodeIfPresent(self.toolChoice, forKey: .toolChoice)
+        try container.encodeIfPresent(self.tools, forKey: .tools)
+        try container.encodeIfPresent(self.topLogprobs, forKey: .topLogprobs)
+        try container.encodeIfPresent(self.topP, forKey: .topP)
+        try container.encodeIfPresent(self.user, forKey: .user)
+        try container.encodeIfPresent(self.webSearchOptions, forKey: .webSearchOptions)
+        
+        for (key, body) in extraBody {
+            guard let codingKey = CodingKeys(stringValue: key) else {
+                continue
+            }
+            try container.encodeIfPresent(body, forKey: codingKey)
+        }
+    }
+}
+
+extension OpenAIChatCompletionRequest {
+    struct CodingKeys: CodingKey, Hashable {
+        var stringValue: String
+        
+        var intValue: Int?
+        
+        init?(intValue: Int) {
+            return nil
+        }
+        
+        init?(stringValue: String) {
+            self.stringValue = stringValue
+            intValue = nil
+        }
+    }
+}
+
+extension OpenAIChatCompletionRequest.CodingKeys {
+    static let allKeys: [Self] = [
+        .messages, .model, .audio, .frequencyPenalty, .logitBias, .logprobs, .maxCompletionTokens, .metadata, .modalities, .n, .parallelToolCalls, .prediction, .presencePenalty, .reasoningEffort, .responseFormat, .seed, .serviceTier, .stop, .store, .stream, .streamOptions, .temperature, .toolChoice, .tools, .topLogprobs, .topP, .user, .webSearchOptions,
+    ]
+    
+    static let messages = Self(stringValue: "messages")!
+    static let model = Self(stringValue: "model")!
+    static let audio = Self(stringValue: "audio")!
+    static let frequencyPenalty = Self(stringValue: "frequency_penalty")!
+    static let logitBias = Self(stringValue: "logit_bias")!
+    static let logprobs = Self(stringValue: "logprobs")!
+    static let maxCompletionTokens = Self(stringValue: "max_completion_tokens")!
+    static let metadata = Self(stringValue: "metadata")!
+    static let modalities = Self(stringValue: "modalities")!
+    static let n = Self(stringValue: "n")!
+    static let parallelToolCalls = Self(stringValue: "parallel_tool_calls")!
+    static let prediction = Self(stringValue: "prediction")!
+    static let presencePenalty = Self(stringValue: "presence_penalty")!
+    static let reasoningEffort = Self(stringValue: "reasoning_effort")!
+    static let responseFormat = Self(stringValue: "response_format")!
+    static let seed = Self(stringValue: "seed")!
+    static let serviceTier = Self(stringValue: "service_tier")!
+    static let stop = Self(stringValue: "stop")!
+    static let store = Self(stringValue: "store")!
+    static let stream = Self(stringValue: "stream")!
+    static let streamOptions = Self(stringValue: "stream_options")!
+    static let temperature = Self(stringValue: "temperature")!
+    static let toolChoice = Self(stringValue: "tool_choice")!
+    static let tools = Self(stringValue: "tools")!
+    static let topLogprobs = Self(stringValue: "top_logprobs")!
+    static let topP = Self(stringValue: "topP")!
+    static let user = Self(stringValue: "user")!
+    static let webSearchOptions = Self(stringValue: "web_search_options")!
+}
+
+
+
+
 
 // MARK: - Message Types
 
