@@ -166,10 +166,8 @@ extension OpenAIChatCompletionRequest {
         var extraBody: [String: JSON] = [:]
         
         for key in extraKeys {
-            if let value = try? container.decodeIfPresent(JSON.self, forKey: key),
-               let key = value.stringValue
-            {
-                extraBody[key] = value
+            if let value = try? container.decodeIfPresent(JSON.self, forKey: key) {
+                extraBody[key.stringValue] = value
             }
         }
         
