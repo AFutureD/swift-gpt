@@ -5,6 +5,8 @@
 //  Created by AFuture on 2025/7/12.
 //
 
+import DynamicJSON
+
 // MARK: Prompt + Input
 
 public extension Prompt {
@@ -168,6 +170,8 @@ public struct Prompt: Sendable {
     /// The sequence of inputs that make up the prompt.
     public let inputs: [Input]
 
+    public let extraBody: [String: DynamicJSON.JSON]?
+
     /// A flag indicating whether to use streaming for the response.
     /// This should be `true` when calling `stream(prompt:model:)` and `false` for `generate(prompt:model:)`.
     public let stream: Bool
@@ -194,6 +198,7 @@ public struct Prompt: Sendable {
         conversationID: String? = nil,
         instructions: Instructions? = nil,
         inputs: [Input],
+        extraBody: [String: DynamicJSON.JSON]? = nil,
         stream: Bool = true,
         generation: GenerationControl? = nil,
         context: ContextControl? = nil
@@ -201,6 +206,7 @@ public struct Prompt: Sendable {
         self.conversationID = conversationID
         self.instructions = instructions
         self.inputs = inputs
+        self.extraBody = extraBody
         self.stream = stream
         self.generation = generation
         self.context = context
@@ -212,6 +218,7 @@ extension Prompt: Codable {
         case conversationID
         case instructions
         case inputs
+        case extraBody
         case store
         case stream
         case generation
@@ -229,6 +236,7 @@ extension Prompt: Codable {
         self.conversationID = try container.decodeIfPresent(String.self, forKey: .conversationID)
         self.instructions = try container.decodeIfPresent(Prompt.Instructions.self, forKey: .instructions)
         self.inputs = try container.decode([Prompt.Input].self, forKey: .inputs)
+        self.extraBody = try container.decodeIfPresent([String: DynamicJSON.JSON].self, forKey: .extraBody)
         self.stream = try container.decode(Bool.self, forKey: .stream)
         self.context = try container.decodeIfPresent(Prompt.ContextControl.self, forKey: .context)
 
@@ -248,6 +256,7 @@ extension Prompt: Codable {
 
         try container.encode(stream, forKey: .stream)
         try container.encode(inputs, forKey: .inputs)
+        try container.encodeIfPresent(extraBody, forKey: .extraBody)
         try container.encodeIfPresent(conversationID, forKey: .conversationID)
         try container.encodeIfPresent(instructions, forKey: .instructions)
         try container.encodeIfPresent(context, forKey: .context)

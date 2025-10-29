@@ -7,8 +7,8 @@ import OpenAPIAsyncHTTPClient
 import OpenAPIRuntime
 import Testing
 
-@Suite("GPTSession Tests")
-struct GPTSessionTests {
+@Suite("RuntimeError Tests")
+struct RuntimeErrorTests {
     var provider = LLMProviderConfiguration(
         type: .OpenAI,
         name: "Provider1",

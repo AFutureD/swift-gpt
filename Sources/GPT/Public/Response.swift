@@ -30,6 +30,16 @@ public struct TokenUsage: Codable, Sendable {
 public struct GenerationConext: Codable, Sendable {
     /// The identifier of the conversation associated with this response.
     public let conversationID: String?
+    
+    /// This attribute indicates that the delta content of a model streaming response is full content.
+    ///
+    /// If nil, this value will be determinted by model, such as qwen-mt will be true.
+    public let modelStreamResponseNotSupportDeltaContent: Bool?
+    
+    public init(conversationID: String? = nil, modelStreamResponseNotSupportDeltaContent: Bool? = nil) {
+        self.conversationID = conversationID
+        self.modelStreamResponseNotSupportDeltaContent = modelStreamResponseNotSupportDeltaContent
+    }
 }
 
 // MARK: ModelResponse

@@ -15,7 +15,7 @@ extension OpenAIChatCompletionRequestMessage {
             case .assistant:
                 self = .assistant(.init(audio: nil, content: .parts([part]), name: nil, refusal: nil, tool_calls: nil))
             case .user:
-                self = .user(.init(content: .parts([part]), name: nil))
+                self = .user(.init(content: .text(text.content), name: nil))
             case .developer:
                 self = .developer(.init(content: .parts([part]), name: nil))
             default:
@@ -160,7 +160,8 @@ extension OpenAIChatCompletionRequest {
             topLogprobs: nil,
             topP: generationControl?.topP,
             user: nil,
-            webSearchOptions: nil
+            webSearchOptions: nil,
+            extraBody: prompt.extraBody ?? [:]
         )
     }
 }

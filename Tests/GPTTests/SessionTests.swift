@@ -310,3 +310,26 @@ func textConversationMaxItems() async throws {
         #expect(!(response.message?.text?.contains("John") ?? true))
     }
 }
+
+@Test("testExtraBody")
+func testExtraBody() async throws {
+    try Dotenv.make()
+
+    let client = AsyncHTTPClientTransport()
+    let session = GPTSession(client: client, logger: .init(label: "Test"))
+
+    let prompt = Prompt(
+        inputs: [
+            .text(.init(role: .user, content: "我看到这个视频后没有笑")),
+        ],
+        extraBody: ["translation_options": ["source_lang":"auto", "target_lang": "English"]]
+    )
+    let configuration = LLMProviderConfiguration(type: .OpenAICompatible, name: "QWen", apiKey: Dotenv["DASHSCOPE_API_KEY"]!.stringValue, apiURL: "https://dashscope.aliyuncs.com/compatible-mode/v1")
+    let model = LLMModelReference(model: .init(name: "qwen-mt-turbo"), provider: configuration)
+    let response = try await session.stream(prompt, model: model)
+
+    let logger = Logger()
+    for try await event in response {
+        logger.info("\(String(describing: event))")
+    }
+}

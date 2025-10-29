@@ -140,15 +140,26 @@ public extension OpenAIChatCompletionStreamResponseAsyncAggregater {
             let delta = choice.delta.content
 
             let previous = current.text?.content
-            let new = MessageContent.text(TextGeneratedContent(delta: delta,
-                                                               content: (previous ?? "") + (delta ?? ""),
-                                                               annotations: []))
+
+            let new = if !modelNotSupportDeltaContent {
+                MessageContent.text(TextGeneratedContent(delta: delta,
+                                                         content: (previous ?? "") + (delta ?? ""),
+                                                         annotations: []))
+            } else {
+                MessageContent.text(TextGeneratedContent(delta: delta?.replacingOccurrences(of: previous ?? "", with: ""),
+                                                         content: delta,
+                                                         annotations: []))
+            }
 
             if let finish = choice.finish_reason {
                 stopReason = .init(code: finish, message: nil)
             }
 
             return (.contentDelta(iterator, current: new), new)
+        }
+
+        var modelNotSupportDeltaContent: Bool {
+            context.modelStreamResponseNotSupportDeltaContent ?? model?.contains("qwen-mt") ?? false
         }
     }
 }
