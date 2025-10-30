@@ -1,5 +1,13 @@
 # Changelog
 
+## [WIP] 0.6.0
+
+Feature enhancements:
+
+- Add ExtraBody Support.
+- `OpenAIChatCompletionStreamResponseAsyncAggregater` now support qwen-mt with `modelStreamResponseNotSupportDeltaContent` option in `GenerationConext`.
+
+
 ## 0.5.1 (2025-10-21)
 
 Feature enhancements:
