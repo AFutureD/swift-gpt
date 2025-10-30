@@ -146,7 +146,7 @@ public extension OpenAIChatCompletionStreamResponseAsyncAggregater {
                                                          content: (previous ?? "") + (delta ?? ""),
                                                          annotations: []))
             } else {
-                MessageContent.text(TextGeneratedContent(delta: delta?.replacingOccurrences(of: previous ?? "", with: ""),
+                MessageContent.text(TextGeneratedContent(delta: delta?.deletingPrefix(previous ?? ""),
                                                          content: delta,
                                                          annotations: []))
             }
@@ -161,5 +161,13 @@ public extension OpenAIChatCompletionStreamResponseAsyncAggregater {
         var modelNotSupportDeltaContent: Bool {
             context.modelStreamResponseNotSupportDeltaContent ?? model?.contains("qwen-mt") ?? false
         }
+    }
+}
+
+
+extension String {
+    fileprivate func deletingPrefix(_ prefix: String) -> String {
+        guard self.hasPrefix(prefix) else { return self }
+        return String(self.dropFirst(prefix.count))
     }
 }
