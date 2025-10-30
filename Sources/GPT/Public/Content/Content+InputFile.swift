@@ -14,6 +14,7 @@ extension ContentType {
 /// A file-based input for a prompt.
 public struct FileInputContent: Sendable, Codable, Hashable {
     public let type: ContentType = .inputFile
+    
     /// The role of the entity providing the content.
     public let role: ModelContentRole
 

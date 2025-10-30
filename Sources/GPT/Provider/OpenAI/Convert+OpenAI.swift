@@ -1,5 +1,22 @@
 import Foundation
 
+extension OpenAIModelReponseRequestInputItemMessageContentImageItemDetail {
+    init?(_ detail: ImageInputDetailLevel?) {
+        guard let detail else { return nil}
+
+        switch detail {
+        case .auto:
+            self = .auto
+        case .high:
+            self = .high
+        case .low:
+            self = .low
+        case .mid:
+            self = .auto
+        }
+    }
+}
+
 extension OpenAIModelReponseRequestInputItemMessageContentItem {
     init?(_ input: Prompt.Input) {
         switch input {
@@ -7,6 +24,8 @@ extension OpenAIModelReponseRequestInputItemMessageContentItem {
             self = .text(.init(text: text.content))
         case .file(let file):
             self = .file(.init(fileData: file.content, fileID: file.id, filename: file.filename))
+        case .image(let image):
+            self = .image(.init(detail: .init(image.detail) ?? .auto, fileId: image.externalID, imageUrl: image.url ?? image.base64))
         }
     }
 }
