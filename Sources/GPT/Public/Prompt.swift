@@ -16,6 +16,8 @@ public extension Prompt {
         case text(TextInputContent)
         /// A file-based input.
         case file(FileInputContent)
+        
+        case image(ImageInputContent)
     }
 }
 
@@ -44,6 +46,8 @@ extension Prompt.Input: Codable {
             try container.encode(value)
         case .file(let value):
             try container.encode(value)
+        case .image(let value):
+            try container.encode(value)
         }
     }
 }
@@ -55,6 +59,8 @@ public extension Prompt.Input {
             return text.role
         case .file(let file):
             return file.role
+        case .image(let image):
+            return image.role
         }
     }
 }

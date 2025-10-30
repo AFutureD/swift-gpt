@@ -4,6 +4,23 @@ import AsyncAlgorithms
 import LazyKit
 import SynchronizationKit
 
+extension OpenAIChatCompletionRequestMessageContentImagePartImageDetail {
+    init?(_ detail: ImageInputDetailLevel?) {
+        guard let detail else { return nil}
+
+        switch detail {
+        case .auto:
+            self = .auto
+        case .high:
+            self = .high
+        case .low:
+            self = .low
+        case .mid:
+            self = .auto
+        }
+    }
+}
+
 extension OpenAIChatCompletionRequestMessage {
     init?(_ input: Prompt.Input) {
         switch input {
@@ -26,8 +43,26 @@ extension OpenAIChatCompletionRequestMessage {
             switch file.role {
             case .system:
                 self = .system(.init(content: .parts([part]), name: nil))
-            case .assistant:
-                self = .assistant(.init(audio: nil, content: .parts([part]), name: nil, refusal: nil, tool_calls: nil))
+            case .user:
+                self = .user(.init(content: .parts([part]), name: nil))
+            case .developer:
+                self = .developer(.init(content: .parts([part]), name: nil))
+            default:
+                return nil
+            }
+        case .image(let image):
+            let part: OpenAIChatCompletionRequestMessageContentPart? = if let url = image.url {
+                .image(.init(imageUrl: .init(url: .url(url), detail: .init(image.detail))))
+            } else if let base64 = image.base64 {
+                .image(.init(imageUrl: .init(url: .base64(base64), detail: .init(image.detail))))
+            } else {
+                nil
+            }
+            guard let part else { return nil }
+            
+            switch image.role {
+            case .system:
+                self = .system(.init(content: .parts([part]), name: nil))
             case .user:
                 self = .user(.init(content: .parts([part]), name: nil))
             case .developer:
