@@ -6,7 +6,7 @@ Feature enhancements:
 
 - Add ExtraBody Support.
 - `OpenAIChatCompletionStreamResponseAsyncAggregater` now support qwen-mt with `modelStreamResponseNotSupportDeltaContent` option in `GenerationConext`.
-
+- Add Image Input Support.
 
 ## 0.5.1 (2025-10-21)
 
