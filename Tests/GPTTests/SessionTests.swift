@@ -322,7 +322,7 @@ func testExtraBody() async throws {
         inputs: [
             .text(.init(role: .user, content: "我看到这个视频后没有笑")),
         ],
-        extraBody: ["translation_options": ["source_lang":"auto", "target_lang": "English"]]
+        extraBody: ["translation_options": ["source_lang": "auto", "target_lang": "English"]]
     )
     let configuration = LLMProviderConfiguration(type: .OpenAICompatible, name: "QWen", apiKey: Dotenv["DASHSCOPE_API_KEY"]!.stringValue, apiURL: "https://dashscope.aliyuncs.com/compatible-mode/v1")
     let model = LLMModelReference(model: .init(name: "qwen-mt-turbo"), provider: configuration)
@@ -331,5 +331,62 @@ func testExtraBody() async throws {
     let logger = Logger()
     for try await event in response {
         logger.info("\(String(describing: event))")
+    }
+}
+
+@Test("testImageInputWithURL")
+func testImageInputWithURL() async throws {
+    try Dotenv.make()
+
+    let client = AsyncHTTPClientTransport()
+    let session = GPTSession(client: client, logger: .init(label: "Test"))
+
+    let prompt = Prompt(
+        inputs: [
+            .image(.init(role: .user, externalID: nil, url: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg", base64: nil, detail: nil)),
+            .text(.init(role: .user, content: "What is in this image?")),
+        ]
+    )
+    let configuration = LLMProviderConfiguration(type: .OpenAICompatible, name: "OpenAI", apiKey: Dotenv["OPENAI_API_KEY"]!.stringValue, apiURL: "https://api.openai.com/v1")
+    let model = LLMModelReference(model: .init(name: "gpt-5-mini"), provider: configuration)
+    let response = try await session.stream(prompt, model: model)
+
+    let logger = Logger()
+    for try await event in response {
+        if case .completed(let response) = event {
+            logger.info("\(response.data.message?.text ?? "nil")")
+        }
+    }
+}
+
+@Test("testImageInputWithFile")
+func testImageInputWithFile() async throws {
+    try Dotenv.make()
+
+    let client = AsyncHTTPClientTransport()
+    let session = GPTSession(client: client, logger: .init(label: "Test"))
+
+    guard let url = Bundle.module.url(forResource: "Gfp-wisconsin-madison-the-nature-boardwalk", withExtension: "jpg") else {
+        Issue.record("image not found")
+        return
+    }
+
+    let data = try Data(contentsOf: url)
+
+    let prompt = Prompt(
+        inputs: [
+            .image(.init(role: .user, externalID: nil, url: nil, base64: "data:image/jpeg;base64,\(data.base64EncodedString())", detail: nil)),
+            .text(.init(role: .user, content: "What is in this image?")),
+        ]
+    )
+    let configuration = LLMProviderConfiguration(type: .OpenAICompatible, name: "OpenAI", apiKey: Dotenv["OPENAI_API_KEY"]!.stringValue, apiURL: "https://api.openai.com/v1")
+    let model = LLMModelReference(model: .init(name: "gpt-5-mini"), provider: configuration)
+    let response = try await session.stream(prompt, model: model)
+
+    let logger = Logger()
+    for try await event in response {
+        if case .completed(let response) = event {
+            logger.info("\(response.data.message?.text ?? "nil")")
+        }
     }
 }

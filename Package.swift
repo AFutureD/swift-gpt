@@ -50,6 +50,9 @@ let package = Package(
                 "GPT",
                 .product(name: "TestKit", package: "swift-lazy"),
                 .product(name: "OpenAPIAsyncHTTPClient", package: "swift-openapi-async-http-client"),
+            ],
+            resources: [
+                .process("Resources"),
             ]
         ),
     ]
