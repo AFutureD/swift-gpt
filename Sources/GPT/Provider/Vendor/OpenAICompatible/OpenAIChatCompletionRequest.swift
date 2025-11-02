@@ -262,7 +262,7 @@ extension OpenAIChatCompletionRequest.CodingKeys {
     static let toolChoice = Self(stringValue: "tool_choice")!
     static let tools = Self(stringValue: "tools")!
     static let topLogprobs = Self(stringValue: "top_logprobs")!
-    static let topP = Self(stringValue: "topP")!
+    static let topP = Self(stringValue: "top_p")!
     static let user = Self(stringValue: "user")!
     static let webSearchOptions = Self(stringValue: "web_search_options")!
 }

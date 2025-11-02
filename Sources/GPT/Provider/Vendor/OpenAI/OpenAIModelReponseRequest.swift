@@ -2222,7 +2222,7 @@ extension OpenAIModelReponseRequest.CodingKeys {
     static let stream = Self(stringValue: "stream")!
     static let temperature = Self(stringValue: "temperature")!
     static let text = Self(stringValue: "text")!
-    static let toolChoice = Self(stringValue: "toolChoice")!
+    static let toolChoice = Self(stringValue: "tool_choice")!
     static let tools = Self(stringValue: "tools")!
     static let topP = Self(stringValue: "top_p")!
     static let truncation = Self(stringValue: "truncation")!
