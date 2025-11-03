@@ -6,7 +6,7 @@
 //
 
 extension ContentType {
-    static let inputImage = ContentType(rawValue: "Image")
+    static let inputImage = ContentType(rawValue: "image")
 }
 
 

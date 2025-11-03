@@ -34,6 +34,8 @@ extension Prompt.Input: Codable {
             self = try .text(.init(from: decoder))
         case .inputFile:
             self = try .file(.init(from: decoder))
+        case .inputImage:
+            self = try .image(.init(from: decoder))
         default:
             throw DecodingError.typeMismatch(MessageItem.self, .init(codingPath: [], debugDescription: "Only Support 'MessageItem'"))
         }
