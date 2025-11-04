@@ -1,6 +1,6 @@
 # Changelog
 
-## [WIP] 0.6.0
+## 0.6.0 (2025-11-04)
 
 Feature enhancements:
 
