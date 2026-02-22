@@ -67,10 +67,7 @@ let package = Package(
                 .product(name: "GRPCCore", package: "grpc-swift-2"),
                 .product(name: "SwiftProtobuf", package: "swift-protobuf"),
             ],
-            exclude: ["README.md", "vendor"],
-            plugins: [
-                .plugin(name: "GRPCProtobufGenerator", package: "grpc-swift-protobuf"),
-            ]
+            exclude: ["README.md", "vendor"]
         )
     ]
 )
