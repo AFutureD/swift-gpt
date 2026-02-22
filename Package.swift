@@ -24,7 +24,9 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-log", from: "1.6.0"),
         .package(url: "https://github.com/apple/swift-distributed-tracing", from: "1.3.1"),
 
-        .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.27.0"),
+        .package(url: "https://github.com/grpc/grpc-swift-protobuf.git", from: "2.0.0"),
+        .package(url: "https://github.com/grpc/grpc-swift-2.git", from: "2.2.1"),
+        .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.31.0"),
 
         // Test
         .package(url: "https://github.com/swift-server/swift-openapi-async-http-client", from: "1.0.0"),
@@ -35,6 +37,7 @@ let package = Package(
         .target(
             name: "GPT",
             dependencies: [
+                "Gemini",
                 .product(name: "Logging", package: "swift-log"),
                 .product(name: "SynchronizationKit", package: "swift-synchronization"),
                 .product(name: "LazyKit", package: "swift-lazy"),
@@ -59,8 +62,15 @@ let package = Package(
         ),
         .target(
             name: "Gemini",
-            dependencies: [.product(name: "SwiftProtobuf", package: "swift-protobuf")],
-            exclude: ["README.md", "vendor"]
+            dependencies: [
+                .product(name: "GRPCProtobuf", package: "grpc-swift-protobuf"),
+                .product(name: "GRPCCore", package: "grpc-swift-2"),
+                .product(name: "SwiftProtobuf", package: "swift-protobuf"),
+            ],
+            exclude: ["README.md", "vendor"],
+            plugins: [
+                .plugin(name: "GRPCProtobufGenerator", package: "grpc-swift-protobuf"),
+            ]
         )
     ]
 )

@@ -17,7 +17,7 @@ extension LLMProviderType {
         case .OpenAICompatible:
             return OpenAICompatibleProvider()
         case .Gemini:
-            fatalError("Not Implemented")
+            return GeminiProvider()
         }
     }
 }
