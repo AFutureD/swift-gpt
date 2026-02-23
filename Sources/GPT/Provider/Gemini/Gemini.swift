@@ -43,19 +43,8 @@ struct GeminiProvider: LLMProvider {
         guard let providerURL = URL(string: provider.apiURL) else {
             throw RuntimeError.invalidApiURL(provider.apiURL)
         }
-
-        var t = Google_Ai_Generativelanguage_V1beta_Part()
-        t.text = "Write a story about a magic backpack."
         
-        var c = Google_Ai_Generativelanguage_V1beta_Content()
-        c.parts = [
-            t
-        ]
-        
-        var body = Google_Ai_Generativelanguage_V1beta_GenerateContentRequest()
-        body.contents = [
-            c
-        ]
+        var body = Google_Ai_Generativelanguage_V1beta_GenerateContentRequest(prompt, history: conversation)
 
         // Build Request
         let request = HTTPRequest(
@@ -73,8 +62,17 @@ struct GeminiProvider: LLMProvider {
         let url = providerURL.appending(path: "models/\(model.name):generateContent")
         let (response, responseBody) = try await client.send(request, body: .init(body.jsonUTF8Data()), baseURL: url, operationID: UUID().uuidString)
 
+        guard response.status == .ok else {
+            let errorStr: String? = if let responseBody {
+                try await String(collecting: responseBody, upTo: .max)
+            } else {
+                nil
+            }
+            throw RuntimeError.httpError(response.status, errorStr)
+        }
+        
         guard let responseBody else {
-            todo()
+            throw RuntimeError.emptyResponseBody
         }
 
         let data = try await Data(collecting: responseBody, upTo: .max)
