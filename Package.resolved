@@ -1,5 +1,5 @@
 {
-  "originHash" : "4ee036f9f3bb3ff2fe529a0c8045801a0aad7e761d00aad5d49c18e91b608643",
+  "originHash" : "370c2a4de1134756d1281729c361ed47f4402a5cf5ccd25631c11ec0daeed152",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -8,24 +8,6 @@
       "state" : {
         "revision" : "60235983163d040f343a489f7e2e77c1918a8bd9",
         "version" : "1.26.1"
-      }
-    },
-    {
-      "identity" : "grpc-swift-2",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/grpc/grpc-swift-2.git",
-      "state" : {
-        "revision" : "531924b28fde0cf7585123c781c6f55cc35ef7fc",
-        "version" : "2.2.1"
-      }
-    },
-    {
-      "identity" : "grpc-swift-protobuf",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/grpc/grpc-swift-protobuf.git",
-      "state" : {
-        "revision" : "19153231a03c2fda1f4ea60da1b92a2cb9c011d8",
-        "version" : "2.2.0"
       }
     },
     {
