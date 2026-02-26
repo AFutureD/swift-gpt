@@ -1,3 +1,4 @@
+import Atomics
 import Foundation
 import Gemini
 import HTTPTypes
@@ -11,15 +12,150 @@ import Tracing
 
 struct GeminiProvider: LLMProvider {
     func generate(
-        client _: ClientTransport,
-        provider _: LLMProviderConfiguration,
-        model _: LLMModel,
-        _: Prompt,
-        conversation _: Conversation,
-        logger _: Logger,
-        serviceContext _: ServiceContext = .current ?? .topLevel
+        client: ClientTransport,
+        provider: LLMProviderConfiguration,
+        model: LLMModel,
+        _ prompt: Prompt,
+        conversation: Conversation,
+        logger: Logger,
+        serviceContext: ServiceContext = .current ?? .topLevel
     ) async throws -> AnyAsyncSequence<ModelStreamResponse> {
-        todo()
+        guard let providerURL = URL(string: provider.apiURL) else {
+            throw RuntimeError.invalidApiURL(provider.apiURL)
+        }
+        
+        let body = Google_Ai_Generativelanguage_V1beta_GenerateContentRequest(prompt, history: conversation)
+        
+        // Build Request
+        let request = HTTPRequest(
+            method: .post,
+            scheme: nil,
+            authority: nil,
+            path: "/models/\(model.name):streamGenerateContent?alt=sse",
+            headerFields: [
+                .contentType: "application/json",
+                .init("x-goog-api-key")!: provider.apiKey
+            ]
+        )
+        
+        let (response, responseBody) = try await client.send(request, body: .init(body.jsonUTF8Data()), baseURL: providerURL, operationID: UUID().uuidString)
+
+        guard response.status == .ok else {
+            let errorStr: String? = if let responseBody {
+                try await String(collecting: responseBody, upTo: .max)
+            } else {
+                nil
+            }
+            throw RuntimeError.httpError(response.status, errorStr)
+        }
+        
+        guard let contentType = response.headerFields.contentType,
+              contentType.starts(with: NetworkKit.ServerSentEvent.MIME_String)
+        else {
+            throw RuntimeError.reveiveUnsupportedContentTypeInResponse
+        }
+
+        guard let responseBody else {
+            throw RuntimeError.emptyResponseBody
+        }
+        
+        return AsyncThrowingStream<ModelStreamResponse, Error> { continuation in
+            let task = Task { @Sendable in
+                let stream = responseBody.map {
+                    Data($0)
+                }.mapToServerSentEvert().map {
+                    try Google_Ai_Generativelanguage_V1beta_GenerateContentResponse(jsonString: $0.data)
+                }
+                
+                let generationConext = GenerationConext(conversationID: conversation.id)
+                
+                // The Main Loop
+                do {
+                    let initialed = ManagedAtomic<Bool>(false)
+                    
+                    var responseID: String? = nil
+                    var textContent: String? = nil
+                    
+                    var usage: TokenUsage? = nil
+                    var stop: GenerationStop? = nil
+                    var error: GenerationError? = nil
+                    
+                    for try await response in stream {
+                        responseID = response.responseID
+                        
+                        let initialed = initialed.exchange(true, ordering: .acquiring)
+                        if !initialed {
+                            continuation.yield(.create(.init(event: .create, data: ModelResponse(
+                                id: responseID,
+                                context: generationConext,
+                                model: model.name,
+                                items: [],
+                                usage: nil,
+                                stop: nil,
+                                error: nil
+                            ))))
+                        }
+                        
+                        let candidate = response.candidates.first
+                        let blockReason = response.promptFeedback.blockReason
+                        
+                        if blockReason != .unspecified {
+                            error = .init(code: String(blockReason.rawValue), message: nil)
+                        }
+                        
+                        guard let candidate, let part = candidate.content.parts.first else {
+                            break
+                        }
+                        
+                        usage = TokenUsage(
+                            input: Int(response.usageMetadata.promptTokenCount),
+                            output: Int(response.usageMetadata.candidatesTokenCount),
+                            total: Int(response.usageMetadata.totalTokenCount)
+                        )
+                        
+                        let finishReason = candidate.finishReason
+                        if finishReason != .unspecified {
+                            stop = GenerationStop(code: String(finishReason.rawValue), message: candidate.finishMessage)
+                        }
+                        
+                        let delta = part.text
+                        textContent = (textContent ?? "") + delta
+                        
+                        if !initialed {
+                            continuation.yield(.itemAdded(.init(event: .itemAdded, data: .message(.init(id: "", index: nil, content: [])))))
+                            continuation.yield(.contentAdded(.init(event: .contentAdded, data: .text(.init(delta: delta, content: textContent, annotations: [])))))
+                        }
+                    
+                        let content = TextGeneratedContent(delta: delta, content: textContent, annotations: [])
+                        continuation.yield(.contentDelta(.init(event: .contentDelta, data: .text(content))))
+                    }
+                    
+                    let content = TextGeneratedContent(delta: nil, content: textContent, annotations: [])
+                    let message = MessageItem(id: "", index: nil, content: [.text(content)])
+                    
+                    if let textContent {
+                        continuation.yield(.contentDone(.init(event: .contentDone, data: .text(.init(delta: nil, content: textContent, annotations: [])))))
+                        continuation.yield(.itemDone(.init(event: .itemDone, data: .message(message))))
+                    }
+                    
+                    continuation.yield(.completed(.init(event: .completed, data: ModelResponse(
+                        id: responseID,
+                        context: generationConext,
+                        model: model.name,
+                        items: [.message(message)],
+                        usage: usage,
+                        stop: stop,
+                        error: error
+                    ))))
+                    
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            
+            continuation.onTermination = { _ in task.cancel() }
+        }.eraseToAnyAsyncSequence()
     }
     
     // https://ai.google.dev/api/generate-content#method:-models.generatecontent
@@ -32,19 +168,11 @@ struct GeminiProvider: LLMProvider {
         logger: Logger,
         serviceContext: ServiceContext = .current ?? .topLevel
     ) async throws -> ModelResponse {
-        _ = client
-        _ = provider
-        _ = model
-        _ = prompt
-        _ = conversation
-        _ = logger
-        _ = serviceContext
-
         guard let providerURL = URL(string: provider.apiURL) else {
             throw RuntimeError.invalidApiURL(provider.apiURL)
         }
         
-        var body = Google_Ai_Generativelanguage_V1beta_GenerateContentRequest(prompt, history: conversation)
+        let body = Google_Ai_Generativelanguage_V1beta_GenerateContentRequest(prompt, history: conversation)
 
         // Build Request
         let request = HTTPRequest(

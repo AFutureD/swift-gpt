@@ -14,13 +14,13 @@ extension ModelResponse {
         let candidate = response.candidates.first
         
         var stop: GenerationStop? = nil
-        if let finishReason = candidate?.finishReason {
+        if let finishReason = candidate?.finishReason, finishReason != .unspecified {
             stop = GenerationStop(code: String(finishReason.rawValue), message: candidate?.finishMessage)
         }
         var error: GenerationError? = nil
         let blockReason = response.promptFeedback.blockReason
         if blockReason != .unspecified {
-            error = GenerationError(code: String(response.promptFeedback.blockReason.rawValue), message: nil) // TODO: convert enum to string
+            error = GenerationError(code: String(blockReason.rawValue), message: nil) // TODO: convert enum to string
         }
         
         let usage = TokenUsage(
@@ -83,8 +83,9 @@ private func convert(conversationItems inputs: [ConversationItem]) -> [Google_Ai
         case .generated(let item):
             var input = Google_Ai_Generativelanguage_V1beta_Content()
             input.role = "model"
-            var content = Google_Ai_Generativelanguage_V1beta_Content(item)
-            
+            if let content = Google_Ai_Generativelanguage_V1beta_Content(item) {
+                items.append(content)
+            }
         }
     }
     return items

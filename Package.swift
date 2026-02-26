@@ -23,7 +23,8 @@ let package = Package(
         .package(url: "https://github.com/AFutureD/swift-synchronization", from: "0.1.0"),
         .package(url: "https://github.com/apple/swift-log", from: "1.6.0"),
         .package(url: "https://github.com/apple/swift-distributed-tracing", from: "1.3.1"),
-
+        .package(url: "https://github.com/apple/swift-atomics.git", from: "1.0.2"),
+        
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.27.0"),
 
         // Test
@@ -45,6 +46,7 @@ let package = Package(
                 .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
                 .product(name: "Algorithms", package: "swift-algorithms"),
                 .product(name: "Tracing", package: "swift-distributed-tracing"),
+                .product(name: "Atomics", package: "swift-atomics")
             ]
         ),
         .testTarget(

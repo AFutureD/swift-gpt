@@ -399,25 +399,30 @@ func testExmapleGeminiBlock() async throws {
     let session = GPTSession(client: client)
 
     let prompt = Prompt(
-        instructions: """
-        be an echo server.
-        what I send to you, you send back.
-
-        the exceptions:
-        1. send "ping", back "pong"
-        2. send "ding", back "dang"
-        """,
+//        instructions: """
+//        be an echo server.
+//        what I send to you, you send back.
+//
+//        the exceptions:
+//        1. send "ping", back "pong"
+//        2. send "ding", back "dang"
+//        """,
         inputs: [
-            .text(.init(role: .developer, content: "Trim Spaces.")),
-            .text(.init(role: .assistant, content: "Ok")),
-            .text(.init(role: .user, content: "Ping")),
+//            .text(.init(role: .developer, content: "Trim Spaces.")),
+//            .text(.init(role: .assistant, content: "Ok")),
+            .text(.init(role: .user, content: "How does AI work?")),
         ],
-        stream: false
+        stream: true
     )
     let openai = LLMProviderConfiguration(type: .Gemini, name: "OpenAI", apiKey: Dotenv["GEMINI_API_KEY"]!.stringValue, apiURL: "https://generativelanguage.googleapis.com/v1beta")
     let model = LLMModelReference(model: .init(name: "gemini-2.0-flash"), provider: openai)
-    let response = try await session.generate(prompt, model: model)
+    let response = try await session.stream(prompt, model: model)
+    
+//    let logger = Logger()
+//    logger.info("\(String(describing: response))")
     
     let logger = Logger()
-    logger.info("\(String(describing: response))")
+    for try await event in response {
+        logger.info("\(String(describing: event))")
+    }
 }
