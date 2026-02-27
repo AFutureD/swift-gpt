@@ -7,6 +7,7 @@
 
 import Gemini
 import LazyKit
+import Swiftic
 
 extension ModelResponse {
     init(_ response: Google_Ai_Generativelanguage_V1beta_GenerateContentResponse, _ context: GenerationConext?) {
@@ -119,6 +120,19 @@ extension Google_Ai_Generativelanguage_V1beta_Part {
     }
 }
 
+extension Google_Ai_Generativelanguage_V1beta_GenerationConfig {
+    init(_ control: GenerationControl?) {
+        self.init()
+        
+        guard let control else { return }
+        
+        self.temperature = control.temperature |> Float.init ?? 0.0
+        self.topP = control.topP |> Float.init ?? 0.0
+        self.maxOutputTokens = control.maxTokens |> Int32.init ?? 0
+    }
+}
+
+
 extension Google_Ai_Generativelanguage_V1beta_GenerateContentRequest {
     init(_ prompt: Prompt, history: Conversation) {
         self.init()
@@ -173,6 +187,7 @@ extension Google_Ai_Generativelanguage_V1beta_GenerateContentRequest {
         self.contents = items
         self.systemInstruction = Google_Ai_Generativelanguage_V1beta_Content()
         self.systemInstruction.parts = instructionParts
+        self.generationConfig = Google_Ai_Generativelanguage_V1beta_GenerationConfig(generationControl)
         
     }
 }

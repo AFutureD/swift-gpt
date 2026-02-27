@@ -16,6 +16,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0"),
 
+        .package(url: "https://github.com/AFutureD/Swiftic", from: "0.5.0"),
         .package(url: "https://github.com/Myoland/swift-lazy", from: "0.2.1"),
         .package(url: "https://github.com/objecthub/swift-dynamicjson", from: "1.0.2"),
         .package(url: "https://github.com/apple/swift-openapi-runtime", from: "1.8.2"),
@@ -24,7 +25,6 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-log", from: "1.6.0"),
         .package(url: "https://github.com/apple/swift-distributed-tracing", from: "1.3.1"),
         .package(url: "https://github.com/apple/swift-atomics.git", from: "1.0.2"),
-        
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.27.0"),
 
         // Test
@@ -46,7 +46,8 @@ let package = Package(
                 .product(name: "OpenAPIRuntime", package: "swift-openapi-runtime"),
                 .product(name: "Algorithms", package: "swift-algorithms"),
                 .product(name: "Tracing", package: "swift-distributed-tracing"),
-                .product(name: "Atomics", package: "swift-atomics")
+                .product(name: "Atomics", package: "swift-atomics"),
+                .product(name: "Swiftic", package: "Swiftic"),
             ]
         ),
         .testTarget(

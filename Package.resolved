@@ -1,5 +1,5 @@
 {
-  "originHash" : "370c2a4de1134756d1281729c361ed47f4402a5cf5ccd25631c11ec0daeed152",
+  "originHash" : "619802513610f2c3d151a287f149ec030d373ca4f883384722e44e8bc7685657",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -269,6 +269,15 @@
       "state" : {
         "revision" : "61e4ca4b81b9e09e2ec863b00c340eb13497dac6",
         "version" : "1.5.0"
+      }
+    },
+    {
+      "identity" : "swiftic",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/AFutureD/Swiftic",
+      "state" : {
+        "revision" : "1857f809d67829a834e3935abda2c3eafac7d8de",
+        "version" : "0.5.0"
       }
     }
   ],

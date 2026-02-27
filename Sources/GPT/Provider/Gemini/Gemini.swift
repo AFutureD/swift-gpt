@@ -9,6 +9,7 @@ import OpenAPIRuntime
 import ServiceContextModule
 import TraceKit
 import Tracing
+import Swiftic
 
 struct GeminiProvider: LLMProvider {
     func generate(
@@ -20,10 +21,8 @@ struct GeminiProvider: LLMProvider {
         logger: Logger,
         serviceContext: ServiceContext = .current ?? .topLevel
     ) async throws -> AnyAsyncSequence<ModelStreamResponse> {
-        guard let providerURL = URL(string: provider.apiURL) else {
-            throw RuntimeError.invalidApiURL(provider.apiURL)
-        }
-        
+        let providerURL = try require(URL(string: provider.apiURL), error: RuntimeError.invalidApiURL(provider.apiURL))
+    
         let body = Google_Ai_Generativelanguage_V1beta_GenerateContentRequest(prompt, history: conversation)
         
         // Build Request
@@ -38,26 +37,17 @@ struct GeminiProvider: LLMProvider {
             ]
         )
         
-        let (response, responseBody) = try await client.send(request, body: .init(body.jsonUTF8Data()), baseURL: providerURL, operationID: UUID().uuidString)
+        let (response, _responseBody) = try await client.send(request, body: .init(body.jsonUTF8Data()), baseURL: providerURL, operationID: UUID().uuidString)
 
         guard response.status == .ok else {
-            let errorStr: String? = if let responseBody {
-                try await String(collecting: responseBody, upTo: .max)
-            } else {
-                nil
-            }
-            throw RuntimeError.httpError(response.status, errorStr)
+            let e = try await _responseBody |> { try await String(collecting: $0, upTo: .max) }
+            throw RuntimeError.httpError(response.status, e)
         }
         
-        guard let contentType = response.headerFields.contentType,
-              contentType.starts(with: NetworkKit.ServerSentEvent.MIME_String)
-        else {
-            throw RuntimeError.reveiveUnsupportedContentTypeInResponse
-        }
+        let contentType = response.headerFields.contentType
+        try require(contentType?.starts(with: ServerSentEvent.MIME_String) ?? false, error: RuntimeError.reveiveUnsupportedContentTypeInResponse)
 
-        guard let responseBody else {
-            throw RuntimeError.emptyResponseBody
-        }
+        let responseBody = try _responseBody ?? RuntimeError.emptyResponseBody
         
         return AsyncThrowingStream<ModelStreamResponse, Error> { continuation in
             let task = Task { @Sendable in
@@ -103,15 +93,15 @@ struct GeminiProvider: LLMProvider {
                             error = .init(code: String(blockReason.rawValue), message: nil)
                         }
                         
-                        guard let candidate, let part = candidate.content.parts.first else {
-                            break
-                        }
-                        
                         usage = TokenUsage(
                             input: Int(response.usageMetadata.promptTokenCount),
                             output: Int(response.usageMetadata.candidatesTokenCount),
                             total: Int(response.usageMetadata.totalTokenCount)
                         )
+                        
+                        guard let candidate, let part = candidate.content.parts.first else {
+                            break
+                        }
                         
                         let finishReason = candidate.finishReason
                         if finishReason != .unspecified {
@@ -168,10 +158,8 @@ struct GeminiProvider: LLMProvider {
         logger: Logger,
         serviceContext: ServiceContext = .current ?? .topLevel
     ) async throws -> ModelResponse {
-        guard let providerURL = URL(string: provider.apiURL) else {
-            throw RuntimeError.invalidApiURL(provider.apiURL)
-        }
-        
+        let providerURL = try require(URL(string: provider.apiURL), error: RuntimeError.invalidApiURL(provider.apiURL))
+
         let body = Google_Ai_Generativelanguage_V1beta_GenerateContentRequest(prompt, history: conversation)
 
         // Build Request
@@ -179,7 +167,7 @@ struct GeminiProvider: LLMProvider {
             method: .post,
             scheme: nil,
             authority: nil,
-            path: nil,
+            path: "/models/\(model.name):generateContent",
             headerFields: [
                 .contentType: "application/json",
                 .init("x-goog-api-key")!: provider.apiKey
@@ -187,21 +175,14 @@ struct GeminiProvider: LLMProvider {
         )
 
         // Send Request
-        let url = providerURL.appending(path: "models/\(model.name):generateContent")
-        let (response, responseBody) = try await client.send(request, body: .init(body.jsonUTF8Data()), baseURL: url, operationID: UUID().uuidString)
+        let (response, _responseBody) = try await client.send(request, body: .init(body.jsonUTF8Data()), baseURL: providerURL, operationID: UUID().uuidString)
 
         guard response.status == .ok else {
-            let errorStr: String? = if let responseBody {
-                try await String(collecting: responseBody, upTo: .max)
-            } else {
-                nil
-            }
-            throw RuntimeError.httpError(response.status, errorStr)
+            let e = try await _responseBody |> { try await String(collecting: $0, upTo: .max) }
+            throw RuntimeError.httpError(response.status, e)
         }
         
-        guard let responseBody else {
-            throw RuntimeError.emptyResponseBody
-        }
+        let responseBody = try _responseBody ?? RuntimeError.emptyResponseBody
 
         let data = try await Data(collecting: responseBody, upTo: .max)
         let contentResposne = try Google_Ai_Generativelanguage_V1beta_GenerateContentResponse(jsonUTF8Data: data)
