@@ -1284,9 +1284,12 @@ public enum ModelReponseRequestAdditionalData: String, Codable, Sendable {
 }
 
 public enum ModelReponseRequestResoningEffort: String, Codable, Sendable {
+    case none
+    case minimal
     case low
     case medium
     case high
+    case xhigh
 }
 
 public enum ModelReponseRequestResoningSummary: Codable, Sendable {

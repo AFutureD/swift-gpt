@@ -1,4 +1,5 @@
 import Foundation
+import Swiftic
 
 extension OpenAIModelReponseRequestInputItemMessageContentImageItemDetail {
     init?(_ detail: ImageInputDetailLevel?) {
@@ -100,6 +101,36 @@ private func convert(conversationItems: [ConversationItem]) -> [OpenAIModelRepon
         }
     }
     return items
+}
+
+extension ModelReponseRequestResoningEffort {
+    init?(_ level: GenerationControl.ThinkingLevel) {
+        switch level {
+        case .custom(let value):
+            switch value {
+            case "none":
+                self = .none
+            case "minimal":
+                self = .minimal
+            case "xhigh":
+                self = .xhigh
+            default:
+                return nil
+            }
+        case .low:
+            self = .low
+        case .medium:
+            self = .medium
+        case .high:
+            self = .high
+        }
+    }
+}
+
+extension OpenAIModelReponseRequestResoning {
+    init(_ reasoning: GenerationControl.ThinkingControl) {
+        self.init(effort: reasoning.level |> ModelReponseRequestResoningEffort.init, summary: nil)
+    }
 }
 
 extension OpenAIModelReponseRequest {

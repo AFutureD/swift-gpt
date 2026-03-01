@@ -412,12 +412,16 @@ func testExmapleGeminiBlock() async throws {
             .text(.init(role: .assistant, content: "Ok")),
             .text(.init(role: .user, content: "  Ping  ")),
         ],
-        stream: false
+        stream: true
     )
     let openai = LLMProviderConfiguration(type: .Gemini, name: "OpenAI", apiKey: Dotenv["GEMINI_API_KEY"]!.stringValue, apiURL: "https://generativelanguage.googleapis.com/v1beta")
     let model = LLMModelReference(model: .init(name: "gemini-2.0-flash"), provider: openai)
-    let response = try await session.generate(prompt, model: model)
+//    let response = try await session.generate(prompt, model: model)
+    
+    let response = try await session.stream(prompt, model: model)
     
     let logger = Logger()
-    logger.info("\(String(describing: response))")
+    for try await event in response {
+        logger.info("\(String(describing: event))")
+    }
 }

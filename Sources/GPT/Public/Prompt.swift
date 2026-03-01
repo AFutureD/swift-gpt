@@ -16,7 +16,7 @@ public extension Prompt {
         case text(TextInputContent)
         /// A file-based input.
         case file(FileInputContent)
-        
+
         case image(ImageInputContent)
     }
 }
@@ -44,11 +44,11 @@ extension Prompt.Input: Codable {
     public func encode(to encoder: any Encoder) throws {
         var container = encoder.singleValueContainer()
         switch self {
-        case .text(let value):
+        case let .text(value):
             try container.encode(value)
-        case .file(let value):
+        case let .file(value):
             try container.encode(value)
-        case .image(let value):
+        case let .image(value):
             try container.encode(value)
         }
     }
@@ -57,11 +57,11 @@ extension Prompt.Input: Codable {
 public extension Prompt.Input {
     var role: ModelContentRole {
         switch self {
-        case .text(let text):
+        case let .text(text):
             return text.role
-        case .file(let file):
+        case let .file(file):
             return file.role
-        case .image(let image):
+        case let .image(image):
             return image.role
         }
     }
@@ -69,12 +69,12 @@ public extension Prompt.Input {
 
 public extension Prompt.Input {
     var text: TextInputContent? {
-        guard case .text(let text) = self else { return nil }
+        guard case let .text(text) = self else { return nil }
         return text
     }
 
     var file: FileInputContent? {
-        guard case .file(let file) = self else { return nil }
+        guard case let .file(file) = self else { return nil }
         return file
     }
 }
@@ -106,9 +106,9 @@ extension Prompt.Instructions: Codable {
         var container = encoder.singleValueContainer()
 
         switch self {
-        case .text(let string):
+        case let .text(string):
             try container.encode(string)
-        case .inputs(let array):
+        case let .inputs(array):
             try container.encode(array)
         }
     }
@@ -122,17 +122,67 @@ extension Prompt.Instructions: ExpressibleByStringLiteral {
 
 extension Prompt.Instructions {
     var text: String? {
-        if case .text(let string) = self {
+        if case let .text(string) = self {
             return string
         }
         return nil
     }
 
     var inputs: [Prompt.Input]? {
-        if case .inputs(let items) = self {
+        if case let .inputs(items) = self {
             return items
         }
         return nil
+    }
+}
+
+public extension GenerationControl {
+    enum ThinkingLevel: Codable, Sendable {
+        case custom(String)
+        case low
+        case medium
+        case high
+    }
+}
+
+extension GenerationControl.ThinkingLevel {
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let value = try container.decode(String.self)
+        
+        switch value {
+        case "low":
+            self = .low
+        case "medium":
+            self = .medium
+        case "high":
+            self = .high
+        default:
+            self = .custom(value)
+        }
+    }
+    
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.singleValueContainer()
+        
+        switch self {
+        case .custom(let string):
+            try container.encode(string)
+        case .low:
+            try container.encode("low")
+        case .medium:
+            try container.encode("medium")
+        case .high:
+            try container.encode("high")
+        }
+    }
+}
+
+public extension GenerationControl {
+    struct ThinkingControl: Codable, Sendable {
+        public let includeInResponse: Bool?
+
+        public let level: ThinkingLevel?
     }
 }
 
@@ -151,6 +201,9 @@ public struct GenerationControl: Codable, Sendable {
 
     /// An optional flag indicating whether the prompt and its response should be stored.
     public let store: Bool?
+
+    // Thinking
+    public let thinking: ThinkingControl?
 }
 
 // MARK: Prompt + ContextControl
@@ -241,21 +294,21 @@ extension Prompt: Codable {
     public init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
-        self.conversationID = try container.decodeIfPresent(String.self, forKey: .conversationID)
-        self.instructions = try container.decodeIfPresent(Prompt.Instructions.self, forKey: .instructions)
-        self.inputs = try container.decode([Prompt.Input].self, forKey: .inputs)
-        self.extraBody = try container.decodeIfPresent([String: DynamicJSON.JSON].self, forKey: .extraBody)
-        self.stream = try container.decode(Bool.self, forKey: .stream)
-        self.context = try container.decodeIfPresent(Prompt.ContextControl.self, forKey: .context)
+        conversationID = try container.decodeIfPresent(String.self, forKey: .conversationID)
+        instructions = try container.decodeIfPresent(Prompt.Instructions.self, forKey: .instructions)
+        inputs = try container.decode([Prompt.Input].self, forKey: .inputs)
+        extraBody = try container.decodeIfPresent([String: DynamicJSON.JSON].self, forKey: .extraBody)
+        stream = try container.decode(Bool.self, forKey: .stream)
+        context = try container.decodeIfPresent(Prompt.ContextControl.self, forKey: .context)
 
         if let value = try? container.decodeIfPresent(GenerationControl.self, forKey: .generation) {
-            self.generation = value
+            generation = value
         } else {
             let store = try? container.decodeIfPresent(Bool.self, forKey: .store)
             let temperature = try? container.decodeIfPresent(Double.self, forKey: .temperature)
             let topP = try? container.decodeIfPresent(Double.self, forKey: .topP)
             let maxTokens = try? container.decodeIfPresent(Int.self, forKey: .maxTokens)
-            self.generation = .init(temperature: temperature, topP: topP, maxTokens: maxTokens, store: store)
+            generation = .init(temperature: temperature, topP: topP, maxTokens: maxTokens, store: store, thinking: nil)
         }
     }
 

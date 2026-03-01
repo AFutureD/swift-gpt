@@ -15,6 +15,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0"),
+        .package(url: "https://github.com/apple/swift-openapi-generator", from: "1.6.0"),
 
         .package(url: "https://github.com/AFutureD/Swiftic", from: "0.5.0"),
         .package(url: "https://github.com/Myoland/swift-lazy", from: "0.2.1"),
@@ -25,7 +26,6 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-log", from: "1.6.0"),
         .package(url: "https://github.com/apple/swift-distributed-tracing", from: "1.3.1"),
         .package(url: "https://github.com/apple/swift-atomics.git", from: "1.0.2"),
-        .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.27.0"),
 
         // Test
         .package(url: "https://github.com/swift-server/swift-openapi-async-http-client", from: "1.0.0"),
@@ -63,10 +63,9 @@ let package = Package(
         ),
         .target(
             name: "Gemini",
-            dependencies: [
-                .product(name: "SwiftProtobuf", package: "swift-protobuf"),
-            ],
-            exclude: ["README.md", "vendor"]
-        )
+            dependencies: [.product(name: "OpenAPIRuntime", package: "swift-openapi-runtime")],
+            exclude: ["README.md"],
+            plugins: [.plugin(name: "OpenAPIGenerator", package: "swift-openapi-generator")]
+        ),
     ]
 )
