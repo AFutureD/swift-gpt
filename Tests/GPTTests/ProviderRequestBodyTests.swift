@@ -11,22 +11,6 @@ import Testing
 import LazyKit
 import DynamicJSON
 
-private func canonicalJSONString(from data: Data) throws -> String {
-    let object = try JSONSerialization.jsonObject(with: data)
-    let normalizedData = try JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])
-    guard let normalized = String(data: normalizedData, encoding: .utf8) else {
-        throw NSError(domain: "ProviderRequestBodyTests", code: 1)
-    }
-    return normalized
-}
-
-private func canonicalJSONString<T: Encodable>(from value: T) throws -> String {
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = .sortedKeys
-    let data = try encoder.encode(value)
-    return try canonicalJSONString(from: data)
-}
-
 @Test
 func testOpenAIRequestBodyWithExtraBody() throws {
 
@@ -62,7 +46,7 @@ func testOpenAIRequestBodyWithExtraBody() throws {
 
     let decoder = JSONDecoder()
     let decoded = try decoder.decode(OpenAIModelReponseRequest.self, from: str.data(using: .utf8)!)
-    #expect(try canonicalJSONString(from: decoded.extraBody) == canonicalJSONString(from: request.extraBody))
+    #expect(decoded.extraBody.debugDescription == request.extraBody.debugDescription)
 
 }
 
@@ -110,7 +94,7 @@ func testOpenAICompatibleRequestBodyWithExtraBody() throws {
 
     let decoder = JSONDecoder()
     let decoded = try decoder.decode(OpenAIChatCompletionRequest.self, from: str.data(using: .utf8)!)
-    #expect(try canonicalJSONString(from: decoded.extraBody) == canonicalJSONString(from: request.extraBody))
+    #expect(decoded.extraBody.debugDescription == request.extraBody.debugDescription)
 
 }
 
@@ -134,7 +118,7 @@ func testOpenAIRequestBodyWithExtraBodyByAny() throws {
 
     let decoder = JSONDecoder()
     let decoded = try decoder.decode(OpenAIModelReponseRequest.self, from: str.data(using: .utf8)!)
-    #expect(try canonicalJSONString(from: decoded.extraBody) == canonicalJSONString(from: request.extraBody))
+    #expect(decoded.extraBody.debugDescription == request.extraBody.debugDescription)
 }
 
 @Test
@@ -156,6 +140,6 @@ func testOpenAICompatibleRequestBodyWithExtraBodyByAny() throws {
 
     let decoder = JSONDecoder()
     let decoded = try decoder.decode(OpenAIChatCompletionRequest.self, from: str.data(using: .utf8)!)
-    #expect(try canonicalJSONString(from: decoded.extraBody) == canonicalJSONString(from: request.extraBody))
+    #expect(decoded.extraBody.debugDescription == request.extraBody.debugDescription)
 
 }
