@@ -74,8 +74,10 @@ public extension GPTSession {
         // Build Conversation
         let history = conversation ?? Conversation()
 
-        let provider = model.provider.type.provider
-        let stream: AnyAsyncSequence<ModelStreamResponse> = try await provider.generate(
+        let provider = model.provider
+        self.logger.debug("[*] provider: \(provider)")
+        
+        let stream: AnyAsyncSequence<ModelStreamResponse> = try await provider.type.provider.generate(
             client: client,
             provider: model.provider,
             model: model.model,
@@ -115,8 +117,10 @@ public extension GPTSession {
 
         var history = conversation ?? Conversation()
 
-        let provider = model.provider.type.provider
-        let response: ModelResponse = try await provider.generate(
+        let provider = model.provider
+        self.logger.debug("[*] provider: \(provider)")
+        
+        let response: ModelResponse = try await provider.type.provider.generate(
             client: client,
             provider: model.provider,
             model: model.model,

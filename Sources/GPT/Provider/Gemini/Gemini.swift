@@ -97,7 +97,7 @@ struct GeminiProvider: LLMProvider {
                         try decoder.decode(Gemini.Components.Schemas.GenerateContentResponse.self, from: Data($0.data.utf8))
                     }
 
-                    let generationConext = GenerationConext(conversationID: conversation.id)
+                    let generationConext = GenerationConext(conversationID: conversation.id, provider: provider)
 
                     // The Main Loop
                     let innerSpan = startSpan("Receive Response", context: span.context)
@@ -252,7 +252,7 @@ struct GeminiProvider: LLMProvider {
 
             do {
                 let contentResposne = try decoder.decode(Gemini.Components.Schemas.GenerateContentResponse.self, from: data)
-                return ModelResponse(contentResposne, .init(conversationID: conversation.id))
+                return ModelResponse(contentResposne, .init(conversationID: conversation.id, provider: provider))
             } catch {
                 span.setStatus(.init(code: .error))
                 span.recordError(error, attributes: .init(["response.body": .string(String(data: data, encoding: .utf8) ?? "nil")]))

@@ -88,7 +88,7 @@ struct OpenAICompatibleProvider: LLMProvider {
 
             do {
                 let openAIChatCompletionResponse = try decoder.decode(OpenAIChatCompletionResponse.self, from: data)
-                let modelReponse = ModelResponse(openAIChatCompletionResponse, .init(conversationID: conversation.id))
+                let modelReponse = ModelResponse(openAIChatCompletionResponse, .init(conversationID: conversation.id, provider: provider))
                 return modelReponse
             } catch {
                 span.setStatus(.init(code: .error))
@@ -178,7 +178,7 @@ struct OpenAICompatibleProvider: LLMProvider {
             }.map {
                 try decoder.decode(OpenAIChatCompletionStreamResponse.self, from: Data($0.data.utf8))
             }.aggregateToModelStremResponse(
-                with: .init(conversationID: conversation.id)
+                with: .init(conversationID: conversation.id, provider: provider)
             ).withSpan("Receive Response", context: span.context).eraseToAnyAsyncSequence()
         }
     }

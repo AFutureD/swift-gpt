@@ -36,9 +36,16 @@ public struct GenerationConext: Codable, Sendable {
     /// If nil, this value will be determinted by model, such as qwen-mt will be true.
     public let modelStreamResponseNotSupportDeltaContent: Bool?
     
-    public init(conversationID: String? = nil, modelStreamResponseNotSupportDeltaContent: Bool? = nil) {
+    public let provider: LLMProviderConfiguration?
+    
+    public init(
+        conversationID: String? = nil,
+        modelStreamResponseNotSupportDeltaContent: Bool? = nil,
+        provider: LLMProviderConfiguration? = nil
+    ) {
         self.conversationID = conversationID
         self.modelStreamResponseNotSupportDeltaContent = modelStreamResponseNotSupportDeltaContent
+        self.provider = provider
     }
 }
 

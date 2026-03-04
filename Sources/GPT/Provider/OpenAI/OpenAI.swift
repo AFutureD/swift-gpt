@@ -93,7 +93,7 @@ struct OpenAIProvider: LLMProvider {
 
             do {
                 let openaiModelResponse = try decoder.decode(OpenAIModelReponse.self, from: data)
-                let modelReponse = ModelResponse(openaiModelResponse, .init(conversationID: conversation.id))
+                let modelReponse = ModelResponse(openaiModelResponse, .init(conversationID: conversation.id, provider: provider))
                 return modelReponse
             } catch {
                 span.recordError(error, attributes: .init(["response.body": .string(String(data: data, encoding: .utf8) ?? "nil")]))
@@ -181,7 +181,7 @@ struct OpenAIProvider: LLMProvider {
             }.mapToServerSentEvert().map { event in
                 try decoder.decode(OpenAIModelStreamResponse.self, from: Data(event.data.utf8))
             }.map {
-                ModelStreamResponse($0, .init(conversationID: conversation.id))
+                ModelStreamResponse($0, .init(conversationID: conversation.id, provider: provider))
             }.compacted().withSpan("Receive Response", context: span.context).eraseToAnyAsyncSequence()
         }
     }
