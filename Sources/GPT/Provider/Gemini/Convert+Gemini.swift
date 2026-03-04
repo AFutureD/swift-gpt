@@ -75,14 +75,14 @@ extension Gemini.Components.Schemas.Content {
     init(_ instructions: Prompt.Instructions) {
         switch instructions {
         case .text(let string):
-            self.init(parts: [.init(text: string)])
+            self.init(parts: [.init(text: string)], role: "user")
         case .inputs(let inputs):
             self.init(inputs)
         }
     }
 
     init(_ inputs: [Prompt.Input]) {
-        self.init(parts: inputs.compactMap { .init($0) })
+        self.init(parts: inputs.compactMap { .init($0) }, role: "user")
     }
 }
 

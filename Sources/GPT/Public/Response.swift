@@ -1,3 +1,5 @@
+import Swiftic
+
 /// Represents an error that occurred during generation.
 public struct GenerationError: Codable, Sendable {
     /// The error code.
@@ -26,6 +28,21 @@ public struct TokenUsage: Codable, Sendable {
     public let total: Int?
 }
 
+extension GenerationConext {
+    public struct ProviderContext: Codable, Sendable {
+        /// The type of the provider.
+        public let type: LLMProviderType
+
+        /// A user-defined name for the provider configuration.
+        public let name: String
+        
+        public init(type: LLMProviderType, name: String) {
+            self.type = type
+            self.name = name
+        }
+    }
+}
+
 /// The Context information when generate this response.
 public struct GenerationConext: Codable, Sendable {
     /// The identifier of the conversation associated with this response.
@@ -39,7 +56,7 @@ public struct GenerationConext: Codable, Sendable {
     /// The provider configuration used to produce this response, when available.
     ///
     /// Use this value to inspect provider-specific metadata captured alongside the generated output.
-    public let provider: LLMProviderConfiguration?
+    public let provider: ProviderContext?
     
     public init(
         conversationID: String? = nil,
@@ -48,7 +65,7 @@ public struct GenerationConext: Codable, Sendable {
     ) {
         self.conversationID = conversationID
         self.modelStreamResponseNotSupportDeltaContent = modelStreamResponseNotSupportDeltaContent
-        self.provider = provider
+        self.provider = provider |> { ProviderContext(type: $0.type, name: $0.name) }
     }
 }
 
