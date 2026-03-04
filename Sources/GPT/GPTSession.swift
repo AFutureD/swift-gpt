@@ -55,6 +55,19 @@ public extension GPTSession {
 }
 
 public extension GPTSession {
+    private func attachProvider(_ response: ModelResponse, providerName: String) -> ModelResponse {
+        ModelResponse(
+            id: response.id,
+            context: response.context,
+            model: response.model,
+            provider: providerName,
+            items: response.items,
+            usage: response.usage,
+            stop: response.stop,
+            error: response.error
+        )
+    }
+
     /// Streams partial results from the LLM as they become available.
     ///
     /// The returned asynchronous sequence yields ``ModelStreamResponse`` events, allowing you to process the response incrementally.
@@ -85,15 +98,29 @@ public extension GPTSession {
             serviceContext: serviceContext
         )
 
+        let providerName = model.provider.name
+
         return stream.map { [history] response in
-            if case .completed(let event) = response {
+            let responseWithProvider: ModelStreamResponse
+            switch response {
+            case .create(let event):
+                let data = event.data.map { attachProvider($0, providerName: providerName) }
+                responseWithProvider = .create(.init(event: event.event, data: data))
+            case .completed(let event):
+                let data = attachProvider(event.data, providerName: providerName)
+                responseWithProvider = .completed(.init(event: event.event, data: data))
+            default:
+                responseWithProvider = response
+            }
+
+            if case .completed(let event) = responseWithProvider {
                 lockedConversation.withLock {
                     $0 = history
                     $0?.items.append(contentsOf: prompt.inputs.map { .input($0) })
                     $0?.items.append(contentsOf: event.data.items.map { .generated($0) })
                 }
             }
-            return response
+            return responseWithProvider
         }.eraseToAnyAsyncSequence()
     }
 
@@ -127,10 +154,12 @@ public extension GPTSession {
         )
 
         history.items.append(contentsOf: prompt.inputs.map { .input($0) })
-        history.items.append(contentsOf: response.items.map { .generated($0) })
+        let responseWithProvider = attachProvider(response, providerName: model.provider.name)
+
+        history.items.append(contentsOf: responseWithProvider.items.map { .generated($0) })
 
         lockedConversation.withLock { [history] in $0 = history }
-        return response
+        return responseWithProvider
     }
 }
 
