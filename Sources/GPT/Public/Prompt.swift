@@ -179,9 +179,23 @@ extension GenerationControl.ThinkingLevel {
 }
 
 public extension GenerationControl {
+    /// Controls model reasoning behavior for providers that support configurable thinking.
+    ///
+    /// Use this type to request a reasoning effort level and, when supported by the provider,
+    /// to include the model's reasoning content in the response payload.
+    ///
+    /// Example:
+    /// ```swift
+    /// let thinking = GenerationControl.ThinkingControl(
+    ///     includeInResponse: true,
+    ///     level: .medium
+    /// )
+    /// ```
     struct ThinkingControl: Codable, Sendable {
+        /// Indicates whether provider-specific reasoning content should be included in the response.
         public let includeInResponse: Bool?
 
+        /// The requested reasoning effort level.
         public let level: ThinkingLevel?
     }
 }

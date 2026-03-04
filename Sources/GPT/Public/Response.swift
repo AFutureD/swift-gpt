@@ -36,6 +36,9 @@ public struct GenerationConext: Codable, Sendable {
     /// If nil, this value will be determinted by model, such as qwen-mt will be true.
     public let modelStreamResponseNotSupportDeltaContent: Bool?
     
+    /// The provider configuration used to produce this response, when available.
+    ///
+    /// Use this value to inspect provider-specific metadata captured alongside the generated output.
     public let provider: LLMProviderConfiguration?
     
     public init(

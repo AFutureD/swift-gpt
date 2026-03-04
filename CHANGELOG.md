@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+Feature enhancements:
+
+- Include `provider` metadata in `GenerationConext` for generated and streamed responses.
+- Add `Gemini` target. Using OpenAPI to generate types for [Gemini API](https://ai.google.dev/api/generate-content). 
+- Add Gemini support.
+- Add `ThinkingControl` and `ThinkingLevel` for reasoning controls.
+
 ## 0.6.0 (2025-11-04)
 
 Feature enhancements:

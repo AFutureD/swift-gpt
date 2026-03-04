@@ -8,7 +8,7 @@ Currently, `swift-gpt` supports the following provider types:
 
 - ``LLMProviderType/OpenAI``: For OpenAI's official API.
 - ``LLMProviderType/OpenAICompatible``: For services that are compatible with the OpenAI API, such as local LLMs or other cloud providers.
-- ``LLMProviderType/Gemini``: For Google's Gemini models (note: this is a placeholder and may not be fully implemented).
+- ``LLMProviderType/Gemini``: For Google's Gemini API.
 
 ## Configuring a Provider
 
@@ -43,6 +43,26 @@ let localLLMProvider = LLMProviderConfiguration(
     apiURL: "http://localhost:8080"
 )
 ```
+
+### Gemini
+
+For Gemini, use the `.Gemini` type and the Generative Language API base URL.
+
+```swift
+import GPT
+
+let geminiProvider = LLMProviderConfiguration(
+    type: .Gemini,
+    name: "Gemini",
+    apiKey: "YOUR_GEMINI_API_KEY",
+    apiURL: "https://generativelanguage.googleapis.com/v1beta"
+)
+```
+
+Current Gemini limitations:
+
+- Request conversion currently forwards text content only.
+- `Prompt.Input.file` and `Prompt.Input.image` are not mapped into Gemini requests yet.
 
 ## Using Multiple Models and Providers
 
