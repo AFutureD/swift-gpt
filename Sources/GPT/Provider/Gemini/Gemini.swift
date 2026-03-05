@@ -152,7 +152,8 @@ struct GeminiProvider: LLMProvider {
 
                             if !initialed {
                                 continuation.yield(.itemAdded(.init(event: .itemAdded, data: .message(.init(id: "", index: nil, content: [])))))
-                                continuation.yield(.contentAdded(.init(event: .contentAdded, data: .text(.init(delta: delta, content: textContent, annotations: [])))))
+                                // Because each candidate will generate a corresponding contentDelta, content is set to nil here.
+                                continuation.yield(.contentAdded(.init(event: .contentAdded, data: .text(.init(delta: delta, content: nil, annotations: [])))))
                             }
 
                             let content = TextGeneratedContent(delta: delta, content: textContent, annotations: [])

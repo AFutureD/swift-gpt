@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.1 (2026-03-05)
+
+Fix:
+
+  - fix first candidate will return in both contentDelta and contentAdd event when using gemini provider stream
+
 ## 0.7.0 (2026-03-04)
 
 Feature enhancements:
