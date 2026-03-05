@@ -1,6 +1,5 @@
 import Atomics
 import Foundation
-
 import Gemini
 import HTTPTypes
 import LazyKit
@@ -18,7 +17,9 @@ package struct AuthenticationMiddleware {
 
     /// Creates a new middleware.
     /// - Parameter value: The value for the `Authorization` header field.
-    package init(apiKey value: String) { self.value = value }
+    package init(apiKey value: String) {
+        self.value = value
+    }
 }
 
 extension AuthenticationMiddleware: ClientMiddleware {
@@ -152,8 +153,7 @@ struct GeminiProvider: LLMProvider {
 
                             if !initialed {
                                 continuation.yield(.itemAdded(.init(event: .itemAdded, data: .message(.init(id: "", index: nil, content: [])))))
-                                // Because each candidate will generate a corresponding contentDelta, content is set to nil here.
-                                continuation.yield(.contentAdded(.init(event: .contentAdded, data: .text(.init(delta: delta, content: nil, annotations: [])))))
+                                continuation.yield(.contentAdded(.init(event: .contentAdded, data: .text(.init(delta: nil, content: textContent, annotations: [])))))
                             }
 
                             let content = TextGeneratedContent(delta: delta, content: textContent, annotations: [])
