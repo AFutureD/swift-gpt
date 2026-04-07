@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.7.3 [WIP]
+## 0.8.0 (2026-04-08)
 
 Feature enhancements:
 
