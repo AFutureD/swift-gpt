@@ -1,10 +1,64 @@
 import Foundation
 @testable import GPT
+import HTTPTypes
 import OpenAPIAsyncHTTPClient
+import OpenAPIRuntime
 import os.log
 import SwiftDotenv
 import Testing
 import TestKit
+
+private struct DelayedSuccessTransport: ClientTransport {
+    let delayNanoseconds: UInt64
+
+    func send(
+        _ request: HTTPRequest,
+        body _: HTTPBody?,
+        baseURL: URL,
+        operationID _: String
+    ) async throws -> (HTTPResponse, HTTPBody?) {
+        #expect(request.method == .post)
+        #expect(baseURL.path == "/chat/completions")
+
+        try await Task.sleep(nanoseconds: delayNanoseconds)
+
+        let responseBody = """
+        {
+          "choices": [
+            {
+              "finish_reason": "stop",
+              "index": 0,
+              "logprobs": null,
+              "message": {
+                "annotations": null,
+                "audio": null,
+                "content": "pong",
+                "refusal": null,
+                "role": "assistant",
+                "tool_calls": null
+              }
+            }
+          ],
+          "created": 0,
+          "id": "resp_123",
+          "model": "gpt-4o-mini",
+          "object": "chat.completion.chunk",
+          "service_tier": null,
+          "system_fingerprint": null,
+          "usage": null
+        }
+        """
+
+        let response = HTTPResponse(
+            status: .ok,
+            headerFields: [
+                .contentType: "application/json"
+            ]
+        )
+
+        return (response, HTTPBody(Data(responseBody.utf8)))
+    }
+}
 
 @Test("testExmaple")
 func testExmaple() async throws {
@@ -138,6 +192,35 @@ func testExmaple4() async throws {
 
     let logger = Logger()
     logger.info("\(String(describing: response))")
+}
+
+@Test("testGenerateTimeout")
+func testGenerateTimeout() async throws {
+    let session = GPTSession(client: DelayedSuccessTransport(delayNanoseconds: 300_000_000))
+    let prompt = Prompt(
+        inputs: [
+            .text("ping")
+        ],
+        stream: false
+    )
+    let model = LLMModelReference(
+        model: .init(name: "gpt-4o-mini"),
+        provider: .init(
+            type: .OpenAICompatible,
+            name: "Mock",
+            apiKey: "test-key",
+            apiURL: "https://example.com"
+        )
+    )
+
+    do {
+        _ = try await session.generate(prompt, model: model, timeout: 0.05)
+        Issue.record("Expected generate to time out")
+    } catch {
+        #expect("\(type(of: error))" == "TimedOutError")
+    }
+
+    #expect(session.conversation == nil)
 }
 
 @Test("testConversationBlock")

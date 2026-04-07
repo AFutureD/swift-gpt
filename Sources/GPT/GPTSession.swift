@@ -1,12 +1,14 @@
 // The Swift Programming Language
 // https://docs.swift.org/swift-book
 
+import Foundation
 import HTTPTypes
 import LazyKit
 import Logging
 import NetworkKit
 import OpenAPIRuntime
 import ServiceContextModule
+import Swiftic
 import SynchronizationKit
 import Tracing
 
@@ -106,11 +108,13 @@ public extension GPTSession {
     /// - Parameters:
     ///   - prompt: The prompt to send. The `stream` property must be `false`.
     ///   - model: The specific model and provider to use for the request.
+    ///   - timeout: The timeout of the request include fetch body.
     /// - Returns: A ``ModelResponse`` containing the full response from the LLM.
     /// - Throws: A ``RuntimeError`` or other transport-level error if the request fails.
     func generate(
         _ prompt: Prompt,
         model: LLMModelReference,
+        timeout: TimeInterval? = nil,
         serviceContext: ServiceContext = .current ?? .topLevel
     ) async throws -> ModelResponse {
         assert(prompt.stream == false, "The prompt perfer do not use stream.")
@@ -120,15 +124,29 @@ public extension GPTSession {
         let provider = model.provider
         self.logger.debug("[*] provider: \(provider)")
         
-        let response: ModelResponse = try await provider.type.provider.generate(
-            client: client,
-            provider: model.provider,
-            model: model.model,
-            prompt,
-            conversation: history,
-            logger: logger,
-            serviceContext: serviceContext
-        )
+        let response: ModelResponse = if let timeout {
+            try await Task.timeout(for: .seconds(timeout)) { [history] in
+                try await provider.type.provider.generate(
+                    client: client,
+                    provider: model.provider,
+                    model: model.model,
+                    prompt,
+                    conversation: history,
+                    logger: logger,
+                    serviceContext: serviceContext
+                )
+            }
+        } else {
+            try await provider.type.provider.generate(
+                client: client,
+                provider: model.provider,
+                model: model.model,
+                prompt,
+                conversation: history,
+                logger: logger,
+                serviceContext: serviceContext
+            )
+        }
 
         history.items.append(contentsOf: prompt.inputs.map { .input($0) })
         history.items.append(contentsOf: response.items.map { .generated($0) })
@@ -233,6 +251,7 @@ public extension GPTSession {
     func generate(
         _ prompt: Prompt,
         model: LLMQualifiedModel,
+        timeout: TimeInterval? = nil,
         serviceContext: ServiceContext = .current ?? .topLevel
     ) async throws -> ModelResponse {
         return try await withSpan("GPT Session Generating", context: serviceContext) { span in
@@ -261,7 +280,7 @@ public extension GPTSession {
                         continue
                     }
 
-                    let response: ModelResponse = try await generate(prompt, model: cur, serviceContext: span.context)
+                    let response: ModelResponse = try await generate(prompt, model: cur, timeout: timeout, serviceContext: span.context)
 
                     retryAdviser.cleanCache(model: cur)
 
