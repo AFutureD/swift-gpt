@@ -36,11 +36,11 @@ public extension RetryAdviser {
         /// - Parameters:
         ///   - maxAttemptsPerProvider: The maximum number of attempts per provider. Defaults to 3.
         ///   - preferNextProvider: Whether to prefer the next provider on failure. Defaults to `true`.
-        ///   - backOff: The backoff policy. Defaults to a simple 100ms delay.
+        ///   - backOff: The backoff policy. Defaults to a exponential backoff with t = 100ms and a maximum of 10 minutes.
         public init(
             maxAttemptsPerProvider: Int = 3,
             preferNextProvider: Bool = true,
-            backOff: BackOffPolicy = .simple(delay: 100 * 1_000_000)
+            backOff: BackOffPolicy = .exponential(delay: 100 * 1_000_000, maxDelay: 10 * 60 * 1_000_000_000, multiplier: 2)
         ) {
             self.maxAttemptsPerProvider = maxAttemptsPerProvider
             self.preferNextProvider = preferNextProvider
@@ -79,7 +79,7 @@ public final class RetryAdviser: Sendable {
     public static let shared = RetryAdviser()
 
     /// The retry strategy used by this adviser.
-    public let strategy: Strategy
+    public let lockedStrategy: LazyLockedValue<Strategy>
 
     let cached: LazyLockedValue<[LLMModelReference: Advice]>
 
@@ -89,7 +89,14 @@ public final class RetryAdviser: Sendable {
     public init(
         strategy: Strategy = .init()
     ) {
-        self.strategy = strategy
+        self.lockedStrategy = .init(strategy)
         self.cached = .init([:])
+    }
+}
+
+extension RetryAdviser {
+    public var strategy: Strategy {
+        get { lockedStrategy.withLock { $0 } }
+        set { lockedStrategy.withLock { $0 = newValue } }
     }
 }

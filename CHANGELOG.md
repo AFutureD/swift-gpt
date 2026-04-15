@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.0 (2026-04-15)
+
+Feature enhancements:
+
+- Shared `RetryAdviser` now default to exponential backoff strategy with t = 100ms.
+
 ## 0.8.0 (2026-04-08)
 
 Feature enhancements:
