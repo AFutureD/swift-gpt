@@ -13,6 +13,12 @@ A Swift package for interacting with Large Language Models (LLMs) from various p
 - **Automatic Retries**: Built-in retry logic with configurable strategies to handle transient network issues or model failures.
 - **Type-Safe**: Leverages Swift's type system to ensure correctness and provide a great developer experience.
 
+### Provider-specific request fields
+
+`Prompt.extraBody` is supported only by OpenAI-compatible providers for
+provider-specific request fields. The official OpenAI provider ignores
+`extraBody`.
+
 ## Installation
 
 Add `swift-gpt` as a dependency to your `Package.swift` file:

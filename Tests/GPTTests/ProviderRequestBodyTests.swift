@@ -12,7 +12,7 @@ import LazyKit
 import DynamicJSON
 
 @Test
-func testOpenAIRequestBodyWithExtraBody() throws {
+func testOpenAIRequestBodyDoesNotSupportExtraBody() throws {
 
     let request = OpenAIModelReponseRequest(input: .text("Foo"),
                                             model: "Bar",
@@ -32,12 +32,9 @@ func testOpenAIRequestBodyWithExtraBody() throws {
                                             tools: nil,
                                             topP: nil,
                                             truncation: nil,
-                                            user: nil,
-                                            extraBody: [
-                                                "baz": ["age":69, "name":"John"]
-                                            ])
+                                            user: nil)
 
-    let str = "{\"baz\":{\"age\":69,\"name\":\"John\"},\"input\":\"Foo\",\"model\":\"Bar\"}"
+    let str = "{\"input\":\"Foo\",\"model\":\"Bar\"}"
 
     let encoder = JSONEncoder()
     encoder.outputFormatting = .sortedKeys
@@ -46,7 +43,8 @@ func testOpenAIRequestBodyWithExtraBody() throws {
 
     let decoder = JSONDecoder()
     let decoded = try decoder.decode(OpenAIModelReponseRequest.self, from: str.data(using: .utf8)!)
-    #expect(decoded.extraBody.debugDescription == request.extraBody.debugDescription)
+    let decodedData = try encoder.encode(decoded)
+    #expect(String(data: decodedData, encoding: .utf8) == str)
 
 }
 
@@ -94,13 +92,14 @@ func testOpenAICompatibleRequestBodyWithExtraBody() throws {
 
     let decoder = JSONDecoder()
     let decoded = try decoder.decode(OpenAIChatCompletionRequest.self, from: str.data(using: .utf8)!)
-    #expect(decoded.extraBody.debugDescription == request.extraBody.debugDescription)
+    let decodedData = try encoder.encode(decoded)
+    #expect(String(data: decodedData, encoding: .utf8) == str)
 
 }
 
 
 @Test
-func testOpenAIRequestBodyWithExtraBodyByAny() throws {
+func testOpenAIRequestBodyIgnoresExtraBodyByAny() throws {
 
     let str = "{\"baz\":{\"age\":69,\"name\":\"John\"},\"input\":\"Foo\",\"model\":\"Bar\"}"
     let dict: [String: Any] = [
@@ -114,11 +113,35 @@ func testOpenAIRequestBodyWithExtraBodyByAny() throws {
     let encoder = JSONEncoder()
     encoder.outputFormatting = .sortedKeys
     let encoded = try encoder.encode(request)
-    #expect(String(data: encoded, encoding: .utf8) == str)
+    #expect(String(data: encoded, encoding: .utf8) == "{\"input\":\"Foo\",\"model\":\"Bar\"}")
 
     let decoder = JSONDecoder()
     let decoded = try decoder.decode(OpenAIModelReponseRequest.self, from: str.data(using: .utf8)!)
-    #expect(decoded.extraBody.debugDescription == request.extraBody.debugDescription)
+    let decodedData = try encoder.encode(decoded)
+    #expect(String(data: decodedData, encoding: .utf8) == "{\"input\":\"Foo\",\"model\":\"Bar\"}")
+}
+
+@Test
+func testOpenAIProviderIgnoresPromptExtraBody() throws {
+    let prompt = Prompt(
+        inputs: [
+            .text(.init(role: .user, content: "Foo"))
+        ],
+        extraBody: [
+            "baz": ["age": 69, "name": "John"]
+        ],
+        stream: false
+    )
+    let request = OpenAIModelReponseRequest(prompt, history: .init(), model: "Bar", stream: false)
+
+    let encoder = JSONEncoder()
+    encoder.outputFormatting = .sortedKeys
+    let encoded = try encoder.encode(request)
+    let encodedString = String(data: encoded, encoding: .utf8) ?? ""
+
+    #expect(!encodedString.contains("\"baz\""))
+    #expect(!encodedString.contains("\"age\""))
+    #expect(!encodedString.contains("\"name\""))
 }
 
 @Test
@@ -140,6 +163,7 @@ func testOpenAICompatibleRequestBodyWithExtraBodyByAny() throws {
 
     let decoder = JSONDecoder()
     let decoded = try decoder.decode(OpenAIChatCompletionRequest.self, from: str.data(using: .utf8)!)
-    #expect(decoded.extraBody.debugDescription == request.extraBody.debugDescription)
+    let decodedData = try encoder.encode(decoded)
+    #expect(String(data: decodedData, encoding: .utf8) == str)
 
 }
