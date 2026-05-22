@@ -2095,10 +2095,8 @@ public struct OpenAIModelReponseRequest: Codable, Sendable {
     /// A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse.
     /// [Learn more](https://platform.openai.com/docs/guides/safety-best-practices#end-user-ids).
     public let user: String?
-
-    public let extraBody: [String: DynamicJSON.JSON]
     
-    public init(input: OpenAIModelReponseRequestInput, model: String, background: Bool?, include: [ModelReponseRequestAdditionalData]?, instructions: String?, maxOutputTokens: Int?, metadata: [String : String]?, parallelToolCalls: Bool?, previousResponseId: String?, reasoning: OpenAIModelReponseRequestResoning?, store: Bool?, stream: Bool?, temperature: Double?, text: openAIModelReponseRequestTextConfiguration?, toolChoice: OpenAIModelReponseRequestToolChoice?, tools: [OpenAIModelReponseRequestTool]?, topP: Double?, truncation: OpenAIModelReponseRequestTruncation?, user: String?, extraBody: [String : DynamicJSON.JSON] = [:]) {
+    public init(input: OpenAIModelReponseRequestInput, model: String, background: Bool?, include: [ModelReponseRequestAdditionalData]?, instructions: String?, maxOutputTokens: Int?, metadata: [String : String]?, parallelToolCalls: Bool?, previousResponseId: String?, reasoning: OpenAIModelReponseRequestResoning?, store: Bool?, stream: Bool?, temperature: Double?, text: openAIModelReponseRequestTextConfiguration?, toolChoice: OpenAIModelReponseRequestToolChoice?, tools: [OpenAIModelReponseRequestTool]?, topP: Double?, truncation: OpenAIModelReponseRequestTruncation?, user: String?) {
         self.input = input
         self.model = model
         self.background = background
@@ -2118,7 +2116,6 @@ public struct OpenAIModelReponseRequest: Codable, Sendable {
         self.topP = topP
         self.truncation = truncation
         self.user = user
-        self.extraBody = extraBody
     }
     
     public init(from decoder: any Decoder) throws {
@@ -2143,17 +2140,6 @@ public struct OpenAIModelReponseRequest: Codable, Sendable {
         self.topP = try container.decodeIfPresent(Double.self, forKey: .topP)
         self.truncation = try container.decodeIfPresent(OpenAIModelReponseRequestTruncation.self, forKey: .truncation)
         self.user = try container.decodeIfPresent(String.self, forKey: .user)
-        
-        let extraKeys = Set(container.allKeys).subtracting(CodingKeys.allKeys)
-        var extraBody: [String: JSON] = [:]
-        
-        for key in extraKeys {
-            if let value = try? container.decodeIfPresent(JSON.self, forKey: key) {
-                extraBody[key.stringValue] = value
-            }
-        }
-        
-        self.extraBody = extraBody
     }
     
     public func encode(to encoder: any Encoder) throws {
@@ -2178,13 +2164,6 @@ public struct OpenAIModelReponseRequest: Codable, Sendable {
         try container.encodeIfPresent(self.topP, forKey: .topP)
         try container.encodeIfPresent(self.truncation, forKey: .truncation)
         try container.encodeIfPresent(self.user, forKey: .user)
-        
-        for (key, body) in extraBody {
-            guard let codingKey = CodingKeys(stringValue: key) else {
-                continue
-            }
-            try container.encodeIfPresent(body, forKey: codingKey)
-        }
     }
 }
 
@@ -2207,10 +2186,6 @@ extension OpenAIModelReponseRequest {
 }
 
 extension OpenAIModelReponseRequest.CodingKeys {
-    static let allKeys: [Self] = [
-        .input, .model, .background, .include, .instructions, .maxOutputTokens, .metadata, .parallelToolCalls, .previousResponseId, .reasoning, .store, .stream, .temperature, .text, .toolChoice, .tools, .topP, .user
-    ]
-    
     static let input = Self(stringValue: "input")!
     static let model = Self(stringValue: "model")!
     static let background = Self(stringValue: "background")!

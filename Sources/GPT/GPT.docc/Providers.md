@@ -29,6 +29,9 @@ let openAIProvider = LLMProviderConfiguration(
 )
 ```
 
+The official OpenAI provider sends only the supported OpenAI request fields.
+`Prompt.extraBody` is ignored for this provider.
+
 ### OpenAI-Compatible
 
 For an OpenAI-compatible provider, you would use the `.OpenAICompatible` type and provide the appropriate URL.
@@ -43,6 +46,10 @@ let localLLMProvider = LLMProviderConfiguration(
     apiURL: "http://localhost:8080"
 )
 ```
+
+OpenAI-compatible providers support `Prompt.extraBody` for provider-specific
+request body fields. These fields are encoded at the top level of the request
+body.
 
 ### Gemini
 

@@ -191,8 +191,7 @@ extension OpenAIModelReponseRequest {
             tools: nil,
             topP: generationControl?.topP,
             truncation: nil,
-            user: nil, // TODO: provide session ID or user ID
-            extraBody: prompt.extraBody ?? [:]
+            user: nil // TODO: provide session ID or user ID
         )
     }
 }

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+Behavior changes:
+
+- The official OpenAI provider no longer forwards `Prompt.extraBody`; `extraBody` remains supported for OpenAI-compatible providers.
+
 ## 0.9.0 (2026-04-15)
 
 Feature enhancements:
