@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Decode Responses payloads that omit or null `metadata`, `parallel_tool_calls`, or output-text `annotations`. The public `metadata` and `parallel_tool_calls` properties are now optional.
+- Preserve reported Responses cache usage as `TokenUsage.cachedInput`, including through Codable round trips.
+- Add an optional `TextInputContent.partial` flag for assistant prefill on Responses-compatible endpoints. It is omitted by default and is not forwarded to Chat Completions.
+
 ## 0.10.0 (2026-05-22)
 
 Behavior changes:

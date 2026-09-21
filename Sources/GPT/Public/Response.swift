@@ -26,6 +26,16 @@ public struct TokenUsage: Codable, Sendable {
     public let output: Int?
     /// The total number of tokens used.
     public let total: Int?
+
+    /// Input tokens read from the provider's prompt cache, when reported.
+    public let cachedInput: Int?
+
+    public init(input: Int?, output: Int?, total: Int?, cachedInput: Int? = nil) {
+        self.input = input
+        self.output = output
+        self.total = total
+        self.cachedInput = cachedInput
+    }
 }
 
 extension GenerationConext {

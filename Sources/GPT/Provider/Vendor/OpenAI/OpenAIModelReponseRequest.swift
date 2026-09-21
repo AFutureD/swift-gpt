@@ -280,7 +280,7 @@ public enum OpenAIModelReponseContextOutputContentTextOutputAnnotation: Codable,
 
 // A text output from the model.
 public struct OpenAIModelReponseContextOutputContentTextOutput: Codable, Sendable {
-    let annotations: [OpenAIModelReponseContextOutputContentTextOutputAnnotation]
+    let annotations: [OpenAIModelReponseContextOutputContentTextOutputAnnotation]?
     let text: String
     let type: OpenAIModelReponseContextOutputContentType = .output_text
 
@@ -344,12 +344,20 @@ public struct OpenAIModelReponseContextOutput: Codable, Sendable {
     let content: [OpenAIModelReponseContextOutputContent]
     let role: String = "assistant"
     let type: OpenAIModelReponseContextType = .message
+    let partial: Bool?
+
+    init(id: String?, content: [OpenAIModelReponseContextOutputContent], partial: Bool? = nil) {
+        self.id = id
+        self.content = content
+        self.partial = partial
+    }
 
     enum CodingKeys: String, CodingKey {
         case id
         case content
         case role
         case type
+        case partial
     }
 }
 
