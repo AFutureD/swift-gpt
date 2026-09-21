@@ -32,6 +32,22 @@ let openAIProvider = LLMProviderConfiguration(
 The official OpenAI provider sends only the supported OpenAI request fields.
 `Prompt.extraBody` is ignored for this provider.
 
+Responses payloads may omit `metadata`, `parallel_tool_calls`, and output-text
+`annotations`; the corresponding decoded fields are optional. When the provider
+reports `usage.input_tokens_details.cached_tokens`, it is available as
+`ModelResponse.usage?.cachedInput`. A missing usage report remains `nil`, while a
+reported cache miss remains `0`.
+
+For a custom Responses-compatible endpoint that explicitly supports assistant
+prefill, `TextInputContent(role: .assistant, content: "Translation:", partial: true)`
+encodes `partial: true` on that assistant input. Leave it unset for ordinary
+OpenAI requests and completed conversation history. The Chat Completions provider
+does not forward this flag.
+
+These compatibility fields do not create or manage provider caches. Custom cache
+request fields and response-ID lifecycle management still require an application
+transport adapter; `Prompt.extraBody` remains ignored here.
+
 ### OpenAI-Compatible
 
 For an OpenAI-compatible provider, you would use the `.OpenAICompatible` type and provide the appropriate URL.

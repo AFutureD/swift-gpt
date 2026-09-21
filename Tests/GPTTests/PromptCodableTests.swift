@@ -22,7 +22,8 @@ func testInstructionsEncode() async throws {
     do {
         let instruct: Prompt.Instructions = .inputs([.text(.init(role: .system, content: "Hi"))])
         let encoded = try encoder.encode(instruct)
-        #expect(String(data: encoded, encoding: .utf8) == "[{\"role\":\"system\",\"content\":\"Hi\",\"type\":\"text\"}]")
+        let object = try JSONSerialization.jsonObject(with: encoded) as? [[String: String]]
+        #expect(object == [["role": "system", "content": "Hi", "type": "text"]])
     }
 }
 

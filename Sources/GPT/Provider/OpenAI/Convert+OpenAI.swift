@@ -72,7 +72,7 @@ private func convert(inputs: [Prompt.Input]) -> [OpenAIModelReponseRequestInputI
         switch input.role {
         case .assistant:
             if let content: OpenAIModelReponseContextOutputContent = .init(input) {
-                items.append(.output(.output(.init(id: nil, content: [content]))))
+                items.append(.output(.output(.init(id: nil, content: [content], partial: input.text?.partial))))
             }
         default:
             if let content = OpenAIModelReponseRequestInputItemMessageContentItem(input) {
@@ -223,7 +223,8 @@ extension ModelResponse {
         let usage = TokenUsage(
             input: response.usage?.input_tokens,
             output: response.usage?.output_tokens,
-            total: response.usage?.total_tokens
+            total: response.usage?.total_tokens,
+            cachedInput: response.usage?.input_tokens_details.cached_tokens
         )
         let items = response.output.convert()
 

@@ -18,19 +18,26 @@ public struct TextInputContent: Sendable, Codable, Hashable {
     /// The text content.
     public let content: String
 
+    /// Whether this assistant message is an incomplete response prefix.
+    /// Encoded by the Responses provider only; omit for ordinary history messages.
+    public let partial: Bool?
+
     enum CodingKeys: CodingKey {
         case type
         case role
         case content
+        case partial
     }
 
     /// Creates a new text content item.
     /// - Parameters:
     ///   - role: The role of the entity providing the content.
     ///   - content: The text content.
-    public init(role: ModelContentRole, content: String) {
+    ///   - partial: An opt-in assistant prefill flag for Responses-compatible providers that support it.
+    public init(role: ModelContentRole, content: String, partial: Bool? = nil) {
         self.role = role
         self.content = content
+        self.partial = partial
     }
 }
 

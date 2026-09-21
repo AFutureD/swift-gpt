@@ -84,7 +84,7 @@ public struct OpenAIModelReponse: Codable, Sendable {
     ///
     /// Keys are strings with a maximum length of 64 characters.
     /// Values are strings with a maximum length of 512 characters.
-    public let metadata: [String: String]
+    public let metadata: [String: String]?
 
     /// Model ID used to generate the response, like gpt-4o or o3.
     /// OpenAI offers a wide range of models with different capabilities,
@@ -109,7 +109,7 @@ public struct OpenAIModelReponse: Codable, Sendable {
 
     /// Whether to allow the model to run tool calls in parallel.
     /// Defaults to true
-    public let parallel_tool_calls: Bool
+    public let parallel_tool_calls: Bool?
 
     /// The unique ID of the previous response to the model.
     /// Use this to create multi-turn conversations.

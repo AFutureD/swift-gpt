@@ -1,0 +1,43 @@
+{
+  "created_at": 0,
+  "id": "resp_byteplus_fixture",
+  "max_output_tokens": 1024,
+  "model": "seed-2-0-mini-260428",
+  "object": "response",
+  "output": [
+    {
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "101. 我把我的雨伞落在火车上了。\n103. 您能帮我找到它吗？"
+        }
+      ],
+      "status": "completed",
+      "id": "msg_byteplus_fixture",
+      "partial": true
+    }
+  ],
+  "thinking": {
+    "type": "disabled"
+  },
+  "service_tier": "default",
+  "status": "completed",
+  "temperature": 0,
+  "usage": {
+    "input_tokens": 648,
+    "output_tokens": 28,
+    "total_tokens": 676,
+    "input_tokens_details": {
+      "cached_tokens": 0
+    },
+    "output_tokens_details": {
+      "reasoning_tokens": 0
+    }
+  },
+  "caching": {
+    "type": "disabled"
+  },
+  "store": false
+}
