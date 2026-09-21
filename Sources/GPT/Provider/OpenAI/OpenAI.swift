@@ -41,7 +41,7 @@ struct OpenAIProvider: LLMProvider {
             }
 
             // Build Request Body
-            let body = OpenAIModelReponseRequest(prompt, history: conversation, model: model.name, stream: false)
+            let body = OpenAIModelReponseRequest(prompt, history: conversation, model: model.name, stream: false, mayNeedPartial: provider.mayNeedPartial)
             let bodyData = try encoder.encode(body)
 
             // Build Request
@@ -184,5 +184,11 @@ struct OpenAIProvider: LLMProvider {
                 ModelStreamResponse($0, .init(conversationID: conversation.id, provider: provider))
             }.compacted().withSpan("Receive Response", context: span.context).eraseToAnyAsyncSequence()
         }
+    }
+}
+
+extension LLMProviderConfiguration {
+     var mayNeedPartial: Bool? {
+         self.apiURL.contains("bytepluses") ? true : nil
     }
 }

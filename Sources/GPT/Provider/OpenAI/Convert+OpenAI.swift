@@ -49,7 +49,7 @@ extension OpenAIModelReponseContext {
             var content: [OpenAIModelReponseContextOutputContent] = []
             if let refusal = message.refusalContent, let text = refusal.content {
                 content.append(.refusal(.init(refusal: text)))
-                self = .output(.init(id: String(describing: message.id), content: content))
+                self = .output(.init(id: String(describing: message.id), content: content, partial: nil))
                 return
             }
             if let textContents = message.textContents {
@@ -58,7 +58,7 @@ extension OpenAIModelReponseContext {
                         content.append(.text(.init(annotations: [], text: text)))
                     }
                 }
-                self = .output(.init(id: String(describing: message.id), content: content))
+                self = .output(.init(id: String(describing: message.id), content: content, partial: nil))
                 return
             }
             return nil
@@ -66,13 +66,15 @@ extension OpenAIModelReponseContext {
     }
 }
 
-private func convert(inputs: [Prompt.Input]) -> [OpenAIModelReponseRequestInputItem] {
+// 字节的 Responses API，当最后一条消息为 assistant 时，需要声明 partial 为 true。
+private func convert(inputs: [Prompt.Input], maybePartial: Bool? = nil) -> [OpenAIModelReponseRequestInputItem] {
     var items: [OpenAIModelReponseRequestInputItem] = []
-    for input in inputs {
+    for (idx, input) in inputs.enumerated() {
         switch input.role {
         case .assistant:
+            let partial = maybePartial |> { $0 && (idx == inputs.count - 1) }
             if let content: OpenAIModelReponseContextOutputContent = .init(input) {
-                items.append(.output(.output(.init(id: nil, content: [content]))))
+                items.append(.output(.output(.init(id: nil, content: [content], partial: partial))))
             }
         default:
             if let content = OpenAIModelReponseRequestInputItemMessageContentItem(input) {
@@ -134,7 +136,7 @@ extension OpenAIModelReponseRequestResoning {
 }
 
 extension OpenAIModelReponseRequest {
-    init(_ prompt: Prompt, history: Conversation, model: String, stream: Bool) {
+    init(_ prompt: Prompt, history: Conversation, model: String, stream: Bool, mayNeedPartial: Bool? = nil) {
         let instructions = prompt.instructions
         let contextControl = prompt.context
         let generationControl = prompt.generation
@@ -174,7 +176,7 @@ extension OpenAIModelReponseRequest {
         items.append(contentsOf: convert(conversationItems: historyItems.suffix(lastK)))
 
         // Inputs
-        items.append(contentsOf: convert(inputs: prompt.inputs))
+        items.append(contentsOf: convert(inputs: prompt.inputs, maybePartial: mayNeedPartial))
 
         self.init(
             input: .items(items),

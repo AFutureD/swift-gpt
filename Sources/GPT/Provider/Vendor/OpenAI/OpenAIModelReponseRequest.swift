@@ -344,12 +344,17 @@ public struct OpenAIModelReponseContextOutput: Codable, Sendable {
     let content: [OpenAIModelReponseContextOutputContent]
     let role: String = "assistant"
     let type: OpenAIModelReponseContextType = .message
+    
+    // In the input list, set the role of the last message to assistant and set partial to true to enable prefill-based response. The model will continue generating based on the content value.
+    // See: https://console.byteplus.com/ark/region:ap-southeast-1/docs/modelark/1958520
+    let partial: Bool?
 
     enum CodingKeys: String, CodingKey {
         case id
         case content
         case role
         case type
+        case partial
     }
 }
 
