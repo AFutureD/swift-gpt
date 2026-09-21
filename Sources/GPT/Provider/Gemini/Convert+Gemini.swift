@@ -28,7 +28,8 @@ extension ModelResponse {
             usage = TokenUsage(
                 input: Int(usageMetadata.promptTokenCount ?? 0),
                 output: Int(usageMetadata.candidatesTokenCount ?? 0),
-                total: Int(usageMetadata.totalTokenCount ?? 0)
+                total: Int(usageMetadata.totalTokenCount ?? 0),
+                cached: nil  // TODO: Add Cached Tokens Support
             )
         }
         

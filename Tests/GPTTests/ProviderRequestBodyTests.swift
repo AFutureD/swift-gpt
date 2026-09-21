@@ -12,7 +12,7 @@ import LazyKit
 import DynamicJSON
 
 @Test
-func testOpenAIRequestBodyDoesNotSupportExtraBody() throws {
+func testOpenAIRequestBodyWithExtraBody() throws {
 
     let request = OpenAIModelReponseRequest(input: .text("Foo"),
                                             model: "Bar",
@@ -32,9 +32,12 @@ func testOpenAIRequestBodyDoesNotSupportExtraBody() throws {
                                             tools: nil,
                                             topP: nil,
                                             truncation: nil,
-                                            user: nil)
+                                            user: nil,
+                                            extraBody: [
+                                                "baz": ["age":69, "name":"John"]
+                                            ])
 
-    let str = "{\"input\":\"Foo\",\"model\":\"Bar\"}"
+    let str = "{\"baz\":{\"age\":69,\"name\":\"John\"},\"input\":\"Foo\",\"model\":\"Bar\"}"
 
     let encoder = JSONEncoder()
     encoder.outputFormatting = .sortedKeys
@@ -43,8 +46,7 @@ func testOpenAIRequestBodyDoesNotSupportExtraBody() throws {
 
     let decoder = JSONDecoder()
     let decoded = try decoder.decode(OpenAIModelReponseRequest.self, from: str.data(using: .utf8)!)
-    let decodedData = try encoder.encode(decoded)
-    #expect(String(data: decodedData, encoding: .utf8) == str)
+    #expect(decoded.extraBody.debugDescription == request.extraBody.debugDescription)
 
 }
 
@@ -92,14 +94,13 @@ func testOpenAICompatibleRequestBodyWithExtraBody() throws {
 
     let decoder = JSONDecoder()
     let decoded = try decoder.decode(OpenAIChatCompletionRequest.self, from: str.data(using: .utf8)!)
-    let decodedData = try encoder.encode(decoded)
-    #expect(String(data: decodedData, encoding: .utf8) == str)
+    #expect(decoded.extraBody.debugDescription == request.extraBody.debugDescription)
 
 }
 
 
 @Test
-func testOpenAIRequestBodyIgnoresExtraBodyByAny() throws {
+func testOpenAIRequestBodyWithExtraBodyByAny() throws {
 
     let str = "{\"baz\":{\"age\":69,\"name\":\"John\"},\"input\":\"Foo\",\"model\":\"Bar\"}"
     let dict: [String: Any] = [
@@ -113,35 +114,11 @@ func testOpenAIRequestBodyIgnoresExtraBodyByAny() throws {
     let encoder = JSONEncoder()
     encoder.outputFormatting = .sortedKeys
     let encoded = try encoder.encode(request)
-    #expect(String(data: encoded, encoding: .utf8) == "{\"input\":\"Foo\",\"model\":\"Bar\"}")
+    #expect(String(data: encoded, encoding: .utf8) == str)
 
     let decoder = JSONDecoder()
     let decoded = try decoder.decode(OpenAIModelReponseRequest.self, from: str.data(using: .utf8)!)
-    let decodedData = try encoder.encode(decoded)
-    #expect(String(data: decodedData, encoding: .utf8) == "{\"input\":\"Foo\",\"model\":\"Bar\"}")
-}
-
-@Test
-func testOpenAIProviderIgnoresPromptExtraBody() throws {
-    let prompt = Prompt(
-        inputs: [
-            .text(.init(role: .user, content: "Foo"))
-        ],
-        extraBody: [
-            "baz": ["age": 69, "name": "John"]
-        ],
-        stream: false
-    )
-    let request = OpenAIModelReponseRequest(prompt, history: .init(), model: "Bar", stream: false)
-
-    let encoder = JSONEncoder()
-    encoder.outputFormatting = .sortedKeys
-    let encoded = try encoder.encode(request)
-    let encodedString = String(data: encoded, encoding: .utf8) ?? ""
-
-    #expect(!encodedString.contains("\"baz\""))
-    #expect(!encodedString.contains("\"age\""))
-    #expect(!encodedString.contains("\"name\""))
+    #expect(decoded.extraBody.debugDescription == request.extraBody.debugDescription)
 }
 
 @Test
@@ -163,7 +140,6 @@ func testOpenAICompatibleRequestBodyWithExtraBodyByAny() throws {
 
     let decoder = JSONDecoder()
     let decoded = try decoder.decode(OpenAIChatCompletionRequest.self, from: str.data(using: .utf8)!)
-    let decodedData = try encoder.encode(decoded)
-    #expect(String(data: decodedData, encoding: .utf8) == str)
+    #expect(decoded.extraBody.debugDescription == request.extraBody.debugDescription)
 
 }

@@ -247,9 +247,8 @@ public struct Prompt: Sendable {
 
     /// Additional provider-specific request body fields.
     ///
-    /// This is forwarded by OpenAI-compatible providers only. The official
-    /// OpenAI provider ignores this value and sends only the supported OpenAI
-    /// request fields.
+    /// This is forwarded by the OpenAI and OpenAI-compatible providers,
+    /// and encoded at the top level of the request body.
     public let extraBody: [String: DynamicJSON.JSON]?
 
     /// A flag indicating whether to use streaming for the response.
@@ -271,8 +270,7 @@ public struct Prompt: Sendable {
     ///   - conversationID: An optional identifier for the current conversation.
     ///   - instructions: System-level instructions for the model.
     ///   - inputs: The sequence of inputs for the prompt.
-    ///   - extraBody: Additional provider-specific request body fields for
-    ///     OpenAI-compatible providers. Ignored by the official OpenAI provider.
+    ///   - extraBody: Additional provider-specific request body fields.
     ///   - stream: A flag indicating whether to use streaming.
     ///   - generation: Controls the generation process.
     ///   - context: Controls the context of the prompt.

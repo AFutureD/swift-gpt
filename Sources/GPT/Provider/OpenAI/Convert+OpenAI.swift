@@ -138,7 +138,11 @@ extension OpenAIModelReponseRequest {
         let instructions = prompt.instructions
         let contextControl = prompt.context
         let generationControl = prompt.generation
-
+        let reference = history.lastReference
+        
+        // TODO: compare reference.name
+        let previousResponseId = reference?.provider == .OpenAI ? reference?.id : nil
+        
         var historyItems = history.items
         historyItems.removeAll {
             guard case .input(let input) = $0, let instructions else {
@@ -180,8 +184,8 @@ extension OpenAIModelReponseRequest {
             instructions: instructions?.text,
             maxOutputTokens: generationControl?.maxTokens,
             metadata: nil,
-            parallelToolCalls: false,
-            previousResponseId: nil,
+            parallelToolCalls: nil, // tools are not supported for now.
+            previousResponseId: previousResponseId,
             reasoning: nil, // TODO: Add reasning configuration
             store: generationControl?.store,
             stream: stream,
@@ -191,7 +195,8 @@ extension OpenAIModelReponseRequest {
             tools: nil,
             topP: generationControl?.topP,
             truncation: nil,
-            user: nil // TODO: provide session ID or user ID
+            user: nil, // TODO: provide session ID or user ID
+            extraBody: prompt.extraBody ?? [:]
         )
     }
 }
@@ -223,7 +228,8 @@ extension ModelResponse {
         let usage = TokenUsage(
             input: response.usage?.input_tokens,
             output: response.usage?.output_tokens,
-            total: response.usage?.total_tokens
+            total: response.usage?.total_tokens,
+            cached: response.usage?.input_tokens_details.cached_tokens
         )
         let items = response.output.convert()
 

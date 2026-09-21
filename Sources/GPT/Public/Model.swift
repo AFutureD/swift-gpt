@@ -81,6 +81,13 @@ extension LLMProviderConfiguration: CustomStringConvertible {
     }
 }
 
+extension LLMProviderConfiguration {
+    static func OpenAI(name: String, apiKey: String, apiURL: String) -> Self {
+        .init(type: .OpenAI, name: name, apiKey: apiKey, apiURL: apiURL)
+    }
+}
+
+
 // MARK: LLMModel
 
 /// Represents a specific LLM model.
@@ -90,6 +97,12 @@ public struct LLMModel: Hashable, Codable, Sendable {
 
     public init(name: String) {
         self.name = name
+    }
+}
+
+extension LLMModel: ExpressibleByStringLiteral {
+    public init(stringLiteral value: StringLiteralType) {
+        self.init(name: value)
     }
 }
 

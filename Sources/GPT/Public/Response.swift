@@ -26,6 +26,14 @@ public struct TokenUsage: Codable, Sendable {
     public let output: Int?
     /// The total number of tokens used.
     public let total: Int?
+    /// The number of cached tokens.
+    public let cached: Int?
+}
+
+extension TokenUsage: CustomStringConvertible {
+    public var description: String {
+        "TokenUsage(input: \(input, default: "nil"), output: \(output, default: "nil"), total: \(total, default: "nil"), cached: \(cached, default: "nil"))"
+    }
 }
 
 extension GenerationConext {

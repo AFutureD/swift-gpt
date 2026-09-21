@@ -15,9 +15,9 @@ A Swift package for interacting with Large Language Models (LLMs) from various p
 
 ### Provider-specific request fields
 
-`Prompt.extraBody` is supported only by OpenAI-compatible providers for
-provider-specific request fields. The official OpenAI provider ignores
-`extraBody`.
+`Prompt.extraBody` is supported by the OpenAI and OpenAI-compatible providers
+for provider-specific request fields. These fields are encoded at the top level
+of the request body.
 
 ## Installation
 

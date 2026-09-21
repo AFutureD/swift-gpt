@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+Feature enhancements:
+
+- `Conversation.lastReference` records the latest provider response, the OpenAI provider sends it as `previous_response_id`.
+- `TokenUsage.cached` reports the cached input tokens, for the OpenAI provider only.
+- The OpenAI provider tolerates the responses of Responses API compatible services, e.g. BytePlus ModelArk.
+
+Behavior changes:
+
+- The OpenAI provider forwards `Prompt.extraBody` again, for the provider-specific fields of Responses API compatible services, e.g. `caching` and `thinking` of BytePlus ModelArk.
+
 ## 0.10.0 (2026-05-22)
 
 Behavior changes:

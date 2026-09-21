@@ -137,7 +137,8 @@ struct GeminiProvider: LLMProvider {
                                 usage = TokenUsage(
                                     input: Int(usageMetadata.promptTokenCount ?? 0),
                                     output: Int(usageMetadata.candidatesTokenCount ?? 0),
-                                    total: Int(usageMetadata.totalTokenCount ?? 0)
+                                    total: Int(usageMetadata.totalTokenCount ?? 0),
+                                    cached: nil
                                 )
                             }
                             guard let candidate, let part = candidate.content?.value1.parts?.first else {

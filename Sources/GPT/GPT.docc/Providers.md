@@ -29,8 +29,9 @@ let openAIProvider = LLMProviderConfiguration(
 )
 ```
 
-The official OpenAI provider sends only the supported OpenAI request fields.
-`Prompt.extraBody` is ignored for this provider.
+The OpenAI provider supports `Prompt.extraBody` for the provider-specific fields
+of Responses API compatible services. These fields are encoded at the top level
+of the request body.
 
 ### OpenAI-Compatible
 

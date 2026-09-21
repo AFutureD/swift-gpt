@@ -203,7 +203,14 @@ extension OpenAIChatCompletionRequest {
 
 extension ModelResponse {
     init(_ response: OpenAIChatCompletionResponse, _ context: GenerationConext?) {
-        let usage = response.usage.map { TokenUsage(input: $0.prompt_tokens, output: $0.completion_tokens, total: $0.total_tokens) }
+        let usage = response.usage.map {
+            TokenUsage(
+                input: $0.prompt_tokens,
+                output: $0.completion_tokens,
+                total: $0.total_tokens,
+                cached: nil  // TODO: Add Cached Tokens Support
+            )
+        }
 
         let choice = response.choices.first
         let stop: GenerationStop? = choice?.finish_reason.map { .init(code: $0, message: nil) }

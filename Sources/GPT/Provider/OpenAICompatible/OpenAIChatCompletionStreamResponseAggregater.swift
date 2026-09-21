@@ -118,7 +118,8 @@ public extension OpenAIChatCompletionStreamResponseAsyncAggregater {
                 self.usage = TokenUsage(
                     input: usage.prompt_tokens,
                     output: usage.completion_tokens,
-                    total: usage.total_tokens
+                    total: usage.total_tokens,
+                    cached: nil  // TODO: Add Cached Tokens Support
                 )
             }
 
