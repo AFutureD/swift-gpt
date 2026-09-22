@@ -135,3 +135,83 @@ func testOpenAIRequestIgnoresReferencesOfOtherProviders() throws {
 
     #expect(request.previousResponseId == nil)
 }
+
+// MARK: Instructions
+
+private func instructedPrompt(instructions: Prompt.Instructions? = "Be brief.", user: String = "a", prefixLength: Int? = 1) -> Prompt {
+    Prompt(
+        instructions: instructions,
+        inputs: [
+            .text(.init(role: .user, content: "context")),
+            .text(.init(role: .user, content: user)),
+        ],
+        stream: false,
+        context: .init(cachingPrefixLength: prefixLength)
+    )
+}
+
+@Test
+func testInstructionsJoinThePrefix() throws {
+    let p = instructedPrompt()
+    let prefix = try #require(p.prefixInputs)
+    // Instructions first, then `cachingPrefixLength` inputs.
+    #expect(prefix.count == 2)
+    #expect(prefix[0].role == .system)
+    #expect(prefix[0].text?.content == "Be brief.")
+    #expect(prefix[1].text?.content == "context")
+    #expect(p.suffixInputs.count == 1)
+
+    let cachePrompt = try #require(p.prefixCachePrompt)
+    #expect(cachePrompt.instructions == nil)
+    #expect(cachePrompt.inputs.count == 2)
+}
+
+@Test
+func testInputInstructionsJoinThePrefixAsIs() throws {
+    let items: [Prompt.Input] = [
+        .text(.init(role: .system, content: "Be brief.")),
+        .text(.init(role: .developer, content: "Answer in English.")),
+    ]
+    let prefix = try #require(instructedPrompt(instructions: .inputs(items)).prefixInputs)
+    #expect(prefix.count == 3)
+    #expect(Array(prefix.prefix(2)) == items)
+}
+
+@Test
+func testPrefixCacheHashChangesWithInstructions() {
+    #expect(instructedPrompt().prefixCacheHashValue != instructedPrompt(instructions: "Be verbose.").prefixCacheHashValue)
+    #expect(instructedPrompt().prefixCacheHashValue != instructedPrompt(instructions: nil).prefixCacheHashValue)
+}
+
+@Test
+func testInstructionsAreNotFoldedWithoutPrefixCaching() {
+    #expect(instructedPrompt(prefixLength: nil).prefixInputs == nil)
+    #expect(instructedPrompt(prefixLength: nil).suffixInputs.count == 2)
+}
+
+@Test
+func testOpenAIRequestOmitsInstructionsWhenThePrefixMatches() throws {
+    let p = instructedPrompt()
+    let hash = try #require(p.prefixCacheHashValue)
+    let history = Conversation(
+        prefixCacheReference: .init(reference: .init(name: "Ark", provider: .OpenAI, id: "resp_prefix"), prefixHashValue: hash)
+    )
+
+    let request = OpenAIModelReponseRequest(p, history: history.referencing(provider), model: "m", stream: false)
+
+    #expect(request.previousResponseId == "resp_prefix")
+    #expect(request.instructions == nil)
+}
+
+@Test
+func testOpenAIRequestKeepsInstructionsWithoutAMatchingPrefix() throws {
+    let stale = Conversation(
+        prefixCacheReference: .init(reference: .init(name: "Ark", provider: .OpenAI, id: "resp_prefix"), prefixHashValue: "stale")
+    )
+    let withPrefix = OpenAIModelReponseRequest(instructedPrompt(), history: stale.referencing(provider), model: "m", stream: false)
+    #expect(withPrefix.previousResponseId == nil)
+    #expect(withPrefix.instructions == "Be brief.")
+
+    let withoutPrefix = OpenAIModelReponseRequest(instructedPrompt(prefixLength: nil), history: Conversation(), model: "m", stream: false)
+    #expect(withoutPrefix.instructions == "Be brief.")
+}

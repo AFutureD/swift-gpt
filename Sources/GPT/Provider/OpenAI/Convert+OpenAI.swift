@@ -144,8 +144,11 @@ extension OpenAIModelReponseRequest {
         var items: [OpenAIModelReponseRequestInputItem] = []
         let previousResponseId: String?
 
-        // With a reference, the provider holds the history.
-        if let prefix = history.prefixCacheReference, prefix.prefixHashValue == prompt.prefixCacheHashValue {
+        // With a reference, the provider holds the history, instructions included.
+        let usesPrefixCache = prompt.prefixCacheHashValue != nil
+            && history.prefixCacheReference?.prefixHashValue == prompt.prefixCacheHashValue
+
+        if usesPrefixCache, let prefix = history.prefixCacheReference {
             previousResponseId = prefix.reference.id
             items.append(contentsOf: convert(inputs: prompt.suffixInputs, maybePartial: mayNeedPartial))
         } else if let last = history.lastReference {
@@ -191,7 +194,7 @@ extension OpenAIModelReponseRequest {
             model: model,
             background: nil, // TODO: suppert backgroud mode.
             include: nil,
-            instructions: instructions?.text,
+            instructions: usesPrefixCache ? nil : instructions?.text,
             maxOutputTokens: generationControl?.maxTokens,
             metadata: nil,
             parallelToolCalls: nil, // tools are not supported for now.

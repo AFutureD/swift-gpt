@@ -135,6 +135,18 @@ extension Prompt.Instructions {
         }
         return nil
     }
+
+    /// The instructions as input items, so that they can be sent inline.
+    ///
+    /// `.text` becomes a single system item.
+    var asInputs: [Prompt.Input] {
+        switch self {
+        case let .text(value):
+            return [.text(.init(role: .system, content: value))]
+        case let .inputs(value):
+            return value
+        }
+    }
 }
 
 public extension GenerationControl {
@@ -359,12 +371,15 @@ extension Prompt: Codable {
 // MARK: Prompt + Prefix Cache
 
 public extension Prompt {
-    /// `nil` when prefix caching is off.
+    /// The instructions followed by the first `cachingPrefixLength` inputs. `nil` when prefix caching is off.
+    ///
+    /// The instructions join the prefix, since BytePlus ModelArk accepts no `instructions` on cached turns.
+    /// `cachingPrefixLength` counts `inputs` only.
     var prefixInputs: [Input]? {
         guard let cachingPrefixLength = context?.cachingPrefixLength, cachingPrefixLength > 0 else {
             return nil
         }
-        return Array(inputs.prefix(cachingPrefixLength))
+        return (instructions?.asInputs ?? []) + inputs.prefix(cachingPrefixLength)
     }
 
     /// The inputs after the cached prefix.
