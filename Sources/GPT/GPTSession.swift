@@ -120,11 +120,11 @@ public extension GPTSession {
     ) async throws -> ModelResponse {
         assert(prompt.stream == false, "The prompt perfer do not use stream.")
 
-        var history = conversation ?? Conversation()
-
         let provider = model.provider
         self.logger.debug("[*] provider: \(provider)")
         
+        var history = conversation ?? Conversation()
+
         let response: ModelResponse = if let timeout {
             try await Task.timeout(for: .seconds(timeout)) { [history] in
                 try await provider.type.provider.generate(
@@ -155,5 +155,38 @@ public extension GPTSession {
 
         lockedConversation.withLock { [history] in $0 = history }
         return response
+    }
+}
+
+// MARK: Prefix Cache
+
+public extension GPTSession {
+    /// Stores the prefix of `prompt` at the provider, so that later prompts can reference it.
+    ///
+    /// Sends ``Prompt/prefixCachePrompt`` once. The session's conversation is not changed,
+    /// store the result in ``Conversation/prefixCacheReference`` of the conversation that later prompts use.
+    ///
+    /// - Returns: `nil` when `prompt` has no prefix to cache.
+    func prepareCache(
+        for prompt: Prompt,
+        model: LLMModelReference,
+        timeout: TimeInterval? = nil,
+        serviceContext: ServiceContext = .current ?? .topLevel
+    ) async throws -> Conversation.PrefixCacheReference? {
+        guard let cachePrompt = prompt.prefixCachePrompt, let hash = prompt.prefixCacheHashValue else {
+            return nil
+        }
+
+        let provider = model.provider
+        self.logger.debug("[*] prepare prefix cache. provider: \(provider)")
+
+        let session = GPTSession(client: client, conversation: nil, retryAdviser: retryAdviser, logger: logger)
+        let response: ModelResponse = try await session.generate(cachePrompt, model: model, timeout: timeout, serviceContext: serviceContext)
+
+        guard let id = response.id else {
+            throw RuntimeError.missingPrefixCacheResponseID
+        }
+
+        return .init(reference: .init(name: provider.name, provider: provider.type, id: id), prefixHashValue: hash)
     }
 }

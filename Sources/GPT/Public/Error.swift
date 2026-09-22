@@ -20,6 +20,8 @@ public enum RuntimeError: Error, Sendable {
     case skipByRetryAdvice
     /// All retry attempts failed for all available models.
     case retryFailed([String: Error])
+    /// The response of the prefix cache request has no ID.
+    case missingPrefixCacheResponseID
 }
 
 extension RuntimeError: Equatable {
@@ -42,6 +44,8 @@ extension RuntimeError: Equatable {
         case (.skipByRetryAdvice, .skipByRetryAdvice):
             return true
         case (.retryFailed(_), .retryFailed(_)):
+            return true
+        case (.missingPrefixCacheResponseID, .missingPrefixCacheResponseID):
             return true
         default:
             return false
@@ -70,6 +74,8 @@ extension RuntimeError: CustomStringConvertible {
             "The reponse has been skipped due to the retry strategery."
         case .retryFailed(let dic):
             "Retry failed. Retry \(dic.count) times. Errors: \(dic)"
+        case .missingPrefixCacheResponseID:
+            "The response of the prefix cache request has no ID."
         }
     }
 }

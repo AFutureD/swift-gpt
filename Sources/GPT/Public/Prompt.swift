@@ -6,6 +6,7 @@
 //
 
 import DynamicJSON
+import Foundation
 
 // MARK: Prompt + Input
 
@@ -228,7 +229,18 @@ public extension Prompt {
         /// The maximum number of items to include in the context.
         ///
         /// The instructions will not be included.
+        /// Not applied when continuing by a provider reference.
         public let maxItemCount: Int?
+
+        /// The number of leading `inputs` that stay the same across prompts, and can be cached by the provider.
+        ///
+        /// `nil` or `0` disables prefix caching.
+        public let cachingPrefixLength: Int?
+
+        public init(maxItemCount: Int? = nil, cachingPrefixLength: Int? = nil) {
+            self.maxItemCount = maxItemCount
+            self.cachingPrefixLength = cachingPrefixLength
+        }
     }
 }
 
@@ -341,5 +353,90 @@ extension Prompt: Codable {
         try container.encodeIfPresent(instructions, forKey: .instructions)
         try container.encodeIfPresent(context, forKey: .context)
         try container.encodeIfPresent(generation, forKey: .generation)
+    }
+}
+
+// MARK: Prompt + Prefix Cache
+
+public extension Prompt {
+    /// `nil` when prefix caching is off.
+    var prefixInputs: [Input]? {
+        guard let cachingPrefixLength = context?.cachingPrefixLength, cachingPrefixLength > 0 else {
+            return nil
+        }
+        return Array(inputs.prefix(cachingPrefixLength))
+    }
+
+    /// The inputs after the cached prefix.
+    var suffixInputs: [Input] {
+        guard let cachingPrefixLength = context?.cachingPrefixLength, cachingPrefixLength > 0 else {
+            return inputs
+        }
+        return Array(inputs.dropFirst(cachingPrefixLength))
+    }
+
+    /// A stable hash of the prefix inputs and the thinking configuration.
+    ///
+    /// BytePlus ModelArk requires thinking to stay the same across the cached turns.
+    /// `nil` when prefix caching is off.
+    var prefixCacheHashValue: String? {
+        guard let prefixInputs else {
+            return nil
+        }
+
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+
+        var hasher = FNV1aHasher()
+        for input in prefixInputs {
+            hasher.combine((try? encoder.encode(input)) ?? Data())
+        }
+        hasher.combine((try? encoder.encode(generation?.thinking)) ?? Data())
+        return hasher.finalize()
+    }
+
+    /// The prompt that stores the prefix, or `nil` when prefix caching is off.
+    ///
+    /// BytePlus ModelArk requires no instructions, no stream, no `max_output_tokens`, and `caching.prefix`.
+    var prefixCachePrompt: Prompt? {
+        guard let prefixInputs else {
+            return nil
+        }
+
+        var extraBody = extraBody ?? [:]
+        extraBody["caching"] = ["type": "enabled", "prefix": true]
+
+        let generation = generation.map {
+            GenerationControl(temperature: $0.temperature, topP: $0.topP, maxTokens: nil, store: $0.store, thinking: $0.thinking)
+        }
+
+        return Prompt(
+            conversationID: nil,
+            instructions: nil,
+            inputs: prefixInputs,
+            extraBody: extraBody,
+            stream: false,
+            generation: generation,
+            context: .init(maxItemCount: context?.maxItemCount, cachingPrefixLength: nil)
+        )
+    }
+}
+
+/// Stable across processes, unlike `Hasher`.
+struct FNV1aHasher {
+    private var hash: UInt64 = 0xcbf2_9ce4_8422_2325
+
+    mutating func combine(_ data: Data) {
+        for byte in data {
+            hash ^= UInt64(byte)
+            hash = hash &* 0x0000_0100_0000_01b3
+        }
+        // Field separator.
+        hash ^= 0xff
+        hash = hash &* 0x0000_0100_0000_01b3
+    }
+
+    func finalize() -> String {
+        String(hash, radix: 16)
     }
 }

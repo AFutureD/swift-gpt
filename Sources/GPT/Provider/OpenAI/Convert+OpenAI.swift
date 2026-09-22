@@ -136,47 +136,55 @@ extension OpenAIModelReponseRequestResoning {
 }
 
 extension OpenAIModelReponseRequest {
+    /// - Note: `history` must only carry references that the provider can access. See ``Conversation/referencing(_:)``.
     init(_ prompt: Prompt, history: Conversation, model: String, stream: Bool, mayNeedPartial: Bool? = nil) {
         let instructions = prompt.instructions
         let contextControl = prompt.context
         let generationControl = prompt.generation
-        let reference = history.lastReference
-        
-        // TODO: compare reference.name
-        let previousResponseId = reference?.provider == .OpenAI ? reference?.id : nil
-        
-        var historyItems = history.items
-        historyItems.removeAll {
-            guard case .input(let input) = $0, let instructions else {
-                return false
-            }
-
-            switch instructions {
-            case .text(let value):
-                return input.role == .system && input.text?.content == value
-            case .inputs(let value):
-                return value.contains(input)
-            }
-        }
-
         var items: [OpenAIModelReponseRequestInputItem] = []
+        let previousResponseId: String?
 
-        // Instructions
-        if case .inputs(let inputs) = prompt.instructions {
-            items.append(contentsOf: convert(inputs: inputs))
-        }
-
-        // History
-        let lastK = if let maxItemCount = contextControl?.maxItemCount {
-            max(0, maxItemCount - prompt.inputs.count)
+        // With a reference, the provider holds the history.
+        if let prefix = history.prefixCacheReference, prefix.prefixHashValue == prompt.prefixCacheHashValue {
+            previousResponseId = prefix.reference.id
+            items.append(contentsOf: convert(inputs: prompt.suffixInputs, maybePartial: mayNeedPartial))
+        } else if let last = history.lastReference {
+            previousResponseId = last.id
+            items.append(contentsOf: convert(inputs: prompt.inputs, maybePartial: mayNeedPartial))
         } else {
-            historyItems.count
+            previousResponseId = nil
+
+            var historyItems = history.items
+            historyItems.removeAll {
+                guard case .input(let input) = $0, let instructions else {
+                    return false
+                }
+
+                switch instructions {
+                case .text(let value):
+                    return input.role == .system && input.text?.content == value
+                case .inputs(let value):
+                    return value.contains(input)
+                }
+            }
+
+            // Instructions
+            if case .inputs(let inputs) = prompt.instructions {
+                items.append(contentsOf: convert(inputs: inputs))
+            }
+
+            // History
+            let lastK = if let maxItemCount = contextControl?.maxItemCount {
+                max(0, maxItemCount - prompt.inputs.count)
+            } else {
+                historyItems.count
+            }
+
+            items.append(contentsOf: convert(conversationItems: historyItems.suffix(lastK)))
+
+            // Inputs
+            items.append(contentsOf: convert(inputs: prompt.inputs, maybePartial: mayNeedPartial))
         }
-
-        items.append(contentsOf: convert(conversationItems: historyItems.suffix(lastK)))
-
-        // Inputs
-        items.append(contentsOf: convert(inputs: prompt.inputs, maybePartial: mayNeedPartial))
 
         self.init(
             input: .items(items),
@@ -312,5 +320,26 @@ extension OpenAIModelReponseContextOutputContent {
         case .refusal(let refusal):
             .refusal(TextRefusalGeneratedContent(content: refusal.refusal))
         }
+    }
+}
+
+extension Conversation.ResponseReference {
+    /// A response ID is only known to the service that created it.
+    func matches(_ provider: LLMProviderConfiguration) -> Bool {
+        self.provider == provider.type && self.name == provider.name
+    }
+}
+
+extension Conversation {
+    /// The conversation without the references that `provider` can not access.
+    func referencing(_ provider: LLMProviderConfiguration) -> Conversation {
+        var conversation = self
+        if let reference = lastReference, !reference.matches(provider) {
+            conversation.lastReference = nil
+        }
+        if let prefix = prefixCacheReference, !prefix.reference.matches(provider) {
+            conversation.prefixCacheReference = nil
+        }
+        return conversation
     }
 }

@@ -172,3 +172,75 @@ public extension GPTSession {
         }
     }
 }
+
+public extension GPTSession {
+    /// Stores the prefix of `prompt` at the first model that succeeds, with automatic retries and fallbacks.
+    ///
+    /// See ``prepareCache(for:model:timeout:serviceContext:)``.
+    func prepareCache(
+        for prompt: Prompt,
+        model: LLMQualifiedModel,
+        timeout: TimeInterval? = nil,
+        serviceContext: ServiceContext = .current ?? .topLevel
+    ) async throws -> Conversation.PrefixCacheReference? {
+        guard prompt.prefixCachePrompt != nil else {
+            return nil
+        }
+
+        return try await withSpan("GPT Session Preparing Prefix Cache", context: serviceContext) { span in
+            guard !model.models.isEmpty else {
+                span.addEvent(.init(name: "Prepare Failed", attributes: .init(["error": .string("emptyModelList")])))
+                throw RuntimeError.emptyModelList
+            }
+
+            var iter = model.models.makeIterator()
+            var model = iter.next()
+
+            var ctx = RetryAdviser.Context()
+
+            repeat {
+                guard let cur = model else { break }
+
+                do {
+                    ctx.current = cur
+
+                    if retryAdviser.skip(ctx) {
+                        let error = RuntimeError.skipByRetryAdvice
+                        ctx.append(error)
+                        model = iter.next()
+                        logger.notice("[*] GPTSession skip modal(\(cur)). Reason: skiped by RetryAdviser.")
+                        span.addEvent(.init(name: "SKip Provider", attributes: .init(["error": .string(error.description)])))
+                        continue
+                    }
+
+                    let reference = try await prepareCache(for: prompt, model: cur, timeout: timeout, serviceContext: span.context)
+
+                    retryAdviser.cleanCache(model: cur)
+
+                    return reference
+                } catch {
+                    span.recordError(error)
+                    logger.error("[*] GPTSession prepare prefix cache failed. Model: `\(cur)` Error: \(error)")
+                    ctx.append(error)
+
+                    guard let retry = retryAdviser.retry(ctx, error: error) else {
+                        model = iter.next()
+                        logger.notice("[*] GPTSession retry with next model: \(model?.description ?? "nil")")
+                        span.addEvent("Next Provider")
+                        continue
+                    }
+
+                    logger.notice("[*] GPTSession retry with same model(\(model?.description ?? "nil"))")
+                    do {
+                        try await Task.sleep(nanoseconds: retry)
+                    } catch {
+                        logger.notice("[*] GPTSession retry failed when sleep. ignored. Error: \(error)")
+                    }
+                }
+            } while model != nil
+
+            span.setStatus(.init(code: .error))
+            throw RuntimeError.retryFailed(ctx.errors)
+        }
+    }
+}

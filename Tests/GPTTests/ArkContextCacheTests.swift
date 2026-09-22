@@ -55,11 +55,10 @@ private let arkGeneration = GenerationControl(temperature: nil, topP: nil, maxTo
 
 /// Prefix caching: a fixed prefix with a dynamic suffix.
 ///
-/// The first turn only stores the prefix, with `"caching": {"type": "enabled", "prefix": true}`.
+/// `GPTSession.prepareCache(for:model:)` stores the prefix once, with `"caching": {"type": "enabled", "prefix": true}`.
 /// Every question references the prefix by `previous_response_id`, and the questions do not see each other.
 ///
-/// - Note: `previous_response_id` comes from `Conversation.lastReference`.
-///   The previous turns are still sent by the session for now, so the input tokens are larger than expected.
+/// - Note: The prefix is the first `cachingPrefixLength` inputs of the prompt. Only the inputs after it are sent.
 @Test("testArkPrefixCaching")
 func testArkPrefixCaching() async throws {
     try Dotenv.make()
@@ -69,47 +68,38 @@ func testArkPrefixCaching() async throws {
         model: "seed-2-0-mini-260428",
         provider: .OpenAI(name: "Ark", apiKey: Dotenv["ARK_API_KEY"]!.stringValue, apiURL: "https://ark.ap-southeast.bytepluses.com/api/v3")
     )
-    
-    // Create the prefix cache. At least 256 input tokens.
-    let prefixSession = GPTSession(client: client, conversation: nil)
-    let prefixPrompt = Prompt(
-        inputs: [
-            .text(.init(role: .system, content: arkCacheContext)),
-        ],
-        extraBody: [
-            "caching": ["type": "enabled", "prefix": true],
-            "thinking": ["type": "disabled"],
-        ],
-        stream: false,
-        generation: arkGeneration
-    )
-    let prefixResponse: ModelResponse = try await prefixSession.generate(prefixPrompt, model: model)
-    print("usage: \(String(describing: prefixResponse.usage))")
-
-    // The prefix and the reference of the prefix cache. The prefix cache is never updated.
-    let prefix = try #require(prefixSession.conversation)
 
     let questions = [
         "Write a diary entry from the point of view of Della describing her emotions before selling her hair.",
         "Analyze how O. Henry uses irony in this story. Provide a concise explanation.",
     ]
 
-    for question in questions {
-        // Every question branches from the prefix.
-        let session = GPTSession(client: client, conversation: prefix)
-        let prompt = Prompt(
+    func prompt(_ question: String) -> Prompt {
+        Prompt(
             inputs: [
+                .text(.init(role: .system, content: arkCacheContext)), // The prefix. At least 256 input tokens.
                 .text(.init(role: .user, content: question)),
             ],
             extraBody: [
                 "thinking": ["type": "disabled"],
             ],
             stream: false,
-            generation: arkGeneration
+            generation: arkGeneration,
+            context: .init(cachingPrefixLength: 1)
         )
+    }
 
-        let response: ModelResponse = try await session.generate(prompt, model: model)
+    // Create the prefix cache. The prefix cache is never updated.
+    let session = GPTSession(client: client, conversation: nil)
+    let prefix = try #require(try await session.prepareCache(for: prompt(questions[0]), model: model))
+    print("prefix: \(prefix)")
+
+    for question in questions {
+        // Every question branches from the prefix.
+        let session = GPTSession(client: client, conversation: Conversation(prefixCacheReference: prefix))
+        let response: ModelResponse = try await session.generate(prompt(question), model: model)
         print("responseID: \(session.conversation?.lastReference?.id, default: "nil") usage: \(response.usage, default: "nil")")
+        #expect((response.usage?.cached ?? 0) > 0)
     }
 }
 
@@ -117,8 +107,7 @@ func testArkPrefixCaching() async throws {
 ///
 /// Every turn enables `"caching": {"type": "enabled"}`, and references the previous turn by `previous_response_id`.
 ///
-/// - Note: `previous_response_id` comes from `Conversation.lastReference`.
-///   The previous turns are still sent by the session for now, so the input tokens are larger than expected.
+/// - Note: `previous_response_id` comes from `Conversation.lastReference`. Only the new inputs are sent every turn.
 @Test("testArkSessionCaching")
 func testArkSessionCaching() async throws {
     try Dotenv.make()
@@ -139,6 +128,7 @@ func testArkSessionCaching() async throws {
         .text("Based on the story and the diary Della just wrote, imagine how Jim would feel when he read the diary entry."),
     ]]
 
+    var previousTotal = 0
     for inputs in turns {
         let prompt = Prompt(
             inputs: inputs,
@@ -152,5 +142,12 @@ func testArkSessionCaching() async throws {
 
         let response: ModelResponse = try await session.generate(prompt, model: model)
         print("responseID: \(session.conversation?.lastReference?.id, default: "nil") usage: \(response.usage, default: "nil")")
+
+        // Previous context + new question, not the previous context twice.
+        let usage = try #require(response.usage)
+        if previousTotal > 0 {
+            #expect(try #require(usage.input) < previousTotal + 200)
+        }
+        previousTotal = try #require(usage.total)
     }
 }
