@@ -1,16 +1,19 @@
 # Changelog
 
-## Unreleased
+## 0.11.0 (2026-10-13)
 
 Feature enhancements:
 
 - `Conversation.lastReference` records the latest provider response, the OpenAI provider sends it as `previous_response_id`.
 - `TokenUsage.cached` reports the cached input tokens, for the OpenAI provider only.
 - The OpenAI provider tolerates the responses of Responses API compatible services, e.g. BytePlus ModelArk.
+- Add prefix caching: set `Prompt.ContextControl.cachingPrefixLength`, store the prefix with `GPTSession.prepareCache(for:model:)`, and keep it in `Conversation.prefixCacheReference`.
 
 Behavior changes:
 
 - The OpenAI provider forwards `Prompt.extraBody` again, for the provider-specific fields of Responses API compatible services, e.g. `caching` and `thinking` of BytePlus ModelArk.
+- The OpenAI provider sends only the new inputs when continuing by a response reference, and only references responses of the same provider.
+- With `cachingPrefixLength` set, the OpenAI provider folds the instructions into the cached prefix and omits `instructions` on the referencing request.
 
 ## 0.10.0 (2026-05-22)
 
