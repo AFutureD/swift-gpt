@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.1 (2026-10-13)
+
+Behavior changes:
+
+- Builds on Linux with Swift 6.1 again: `TokenUsage.description` no longer uses the Swift 6.2 `\(value, default:)` interpolation, and Swiftic is required from 0.6.1, the first release that builds on Linux.
+
 ## 0.11.0 (2026-10-13)
 
 Feature enhancements:

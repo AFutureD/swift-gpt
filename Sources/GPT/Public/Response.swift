@@ -32,7 +32,12 @@ public struct TokenUsage: Codable, Sendable {
 
 extension TokenUsage: CustomStringConvertible {
     public var description: String {
-        "TokenUsage(input: \(input, default: "nil"), output: \(output, default: "nil"), total: \(total, default: "nil"), cached: \(cached, default: "nil"))"
+        "TokenUsage(input: \(Self.text(input)), output: \(Self.text(output)), total: \(Self.text(total)), cached: \(Self.text(cached)))"
+    }
+
+    /// `\(value, default:)` needs Swift 6.2, and Linux builds still use 6.1.
+    private static func text(_ value: Int?) -> String {
+        value.map(String.init) ?? "nil"
     }
 }
 

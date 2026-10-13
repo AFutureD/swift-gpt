@@ -98,7 +98,7 @@ func testArkPrefixCaching() async throws {
         // Every question branches from the prefix.
         let session = GPTSession(client: client, conversation: Conversation(prefixCacheReference: prefix))
         let response: ModelResponse = try await session.generate(prompt(question), model: model)
-        print("responseID: \(session.conversation?.lastReference?.id, default: "nil") usage: \(response.usage, default: "nil")")
+        print("responseID: \(session.conversation?.lastReference?.id ?? "nil") usage: \(response.usage.map(String.init(describing:)) ?? "nil")")
         #expect((response.usage?.cached ?? 0) > 0)
     }
 }
@@ -141,7 +141,7 @@ func testArkSessionCaching() async throws {
         )
 
         let response: ModelResponse = try await session.generate(prompt, model: model)
-        print("responseID: \(session.conversation?.lastReference?.id, default: "nil") usage: \(response.usage, default: "nil")")
+        print("responseID: \(session.conversation?.lastReference?.id ?? "nil") usage: \(response.usage.map(String.init(describing:)) ?? "nil")")
 
         // Previous context + new question, not the previous context twice.
         let usage = try #require(response.usage)
