@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.11.2 (2026-10-15)
 
-Fix:
+Bug fixes:
 
 - Cap exponential retry delays before integer overflow or an out-of-range floating-point conversion can terminate the process during sustained provider failures. Failure counts saturate, and wait intervals no longer overflow uptime deadlines. Existing finite fractional-factor rounding is preserved.
 
