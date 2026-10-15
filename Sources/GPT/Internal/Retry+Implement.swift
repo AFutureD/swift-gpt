@@ -15,8 +15,15 @@ extension RetryAdviser.BackOffPolicy {
         case .simple(let delay):
             return delay
         case .exponential(let delay, let maxDelay, let multiplier):
-            guard count > 0 else { return 0 }
-            return min(delay * UInt64(pow(multiplier, Double(count - 1))), maxDelay)
+            guard count > 0, delay > 0, maxDelay > 0 else { return 0 }
+            let factor = pow(multiplier, Double(count - 1))
+            // Double(UInt64.max) rounds up to 2^64, which is not convertible.
+            // Check before conversion, then saturate before a product can trap.
+            guard factor.isFinite, factor >= 0, factor < Double(UInt64.max) else {
+                return maxDelay
+            }
+            let (scaled, overflow) = delay.multipliedReportingOverflow(by: UInt64(factor))
+            return overflow ? maxDelay : min(scaled, maxDelay)
         }
     }
 }
@@ -41,7 +48,7 @@ extension RetryAdviser {
         case .skip:
             return true
         case .wait(base: let base, count: _, delay: let delay):
-            return base + delay > now
+            return now < base || now - base < delay
         case nil:
             return false
         }
@@ -56,7 +63,7 @@ extension RetryAdviser {
         if case .skip = previous { return nil }
 
         let count: UInt = if case .wait(_, let count, _) = previous {
-            count + 1
+            count == .max ? .max : count + 1
         } else {
             1
         }

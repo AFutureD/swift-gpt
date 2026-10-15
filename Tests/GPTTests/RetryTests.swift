@@ -21,6 +21,115 @@ struct RetryAdviserTests {
         #expect(policy.delay(10) == 10000)
     }
 
+    @Test("Default exponential backoff stays capped at large failure counts")
+    func testExponentialBackOffCapsLargeCounts() {
+        let policy = RetryAdviser.Strategy().backOff
+        let cap: UInt64 = 600_000_000_000
+        for count: UInt in [14, 38, 39, 65, 1025, .max] {
+            #expect(policy.delay(count) == cap)
+        }
+    }
+
+    @Test("Exponential backoff handles UInt64 limits and zero delays")
+    func testExponentialBackOffIntegerLimits() {
+        let policy = RetryAdviser.BackOffPolicy.exponential(
+            delay: .max, maxDelay: .max, multiplier: 2)
+        #expect(policy.delay(0) == 0)
+        #expect(policy.delay(1) == .max)
+        #expect(policy.delay(2) == .max)
+        #expect(policy.delay(.max) == .max)
+        let zero = RetryAdviser.BackOffPolicy.exponential(
+            delay: 0, maxDelay: .max, multiplier: 2)
+        #expect(zero.delay(.max) == 0)
+        let zeroCap = RetryAdviser.BackOffPolicy.exponential(
+            delay: .max, maxDelay: 0, multiplier: 2)
+        #expect(zeroCap.delay(.max) == 0)
+    }
+
+    @Test("Exponential backoff cannot trap on nonfinite or negative factors")
+    func testExponentialBackOffInvalidFactors() {
+        for multiplier in [Double.infinity, Double.nan, -2] {
+            let policy = RetryAdviser.BackOffPolicy.exponential(
+                delay: 100, maxDelay: 10000, multiplier: multiplier)
+            #expect(policy.delay(2) == 10000)
+        }
+    }
+
+    @Test("Exponential backoff preserves truncation of fractional factors")
+    func testExponentialBackOffFractionalFactors() {
+        let policy = RetryAdviser.BackOffPolicy.exponential(
+            delay: 100, maxDelay: 10000, multiplier: 1.5)
+        #expect(policy.delay(2) == 100)
+        #expect(policy.delay(3) == 200)
+        let decreasing = RetryAdviser.BackOffPolicy.exponential(
+            delay: 100, maxDelay: 10000, multiplier: 0.5)
+        #expect(decreasing.delay(2) == 0)
+    }
+
+    @Test("Consecutive HTTP failures stay capped and success resets the advice")
+    func testConsecutiveFailuresStayCapped() {
+        let adviser = RetryAdviser()
+        let model = LLMModelReference(
+            model: LLMModel(name: "test-model"),
+            provider: LLMProviderConfiguration(
+                type: .OpenAI, name: "Test", apiKey: "test-key",
+                apiURL: "https://api.test.invalid"))
+        let context = RetryAdviser.Context(current: model, errors: [:])
+        let error = RuntimeError.httpError(.serviceUnavailable, "Unavailable")
+        for _ in 0..<1024 {
+            #expect(adviser.retry(context, error: error) == nil)
+        }
+        let advice = adviser.cached.withLock { $0[model] }
+        if case .wait(_, let count, let delay) = advice {
+            #expect(count == 1024)
+            #expect(delay == 600_000_000_000)
+        } else {
+            Issue.record("Expected capped wait advice")
+        }
+        #expect(adviser.skip(context))
+        adviser.cleanCache(model: model)
+        #expect(!adviser.skip(context))
+        #expect(adviser.retry(context, error: error) == nil)
+        if case .wait(_, let count, let delay) = adviser.cached.withLock({ $0[model] }) {
+            #expect(count == 1)
+            #expect(delay == 100_000_000)
+        } else {
+            Issue.record("Expected reset wait advice")
+        }
+    }
+
+    @Test("Maximum cached failure count saturates without wrapping")
+    func testMaximumFailureCount() {
+        let adviser = RetryAdviser()
+        let model = LLMModelReference(
+            model: LLMModel(name: "test-model"),
+            provider: LLMProviderConfiguration(
+                type: .OpenAI, name: "Test", apiKey: "test-key",
+                apiURL: "https://api.test.invalid"))
+        adviser.cached.withLock { $0[model] = .wait(base: 0, count: .max, delay: 0) }
+        let context = RetryAdviser.Context(current: model, errors: [:])
+        #expect(adviser.retry(context, error: RuntimeError.unknown) == nil)
+        if case .wait(_, let count, let delay) = adviser.cached.withLock({ $0[model] }) {
+            #expect(count == .max)
+            #expect(delay == 600_000_000_000)
+        } else {
+            Issue.record("Expected capped wait advice")
+        }
+    }
+
+    @Test("A maximum wait interval does not overflow the skip deadline")
+    func testMaximumWaitInterval() {
+        let adviser = RetryAdviser(strategy: .init(backOff: .simple(delay: .max)))
+        let model = LLMModelReference(
+            model: LLMModel(name: "test-model"),
+            provider: LLMProviderConfiguration(
+                type: .OpenAI, name: "Test", apiKey: "test-key",
+                apiURL: "https://api.test.invalid"))
+        let context = RetryAdviser.Context(current: model, errors: [:])
+        #expect(adviser.retry(context, error: RuntimeError.unknown) == nil)
+        #expect(adviser.skip(context))
+    }
+
     @Test("BackOffPolicy exponential delay with multiplier 2")
     func testExponentialBackOffPolicyWithMultiplier1() {
         let policy = RetryAdviser.BackOffPolicy.exponential(delay: 100, maxDelay: 10000, multiplier: 2)
